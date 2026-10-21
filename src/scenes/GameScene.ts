@@ -1,40 +1,31 @@
 import Phaser from 'phaser';
+import { crearBoton } from '../ui/Boton';
 
 export class GameScene extends Phaser.Scene {
   constructor() {
     super('Game');
   }
 
+  init() {
+    // Reinicia aquí el estado de la partida (puntos, vidas...)
+  }
+
   create() {
     const { width, height } = this.scale;
+    this.cameras.main.fadeIn(250);
 
     this.add
-      .text(width / 2, 120, 'Phaser + Capacitor', {
+      .text(width / 2, height / 2, 'Escena de juego', {
         fontFamily: 'sans-serif',
-        fontSize: '48px',
+        fontSize: '56px',
         color: '#ffffff',
       })
       .setOrigin(0.5);
 
-    this.add
-      .text(width / 2, 190, 'Toca la pantalla para crear bolas', {
-        fontFamily: 'sans-serif',
-        fontSize: '28px',
-        color: '#aaaacc',
-      })
-      .setOrigin(0.5);
-
-    this.spawnBall(width / 2, height / 2);
-
-    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      this.spawnBall(pointer.x, pointer.y);
-    });
+    crearBoton(this, width / 2, height - 140, 'Menú', () => this.scene.start('Menu'));
   }
 
-  private spawnBall(x: number, y: number) {
-    const ball = this.physics.add.image(x, y, 'ball');
-    ball.setCollideWorldBounds(true);
-    ball.setBounce(1, 1);
-    ball.setVelocity(Phaser.Math.Between(-400, 400), Phaser.Math.Between(-400, 400));
+  update(_time: number, _delta: number) {
+    // Lógica que se ejecuta cada frame
   }
 }
