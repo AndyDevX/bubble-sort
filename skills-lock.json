@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "skills": {
+    "animations": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/animations/SKILL.md",
+      "computedHash": "7e5ce476a4bf1a65ba07bd8e0e38e4e8d95c7491563b309ea1e457ac3545ed5f"
+    },
+    "audio-and-sound": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/audio-and-sound/SKILL.md",
+      "computedHash": "0ac3d8b80936f93f78e437cdaa8399efa6054f08244d90eb78de7b5f5ddec337"
+    },
+    "capacitor-best-practices": {
+      "source": "cap-go/capgo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/capacitor-best-practices/SKILL.md",
+      "computedHash": "1b1a0d9c040340e77bc022dd481d6d985c6cbf5177626e16700ff5bf58e06596"
+    },
+    "capacitor-performance": {
+      "source": "cap-go/capgo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/capacitor-performance/SKILL.md",
+      "computedHash": "fbcf0fbb47bd6995b87025277546c7706377bd804aaa0108c1ae63909f931970"
+    },
+    "create-game-assets": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/disciplines/create-game-assets/SKILL.md",
+      "computedHash": "e0991db4ed544179782a60a7020aa49c7469b66744de5a5eda28eb3a35f856be"
+    },
+    "debugging-capacitor": {
+      "source": "cap-go/capgo-skills",
+      "sourceType": "github",
+      "skillPath": "skills/debugging-capacitor/SKILL.md",
+      "computedHash": "96abaeb34be6f61e910ca7a5d9b4cc58d98288f0372acda6d3629506d40d58c9"
+    },
+    "game-object-components": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/game-object-components/SKILL.md",
+      "computedHash": "48dde2e855f8e87b8920d62eca7fff335a197c9fd89aac61e95cf1487c3432b5"
+    },
+    "game-setup-and-config": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/game-setup-and-config/SKILL.md",
+      "computedHash": "9864274b28b515d15ea06e10c45c7dd44133013ae381664ff8cd445d2c0c4403"
+    },
+    "game-ui-ux": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/disciplines/game-ui-ux/SKILL.md",
+      "computedHash": "4234b295c380c907a2b196b2a6b32a158ee942ac3708ea63e13f0514332e4fd1"
+    },
+    "geometry-and-math": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/geometry-and-math/SKILL.md",
+      "computedHash": "e8cf50caee36df5b3e92dde833c9cebdb1c59374f131ae650f97230a84990615"
+    },
+    "groups-and-containers": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/groups-and-containers/SKILL.md",
+      "computedHash": "f8eb3b2e665b8e9fd438b0f8f634b56f5b8421e732ea1be19ce99d554e3ed55b"
+    },
+    "input-keyboard-mouse-touch": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/input-keyboard-mouse-touch/SKILL.md",
+      "computedHash": "dee585dd36d5c96ecb7a0bf49fece4c74fcdd58518723e1ecf17231d5e189ed3"
+    },
+    "phaser-core": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-engines/phaser-core/SKILL.md",
+      "computedHash": "4ec5dd6c81265f9d80993792fd174d1282591720f7f0ca3f502279348f58bb7f"
+    },
+    "scale-and-responsive": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/scale-and-responsive/SKILL.md",
+      "computedHash": "a0a25c250fd0e4348c302d2f839a829767626d1dd961babeb9063ccb3849928d"
+    },
+    "sprites-and-images": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/sprites-and-images/SKILL.md",
+      "computedHash": "dfa048c9121566261eae554b4c4b20854991c59736df199809966b4ddcc743e0"
+    },
+    "typescript-pro": {
+      "source": "jeffallan/claude-skills",
+      "sourceType": "github",
+      "skillPath": "skills/typescript-pro/SKILL.md",
+      "computedHash": "6751e2000c6359db46852d754d4bc246061ac05229e8a9b95a5ec0667a053834"
+    },
+    "vite": {
+      "source": "antfu/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vite/SKILL.md",
+      "computedHash": "88ee465fd10f711efecc76e91e96accae2b229dda371614dcf219099c264a486"
+    }
+  }
+}
