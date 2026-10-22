@@ -58,7 +58,8 @@ interface Guardado {
 | Lluvia | Empieza al sellar el **50 %** de los colores del nivel. Caen tandas de 4 bolas de un color nuevo, una cada pocos segundos, en un tubo al azar con hueco. Si no queda hueco → derrota |
 | Alquimia | Algunas bolas llegan "partidas" en dos ingredientes (anillo blanco). Ingrediente sobre ingrediente de su receta → se fusionan en el color resultado · +25 pts |
 | Niebla | Las bolas ocultas se ven como «?» y se revelan al quedar arriba (y se quedan reveladas) |
-| Giro de gravedad | Barra que se llena con **150 pts** (una sola carga, se vacía al usarla y al empezar nivel). Invierte todos los tubos sin sellar |
+| Puntos | Bola colocada sobre una de su mismo color +10 (cada bola solo puntúa la primera vez en el nivel) · sellar +100 · fusionar +25 |
+| Giro de gravedad | Barra que se llena con **150 pts** de los de arriba (una sola carga, se vacía al usarla y al empezar nivel). Invierte todos los tubos sin sellar |
 | Recompensa | 5 + puntos/10 monedas al superar el nivel; el progreso se guarda |
 
 Dificultad por nivel (`src/juego/niveles.ts` → `configNivel`): de 3 a 7 colores, 0–2 fusiones, niebla del 0 % al 60 %, 1–2 tandas de lluvia y lluvia más rápida. Cada nivel se genera al azar y se comprueba con un solucionador que tiene solución.

@@ -14,7 +14,8 @@ Diseño del juego y decisiones tomadas: `docs/diseno-juego.md`. Guías: `docs/gu
 - `src/scenes/` — una clase por escena: `BootScene` (carga) → `MenuScene` → `GameScene`; `DialogoScene` (pausa/victoria/derrota) y `SettingsScene` se abren encima
 - `src/juego/` — lógica pura sin Phaser: reglas (`modelo.ts`), colores y recetas, generador de niveles y solucionador
 - `src/ui/` — componentes (`Boton`, `BotonAjustes`, `Slider`) y `layout.ts` (colocación adaptable)
-- `src/sistemas/` — ajustes guardados, audio (volumen música/efectos), medidor de FPS (solo dev)
+- `public/sw.js` — Service Worker: guarda audio y build en el caché del dispositivo (sube `VERSION` para invalidarlo)
+- `src/sistemas/` — ajustes guardados, audio (volumen música/efectos), registro del Service Worker, medidor de FPS (solo dev)
 - `src/i18n/` — textos; todo texto visible sale de `t('clave')`
 - `public/assets/` — assets estáticos (se cargan como `assets/...`)
 - `public/assets/sfx/` — efectos de sonido de vidrio, generados con `python3 scripts/generar-sonidos.py` (Python + ffmpeg); para cambiar un sonido, edita su función en el script y vuelve a ejecutarlo

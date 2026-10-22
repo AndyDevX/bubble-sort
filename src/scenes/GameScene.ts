@@ -26,6 +26,7 @@ import type { DatosDialogo } from './DialogoScene';
 
 const PUNTOS_SELLAR = 100;
 const PUNTOS_FUSION = 25;
+const PUNTOS_ACIERTO = 10; // por bola colocada sobre una de su mismo color
 const PUNTOS_CARGA = 150; // puntos para llenar la barra de Gravedad (una sola carga)
 
 // Medidas calculadas según el tamaño de pantalla
@@ -53,6 +54,7 @@ export class GameScene extends Phaser.Scene {
 
   private puntos = 0;
   private carga = 0;
+  private bolasPuntuadas = new Set<number>();
 
   private lluviaPendiente: ColorId[] = [];
   private lluviaIniciada = false;
@@ -84,6 +86,7 @@ export class GameScene extends Phaser.Scene {
     this.terminado = false;
     this.puntos = 0;
     this.carga = 0;
+    this.bolasPuntuadas = new Set();
     this.lluviaPendiente = [];
     this.lluviaIniciada = false;
     this.temporizadorLluvia = null;
@@ -359,6 +362,17 @@ export class GameScene extends Phaser.Scene {
     const primerHueco = this.tubos[destino].bolas.length - (mov.tipo === 'fusionar' ? 1 : 0);
     const res = aplicarMovimiento(this.tubos, origen, destino, mov);
 
+    // Acierto: cada bola colocada sobre una de su color puntúa (solo la primera vez en el nivel,
+    // para que mover la misma bola de un lado a otro no llene la barra)
+    let aciertos = 0;
+    if (res.movimiento.tipo === 'mover' && primerHueco > 0) {
+      for (const bola of res.bolas) {
+        if (this.bolasPuntuadas.has(bola.id)) continue;
+        this.bolasPuntuadas.add(bola.id);
+        aciertos++;
+      }
+    }
+
     // El grupo sale empezando por la de arriba; cada bola cae a su hueco con un pequeño desfase
     const encima = this.posicionLevantada(destino);
     const desfase = 50;
@@ -389,10 +403,23 @@ export class GameScene extends Phaser.Scene {
       } else {
         reproducirEfecto(this, 'mover', true);
       }
+      if (aciertos > 0) {
+        this.sumarPuntos(aciertos * PUNTOS_ACIERTO);
+        this.mostrarPuntosFlotantes(destino, aciertos * PUNTOS_ACIERTO);
+      }
       this.revelar(res.reveladas);
       if (res.sellado) this.animarSellado(destino);
       this.trasJugada();
     });
+  }
+
+  private mostrarPuntosFlotantes(tubo: number, puntos: number) {
+    const pos = this.posicionLevantada(tubo);
+    const texto = this.add
+      .text(pos.x, pos.y, `+${puntos}`, { fontFamily: 'sans-serif', fontSize: '34px', color: '#81d4fa', fontStyle: 'bold' })
+      .setOrigin(0.5)
+      .setDepth(5);
+    this.tweens.add({ targets: texto, y: pos.y - 60, alpha: 0, duration: 700, ease: 'Quad.easeOut', onComplete: () => texto.destroy() });
   }
 
   private animarFusion(a: Bola, b: Bola, creada: Bola, pos: { x: number; y: number }) {
