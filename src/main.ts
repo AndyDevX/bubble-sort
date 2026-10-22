@@ -5,7 +5,6 @@ import { GameScene } from './scenes/GameScene';
 import { SettingsScene } from './scenes/SettingsScene';
 import { setIdioma, t } from './i18n';
 import { getAjustes } from './sistemas/ajustes';
-import { activarPantallaCompletaEnMovil } from './sistemas/pantallaCompleta';
 import './style.css';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -40,7 +39,6 @@ const avisoGirar = document.querySelector('#girar span');
 if (avisoGirar) avisoGirar.textContent = t('giraTelefono');
 
 const juego = new Phaser.Game(config);
-activarPantallaCompletaEnMovil(juego);
 
 if (import.meta.env.DEV) {
   void import('./sistemas/medidorFps').then(({ mostrarMedidorFps }) => mostrarMedidorFps(juego));

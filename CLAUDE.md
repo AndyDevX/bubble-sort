@@ -12,7 +12,7 @@ Diseño del juego y decisiones tomadas: `docs/diseno-juego.md`. Guías: `docs/gu
 - `src/main.ts` — GameConfig
 - `src/scenes/` — una clase por escena: `BootScene` (carga) → `MenuScene` → `GameScene`; `SettingsScene` se abre encima
 - `src/ui/` — componentes (`Boton`, `BotonAjustes`, `Slider`) y `layout.ts` (colocación adaptable)
-- `src/sistemas/` — ajustes guardados, audio (volumen música/efectos), pantalla completa, medidor de FPS (solo dev)
+- `src/sistemas/` — ajustes guardados, audio (volumen música/efectos), medidor de FPS (solo dev)
 - `src/i18n/` — textos; todo texto visible sale de `t('clave')`
 - `public/assets/` — assets estáticos (se cargan como `assets/...`)
 
@@ -32,8 +32,9 @@ Diseño del juego y decisiones tomadas: `docs/diseno-juego.md`. Guías: `docs/gu
 
 ## Pantalla: siempre adaptable y siempre vertical
 - Escalado `Scale.EXPAND`: 720x1280 es el tamaño **mínimo**; el juego crece hasta llenar la pantalla (p. ej. 720x1600 en móviles alargados, hasta 960x1280 en tablet). **Nunca** uses 720/1280 fijos para colocar cosas: usa `this.scale.width/height`.
-- Coloca la interfaz dentro de `alRedimensionar(this, (ancho, alto) => { ... })` (`src/ui/layout.ts`), que se vuelve a ejecutar al girar, entrar en pantalla completa o redimensionar.
+- Coloca la interfaz dentro de `alRedimensionar(this, (ancho, alto) => { ... })` (`src/ui/layout.ts`), que se vuelve a ejecutar al girar, al mostrarse/ocultarse la barra del navegador o al redimensionar.
 - Lo pegado a los bordes (barra superior, esquinas) va dentro de `zonaSegura(this)` para no quedar bajo el notch o la barra de gestos.
+- En el navegador **no** se fuerza pantalla completa: el juego se adapta al área visible normal.
 - Solo vertical: en horizontal se muestra el aviso «Gira el teléfono» (`#girar` en `index.html`); en PC el juego es una columna centrada de proporción máxima 3:4.
 - Al crear el proyecto Android (`npx cap add android`), fija `android:screenOrientation="portrait"` en la `<activity>` de `AndroidManifest.xml`.
 - Prueba cada pantalla nueva al menos en 360x640, 412x915, 768x1024 y en horizontal.

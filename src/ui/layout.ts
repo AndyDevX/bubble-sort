@@ -44,7 +44,7 @@ export function zonaSegura(escena: Phaser.Scene): Area {
 }
 
 // Llama a `colocar` ahora y cada vez que cambie el tamaño de la pantalla
-// (girar, entrar/salir de pantalla completa, redimensionar ventana).
+// (girar, barra del navegador que aparece/desaparece, redimensionar ventana).
 // El tamaño del juego NO es fijo: mínimo 720 de ancho y 1280 de alto, crece según la pantalla.
 export function alRedimensionar(escena: Phaser.Scene, colocar: (ancho: number, alto: number) => void): void {
   const alCambiar = (tamano: Phaser.Structs.Size) => colocar(tamano.width, tamano.height);
