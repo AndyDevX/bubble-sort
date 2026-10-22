@@ -8,4 +8,5 @@ export const es = {
   volver: 'Volver',
   menu: 'Menú',
   escenaJuego: 'Escena de juego',
+  giraTelefono: 'Gira el teléfono',
 };

@@ -5,9 +5,39 @@ html, body {
   height: 100%;
   overflow: hidden;
   background: #1d1d2b;
+  touch-action: none;           /* sin zoom ni scroll del navegador al jugar */
+  -webkit-user-select: none;
+  user-select: none;
 }
 
+/* Siempre en vertical: en pantallas anchas (PC, tablet horizontal) el juego
+   se queda en una columna de proporción máxima 3:4 centrada. */
 #game {
   width: 100%;
   height: 100%;
+  height: 100dvh;
+  max-width: calc(100dvh * 3 / 4);
+  margin: 0 auto;
+}
+
+/* Aviso para girar el teléfono si está en horizontal */
+#girar {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  background: #1d1d2b;
+  color: #fff;
+  font: 600 22px sans-serif;
+  text-align: center;
+}
+
+@media (orientation: landscape) and (pointer: coarse) and (max-height: 600px) {
+  #girar {
+    display: flex;
+  }
 }

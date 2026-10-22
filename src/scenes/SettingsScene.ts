@@ -61,6 +61,11 @@ export class SettingsScene extends Phaser.Scene {
     this.crearSelectorIdioma(width / 2, arriba + 620);
 
     crearBoton(this, width / 2, arriba + panelAlto - 110, t('volver'), () => this.cerrar());
+
+    // Si cambia el tamaño de la pantalla, se vuelve a construir (los valores ya están guardados)
+    const alCambiarTamano = () => this.scene.restart({ origen: this.escenaOrigen });
+    this.scale.once(Phaser.Scale.Events.RESIZE, alCambiarTamano);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, alCambiarTamano));
   }
 
   private crearSelectorIdioma(x: number, y: number) {
