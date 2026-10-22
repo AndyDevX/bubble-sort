@@ -6,11 +6,13 @@ Diseño del juego y decisiones tomadas: `docs/diseno-juego.md`. Guías: `docs/gu
 ## Comandos
 - `npm run dev` — servidor local (http://localhost:5173)
 - `npm run build` — tsc + build a `dist/`
+- `npm run compartir` — (con `npm run dev` abierto en otra terminal) túnel público temporal `https://….trycloudflare.com`
 - `npm run cap:sync` / `npm run cap:android` — build y sincronizar con nativo
 
 ## Estructura
 - `src/main.ts` — GameConfig
-- `src/scenes/` — una clase por escena: `BootScene` (carga) → `MenuScene` → `GameScene`; `SettingsScene` se abre encima
+- `src/scenes/` — una clase por escena: `BootScene` (carga) → `MenuScene` → `GameScene`; `DialogoScene` (pausa/victoria/derrota) y `SettingsScene` se abren encima
+- `src/juego/` — lógica pura sin Phaser: reglas (`modelo.ts`), colores y recetas, generador de niveles y solucionador
 - `src/ui/` — componentes (`Boton`, `BotonAjustes`, `Slider`) y `layout.ts` (colocación adaptable)
 - `src/sistemas/` — ajustes guardados, audio (volumen música/efectos), medidor de FPS (solo dev)
 - `src/i18n/` — textos; todo texto visible sale de `t('clave')`

@@ -30,6 +30,9 @@ export function nombreDeIdioma(codigo: CodigoIdioma): string {
   return IDIOMAS[codigo].nombreIdioma;
 }
 
-export function t(clave: ClaveTexto): string {
-  return IDIOMAS[idiomaActual][clave];
+// t('nivel', { n: 3 }) → 'Nivel 3'
+export function t(clave: ClaveTexto, valores?: Record<string, string | number>): string {
+  const texto = IDIOMAS[idiomaActual][clave];
+  if (!valores) return texto;
+  return texto.replace(/\{(\w+)\}/g, (_, nombre: string) => String(valores[nombre] ?? `{${nombre}}`));
 }

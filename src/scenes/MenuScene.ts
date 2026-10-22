@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { NOMBRE_JUEGO } from '../constantes';
 import { t } from '../i18n';
+import { getGuardado } from '../sistemas/guardado';
 import { crearBoton } from '../ui/Boton';
 import { crearBotonAjustes } from '../ui/BotonAjustes';
 import { alRedimensionar, zonaSegura } from '../ui/layout';
@@ -28,6 +29,10 @@ export class MenuScene extends Phaser.Scene {
       });
     });
 
+    const nivel = this.add
+      .text(0, 0, t('nivel', { n: getGuardado().nivel }), { fontFamily: 'sans-serif', fontSize: '32px', color: '#aaaacc' })
+      .setOrigin(0.5);
+
     const ajustes = crearBotonAjustes(this, 0, 0, () => {
       this.scene.pause();
       this.scene.launch('Settings', { origen: this.scene.key });
@@ -37,6 +42,7 @@ export class MenuScene extends Phaser.Scene {
       const zona = zonaSegura(this);
       titulo.setPosition(ancho / 2, alto * 0.3);
       jugar.setPosition(ancho / 2, alto * 0.6);
+      nivel.setPosition(ancho / 2, alto * 0.6 + 100);
       // Esquina inferior derecha, respetando notch y barra de gestos
       ajustes.setPosition(zona.x + zona.ancho - 90, zona.y + zona.alto - 90);
     });

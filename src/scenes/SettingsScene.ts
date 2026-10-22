@@ -100,7 +100,9 @@ export class SettingsScene extends Phaser.Scene {
     const idiomaCambiado = getIdioma() !== this.idiomaAlAbrir;
     this.scene.stop();
     if (idiomaCambiado) {
-      this.scene.start(this.escenaOrigen); // reinicia la escena de origen con los textos nuevos
+      // Reinicia la escena de origen (con sus mismos datos) para que muestre los textos nuevos
+      const datosOrigen = this.scene.get(this.escenaOrigen).sys.settings.data;
+      this.scene.start(this.escenaOrigen, datosOrigen);
     } else {
       this.scene.resume(this.escenaOrigen);
     }

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { generarTexturasBolas } from '../juego/texturas';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -7,17 +8,11 @@ export class BootScene extends Phaser.Scene {
 
   preload() {
     // Carga aquí tus assets desde /public/assets, p. ej.:
-    // this.load.image('player', 'assets/player.png');
+    // this.load.audio('mover', ['assets/mover.ogg', 'assets/mover.mp3']);
   }
 
   create() {
-    // Textura generada para no depender de archivos externos
-    const g = this.make.graphics({ x: 0, y: 0 }, false);
-    g.fillStyle(0x4fc3f7);
-    g.fillCircle(32, 32, 32);
-    g.generateTexture('ball', 64, 64);
-    g.destroy();
-
+    generarTexturasBolas(this);
     this.scene.start('Menu');
   }
 }

@@ -9,7 +9,9 @@ Juego de ordenar colores en tubos para móvil, en vertical. Partimos del documen
 | Modos de juego | **Un único modo** con todas las mecánicas activas (no hay selector de modos) |
 | Flujo | Menú → **Jugar** → partida directamente |
 | Niveles | **Aleatorios** (generados por procedimiento) |
-| Giro de gravedad | **Habilidad**, no modo: se recarga al ir sumando puntos en cada nivel y se muestra con una **barra** |
+| Giro de gravedad | **Habilidad**, no modo: se recarga al ir sumando puntos en cada nivel y se muestra con una **barra**; una sola carga |
+| Lluvia | Empieza al 50 % de completado el nivel |
+| Nivel superado | Todos los tubos ordenados |
 | Plataforma | Navegador móvil y APK con Capacitor; siempre vertical |
 
 ## Regla base
@@ -45,8 +47,16 @@ interface Guardado {
 }
 ```
 
-## Preguntas abiertas
+## Reglas concretas (implementadas)
 
-- ¿Cómo conviven la **Lluvia** (tiempo real) con los niveles? ¿Llueve durante todo el nivel, a partir de cierto nivel, o es un evento?
-- ¿Qué se considera **nivel superado**: todos los tubos ordenados, o alcanzar una puntuación?
-- ¿Cuántos puntos llenan la barra del Giro de gravedad y cuántas cargas se pueden acumular?
+| Tema | Regla |
+| --- | --- |
+| Tubo completo | 4 bolas del mismo color → el tubo **se sella** (tapón de color, ya no se puede tocar) · +100 pts |
+| Nivel superado | Todos los tubos sellados o vacíos y sin lluvia pendiente |
+| Lluvia | Empieza al sellar el **50 %** de los colores del nivel. Caen tandas de 4 bolas de un color nuevo, una cada pocos segundos, en un tubo al azar con hueco. Si no queda hueco → derrota |
+| Alquimia | Algunas bolas llegan "partidas" en dos ingredientes (anillo blanco). Ingrediente sobre ingrediente de su receta → se fusionan en el color resultado · +25 pts |
+| Niebla | Las bolas ocultas se ven como «?» y se revelan al quedar arriba (y se quedan reveladas) |
+| Giro de gravedad | Barra que se llena con **150 pts** (una sola carga, se vacía al usarla y al empezar nivel). Invierte todos los tubos sin sellar |
+| Recompensa | 5 + puntos/10 monedas al superar el nivel; el progreso se guarda |
+
+Dificultad por nivel (`src/juego/niveles.ts` → `configNivel`): de 3 a 7 colores, 0–2 fusiones, niebla del 0 % al 60 %, 1–2 tandas de lluvia y lluvia más rápida. Cada nivel se genera al azar y se comprueba con un solucionador que tiene solución.

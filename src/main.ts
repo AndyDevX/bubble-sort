@@ -3,6 +3,7 @@ import { BootScene } from './scenes/BootScene';
 import { MenuScene } from './scenes/MenuScene';
 import { GameScene } from './scenes/GameScene';
 import { SettingsScene } from './scenes/SettingsScene';
+import { DialogoScene } from './scenes/DialogoScene';
 import { setIdioma, t } from './i18n';
 import { getAjustes } from './sistemas/ajustes';
 import './style.css';
@@ -30,7 +31,7 @@ const config: Phaser.Types.Core.GameConfig = {
     default: 'arcade',
     arcade: { gravity: { x: 0, y: 0 } },
   },
-  scene: [BootScene, MenuScene, GameScene, SettingsScene],
+  scene: [BootScene, MenuScene, GameScene, DialogoScene, SettingsScene],
 };
 
 setIdioma(getAjustes().idioma);
@@ -41,5 +42,6 @@ if (avisoGirar) avisoGirar.textContent = t('giraTelefono');
 const juego = new Phaser.Game(config);
 
 if (import.meta.env.DEV) {
+  Object.assign(window, { juego }); // para depurar desde la consola del navegador
   void import('./sistemas/medidorFps').then(({ mostrarMedidorFps }) => mostrarMedidorFps(juego));
 }
