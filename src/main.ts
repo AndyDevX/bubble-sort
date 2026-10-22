@@ -2,6 +2,9 @@ import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
 import { MenuScene } from './scenes/MenuScene';
 import { GameScene } from './scenes/GameScene';
+import { SettingsScene } from './scenes/SettingsScene';
+import { setIdioma } from './i18n';
+import { getAjustes } from './sistemas/ajustes';
 import './style.css';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -18,7 +21,9 @@ const config: Phaser.Types.Core.GameConfig = {
     default: 'arcade',
     arcade: { gravity: { x: 0, y: 0 } },
   },
-  scene: [BootScene, MenuScene, GameScene],
+  scene: [BootScene, MenuScene, GameScene, SettingsScene],
 };
+
+setIdioma(getAjustes().idioma);
 
 new Phaser.Game(config);

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { Colores } from '../constantes';
 
 // Botón reutilizable: rectángulo redondeado + texto, con feedback al tocar
 export function crearBoton(
@@ -16,7 +17,7 @@ export function crearBoton(
     fondo.clear();
     fondo.fillStyle(color).fillRoundedRect(-ancho / 2, -alto / 2, ancho, alto, 28);
   };
-  pintar(0x4fc3f7);
+  pintar(Colores.primario);
 
   const etiqueta = escena.add
     .text(0, 0, texto, {
@@ -31,9 +32,9 @@ export function crearBoton(
   boton.setSize(ancho, alto);
   boton.setInteractive({ useHandCursor: true });
 
-  boton.on('pointerover', () => pintar(0x81d4fa));
+  boton.on('pointerover', () => pintar(Colores.primarioClaro));
   boton.on('pointerout', () => {
-    pintar(0x4fc3f7);
+    pintar(Colores.primario);
     boton.setScale(1);
   });
   boton.on('pointerdown', () => boton.setScale(0.95));
