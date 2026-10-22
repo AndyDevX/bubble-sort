@@ -17,7 +17,7 @@ import {
 } from '../juego/modelo';
 import { generarNivel, type Nivel } from '../juego/niveles';
 import { claveTextura, colorHex } from '../juego/texturas';
-import { reproducirEfecto } from '../sistemas/audio';
+import { iniciarMusicaPartida, reproducirEfecto } from '../sistemas/audio';
 import { actualizarGuardado, getGuardado } from '../sistemas/guardado';
 import { crearBarraHabilidad, type BarraHabilidad } from '../ui/BarraHabilidad';
 import { crearBotonRedondo, iconoPausa, type BotonRedondo } from '../ui/BotonRedondo';
@@ -92,6 +92,7 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     this.cameras.main.fadeIn(250);
+    iniciarMusicaPartida(this);
 
     this.nivel = generarNivel(this.numeroNivel);
     this.tubos = this.nivel.tubos;

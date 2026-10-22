@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { NOMBRE_JUEGO } from '../constantes';
 import { t } from '../i18n';
+import { detenerMusica, precargarMusica } from '../sistemas/audio';
 import { getGuardado } from '../sistemas/guardado';
 import { crearBoton } from '../ui/Boton';
 import { crearBotonAjustes } from '../ui/BotonAjustes';
@@ -12,6 +13,10 @@ export class MenuScene extends Phaser.Scene {
   }
 
   create() {
+    // La música es solo de las partidas: aquí se para y se adelanta la carga
+    detenerMusica();
+    precargarMusica(this);
+
     const titulo = this.add
       .text(0, 0, NOMBRE_JUEGO, {
         fontFamily: 'sans-serif',
