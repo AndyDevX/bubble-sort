@@ -37,7 +37,7 @@ Diseño del juego y decisiones tomadas: `docs/diseno-juego.md`. Guías: `docs/gu
 - Coloca la interfaz dentro de `alRedimensionar(this, (ancho, alto) => { ... })` (`src/ui/layout.ts`), que se vuelve a ejecutar al girar, al mostrarse/ocultarse la barra del navegador o al redimensionar.
 - Lo pegado a los bordes (barra superior, esquinas) va dentro de `zonaSegura(this)` para no quedar bajo el notch o la barra de gestos.
 - En el navegador **no** se fuerza pantalla completa: el juego se adapta al área visible normal.
-- Solo vertical: en horizontal se muestra el aviso «Gira el teléfono» (`#girar` en `index.html`); en PC el juego es una columna centrada de proporción máxima 3:4.
+- Solo vertical: el diseño es vertical; en pantallas anchas (PC, móvil en horizontal) el juego es una columna centrada de proporción máxima 3:4. Sin aviso de «gira el teléfono» (daba falsos positivos).
 - Al crear el proyecto Android (`npx cap add android`), fija `android:screenOrientation="portrait"` en la `<activity>` de `AndroidManifest.xml`.
 - Prueba cada pantalla nueva al menos en 360x640, 412x915, 768x1024 y en horizontal.
 

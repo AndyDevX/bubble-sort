@@ -4,7 +4,7 @@ import { MenuScene } from './scenes/MenuScene';
 import { GameScene } from './scenes/GameScene';
 import { SettingsScene } from './scenes/SettingsScene';
 import { DialogoScene } from './scenes/DialogoScene';
-import { setIdioma, t } from './i18n';
+import { setIdioma } from './i18n';
 import { getAjustes } from './sistemas/ajustes';
 import './style.css';
 
@@ -35,9 +35,6 @@ const config: Phaser.Types.Core.GameConfig = {
 };
 
 setIdioma(getAjustes().idioma);
-
-const avisoGirar = document.querySelector('#girar span');
-if (avisoGirar) avisoGirar.textContent = t('giraTelefono');
 
 const juego = new Phaser.Game(config);
 
