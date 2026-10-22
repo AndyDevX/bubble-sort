@@ -1,0 +1,10 @@
+{
+  "name": "Odi Sort",
+  "short_name": "Odi Sort",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#1d1d2b",
+  "theme_color": "#1d1d2b",
+  "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

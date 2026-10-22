@@ -5,6 +5,7 @@ import { GameScene } from './scenes/GameScene';
 import { SettingsScene } from './scenes/SettingsScene';
 import { setIdioma } from './i18n';
 import { getAjustes } from './sistemas/ajustes';
+import { activarPantallaCompletaEnMovil } from './sistemas/pantallaCompleta';
 import './style.css';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -26,4 +27,5 @@ const config: Phaser.Types.Core.GameConfig = {
 
 setIdioma(getAjustes().idioma);
 
-new Phaser.Game(config);
+const juego = new Phaser.Game(config);
+activarPantallaCompletaEnMovil(juego);
