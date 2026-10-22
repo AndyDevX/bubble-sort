@@ -433,15 +433,18 @@ export class GameScene extends Phaser.Scene {
   private trasJugada() {
     if (this.terminado) return;
 
+    // Se gana en cuanto todos los tubos están completos (sellados) o vacíos:
+    // - si aún no ha caído ninguna gota, la lluvia pendiente se cancela;
+    // - si ya cayeron gotas, sus bolas también tienen que estar en tubos completos.
+    if (nivelCompleto(this.tubos)) {
+      this.victoria();
+      return;
+    }
+
     // La lluvia empieza al 50 % de tubos (colores del nivel) sellados
     if (!this.lluviaIniciada && this.lluviaPendiente.length > 0) {
       const sellados = this.tubos.filter((t) => t.sellado && this.nivel.coloresBase.includes(t.bolas[0].color)).length;
       if (sellados / this.nivel.coloresBase.length >= 0.5) this.iniciarLluvia();
-    }
-
-    if (nivelCompleto(this.tubos)) {
-      if (this.lluviaPendiente.length === 0) this.victoria();
-      return;
     }
 
     // Sin jugadas posibles y sin Gravedad cargada (que podría desbloquear la partida): se pierde
@@ -591,6 +594,8 @@ export class GameScene extends Phaser.Scene {
   private victoria() {
     this.terminado = true;
     this.temporizadorLluvia?.remove();
+    this.lluviaPendiente = [];
+    this.textoLluvia.setVisible(false);
 
     const monedas = 5 + Math.floor(this.puntos / 10);
     const guardado = getGuardado();

@@ -54,7 +54,7 @@ interface Guardado {
 | --- | --- |
 | Mover | Se mueve el **grupo** de bolas seguidas del mismo color de arriba, tantas como quepan en el destino (las ocultas del grupo se mueven y se revelan). Las fusiones son de una en una |
 | Tubo completo | 4 bolas del mismo color → el tubo **se sella** (tapón de color, ya no se puede tocar) · +100 pts |
-| Nivel superado | Todos los tubos sellados o vacíos y sin lluvia pendiente |
+| Nivel superado | En cuanto todos los tubos están sellados o vacíos. Si aún no ha caído ninguna gota, la lluvia pendiente se cancela; si ya cayeron, esas bolas también deben estar en tubos sellados (con una tanda a medias no se puede completar) |
 | Lluvia | Empieza al sellar el **50 %** de los colores del nivel. Caen tandas de 4 bolas de un color nuevo, una cada pocos segundos, en un tubo al azar con hueco. Si no queda hueco → derrota |
 | Alquimia | Algunas bolas llegan "partidas" en dos ingredientes (anillo blanco). Ingrediente sobre ingrediente de su receta → se fusionan en el color resultado · +25 pts |
 | Niebla | Las bolas ocultas se ven como «?» y se revelan al quedar arriba (y se quedan reveladas) |
