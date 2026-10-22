@@ -14,11 +14,12 @@ export interface Tubo {
   sellado: boolean;
 }
 
-export type Movimiento = { tipo: 'mover' } | { tipo: 'fusionar'; resultado: ColorId };
+// mover: se mueve el grupo de bolas iguales de arriba (tantas como quepan)
+export type Movimiento = { tipo: 'mover'; cantidad: number } | { tipo: 'fusionar'; resultado: ColorId };
 
 export interface ResultadoMovimiento {
   movimiento: Movimiento;
-  bola: Bola;               // la bola que sale del origen
+  bolas: Bola[];            // las bolas que salen del origen (de abajo a arriba)
   fusionadaCon?: Bola;      // fusión: la bola de arriba del destino que desaparece
   creada?: Bola;            // fusión: la bola nueva
   reveladas: Bola[];
@@ -35,6 +36,19 @@ export function arriba(tubo: Tubo): Bola | undefined {
   return tubo.bolas[tubo.bolas.length - 1];
 }
 
+// Cuántas bolas seguidas del mismo color hay arriba del tubo (incluidas las ocultas)
+export function grupoSuperior(tubo: Tubo): number {
+  const tope = arriba(tubo);
+  if (!tope) return 0;
+  let n = 0;
+  for (let i = tubo.bolas.length - 1; i >= 0; i--) {
+    const b = tubo.bolas[i];
+    if (b.color !== tope.color || b.ingrediente !== tope.ingrediente) break;
+    n++;
+  }
+  return n;
+}
+
 export function evaluarMovimiento(tubos: Tubo[], origen: number, destino: number): Movimiento | null {
   if (origen === destino) return null;
   const desde = tubos[origen];
@@ -45,8 +59,11 @@ export function evaluarMovimiento(tubos: Tubo[], origen: number, destino: number
   if (!bola) return null;
 
   const tope = arriba(hacia);
-  if (!tope) return { tipo: 'mover' };
-  if (tope.color === bola.color) return hacia.bolas.length < CAPACIDAD ? { tipo: 'mover' } : null;
+  const libres = CAPACIDAD - hacia.bolas.length;
+  if (!tope) return { tipo: 'mover', cantidad: Math.min(grupoSuperior(desde), libres) };
+  if (tope.color === bola.color) {
+    return libres > 0 ? { tipo: 'mover', cantidad: Math.min(grupoSuperior(desde), libres) } : null;
+  }
 
   // Colores distintos: solo si dos ingredientes forman una receta
   if (bola.ingrediente && tope.ingrediente) {
@@ -82,22 +99,32 @@ export function intentarSellar(tubo: Tubo): boolean {
 export function aplicarMovimiento(tubos: Tubo[], origen: number, destino: number, mov: Movimiento): ResultadoMovimiento {
   const desde = tubos[origen];
   const hacia = tubos[destino];
-  const bola = desde.bolas.pop()!;
 
+  let bolas: Bola[];
   let fusionadaCon: Bola | undefined;
   let creada: Bola | undefined;
+  const reveladas: Bola[] = [];
 
   if (mov.tipo === 'mover') {
-    hacia.bolas.push(bola);
+    bolas = desde.bolas.splice(desde.bolas.length - mov.cantidad, mov.cantidad);
+    // Las ocultas que viajan en el grupo se descubren
+    for (const b of bolas) {
+      if (b.oculta) {
+        b.oculta = false;
+        reveladas.push(b);
+      }
+    }
+    hacia.bolas.push(...bolas);
   } else {
+    bolas = [desde.bolas.pop()!];
     fusionadaCon = hacia.bolas.pop()!;
     creada = nuevaBola(mov.resultado);
     hacia.bolas.push(creada);
   }
 
   const sellado = intentarSellar(hacia);
-  const reveladas = revelarTopes(tubos);
-  return { movimiento: mov, bola, fusionadaCon, creada, reveladas, sellado };
+  reveladas.push(...revelarTopes(tubos));
+  return { movimiento: mov, bolas, fusionadaCon, creada, reveladas, sellado };
 }
 
 // Giro de gravedad: invierte todos los tubos sin sellar
@@ -110,6 +137,16 @@ export function invertirTubos(tubos: Tubo[]): Bola[] {
 
 export function nivelCompleto(tubos: Tubo[]): boolean {
   return tubos.every((t) => t.sellado || t.bolas.length === 0);
+}
+
+// ¿Queda alguna jugada válida?
+export function hayMovimientos(tubos: Tubo[]): boolean {
+  for (let o = 0; o < tubos.length; o++) {
+    for (let d = 0; d < tubos.length; d++) {
+      if (evaluarMovimiento(tubos, o, d)) return true;
+    }
+  }
+  return false;
 }
 
 export function hayHueco(tubos: Tubo[]): boolean {

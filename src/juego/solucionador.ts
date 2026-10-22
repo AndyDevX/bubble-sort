@@ -70,6 +70,8 @@ export function tieneSolucion(tubos: Tubo[], limiteNodos = 40000): boolean {
       if (desde === '#' || desde === '') continue;
       const bola = desde[desde.length - 1];
       const monocolor = desde === bola.repeat(desde.length);
+      let grupo = 0;
+      while (grupo < desde.length && desde[desde.length - 1 - grupo] === bola) grupo++;
 
       for (let d = 0; d < e.length; d++) {
         if (d === o) continue;
@@ -78,14 +80,16 @@ export function tieneSolucion(tubos: Tubo[], limiteNodos = 40000): boolean {
         const tope = hacia[hacia.length - 1];
 
         let nuevoHacia: string | null = null;
+        let quitar = 1;
         let prioridad = 0;
-        if (hacia === '') {
-          if (monocolor) continue; // mover un tubo de un solo color a uno vacío no sirve
-          nuevoHacia = bola;
-        } else if (tope === bola) {
-          if (hacia.length >= CAPACIDAD) continue;
-          nuevoHacia = hacia + bola;
-          prioridad = hacia === bola.repeat(hacia.length) ? 3 : 1;
+        if (hacia === '' || tope === bola) {
+          // Igual que en el juego: se mueve el grupo de iguales de arriba, tantas como quepan
+          if (hacia === '' && monocolor) continue; // mover un tubo de un solo color a uno vacío no sirve
+          const libres = CAPACIDAD - hacia.length;
+          if (libres <= 0) continue;
+          quitar = Math.min(grupo, libres);
+          nuevoHacia = hacia + bola.repeat(quitar);
+          prioridad = hacia === '' ? 0 : hacia === bola.repeat(hacia.length) ? 3 : 1;
         } else if (bola === bola.toUpperCase() && tope === tope.toUpperCase()) {
           const r = fusionar(bola, tope);
           if (!r) continue;
@@ -96,7 +100,7 @@ export function tieneSolucion(tubos: Tubo[], limiteNodos = 40000): boolean {
         }
 
         const siguiente = [...e];
-        siguiente[o] = desde.slice(0, -1);
+        siguiente[o] = desde.slice(0, -quitar);
         siguiente[d] = sellable(nuevoHacia) ? '#' : nuevoHacia;
         const k = clave(siguiente);
         if (visitados.has(k)) continue;

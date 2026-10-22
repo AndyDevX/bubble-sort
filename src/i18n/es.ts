@@ -22,4 +22,6 @@ export const es = {
   recompensa: '{puntos} pts · +{monedas} monedas',
   derrota: '¡Se desbordó!',
   derrotaTexto: 'La lluvia no encontró hueco',
+  sinSalida: 'Sin salida',
+  sinMovimientos: 'No quedan movimientos',
 };

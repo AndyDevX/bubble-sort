@@ -11,6 +11,7 @@ Juego de ordenar colores en tubos para móvil, en vertical. Partimos del documen
 | Niveles | **Aleatorios** (generados por procedimiento) |
 | Giro de gravedad | **Habilidad**, no modo: se recarga al ir sumando puntos en cada nivel y se muestra con una **barra**; una sola carga |
 | Lluvia | Empieza al 50 % de completado el nivel |
+| Sin salida | Si no queda ninguna jugada válida y la Gravedad no está cargada → derrota («No quedan movimientos») |
 | Nivel superado | Todos los tubos ordenados |
 | Plataforma | Navegador móvil y APK con Capacitor; siempre vertical |
 
@@ -19,7 +20,7 @@ Juego de ordenar colores en tubos para móvil, en vertical. Partimos del documen
 - Estado: matriz de tubos, p. ej. `[['rojo', 'azul'], ['verde', 'amarillo', 'verde', 'amarillo'], [], []]`.
 - Capacidad máxima por tubo: 4.
 - Mover: el tubo de origen no puede estar vacío; el destino debe tener menos de 4 y estar vacío o tener arriba el mismo color.
-- Mutación: `pop()` en origen y `push()` en destino, y después actualizar la vista.
+- Mutación: se sacan del origen las bolas iguales de arriba (tantas como quepan) y se añaden al destino; después se actualiza la vista.
 
 ## Mecánicas (todas activas en el mismo modo)
 
@@ -51,6 +52,7 @@ interface Guardado {
 
 | Tema | Regla |
 | --- | --- |
+| Mover | Se mueve el **grupo** de bolas seguidas del mismo color de arriba, tantas como quepan en el destino (las ocultas del grupo se mueven y se revelan). Las fusiones son de una en una |
 | Tubo completo | 4 bolas del mismo color → el tubo **se sella** (tapón de color, ya no se puede tocar) · +100 pts |
 | Nivel superado | Todos los tubos sellados o vacíos y sin lluvia pendiente |
 | Lluvia | Empieza al sellar el **50 %** de los colores del nivel. Caen tandas de 4 bolas de un color nuevo, una cada pocos segundos, en un tubo al azar con hueco. Si no queda hueco → derrota |

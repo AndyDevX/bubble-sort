@@ -6,6 +6,7 @@ import {
   aplicarMovimiento,
   arriba,
   evaluarMovimiento,
+  hayMovimientos,
   intentarSellar,
   invertirTubos,
   nivelCompleto,
@@ -354,29 +355,34 @@ export class GameScene extends Phaser.Scene {
 
   private mover(origen: number, destino: number, mov: Movimiento) {
     this.seleccionado = null;
-    const huecoDestino = this.tubos[destino].bolas.length - (mov.tipo === 'fusionar' ? 1 : 0);
+    const primerHueco = this.tubos[destino].bolas.length - (mov.tipo === 'fusionar' ? 1 : 0);
     const res = aplicarMovimiento(this.tubos, origen, destino, mov);
 
-    const sprite = this.sprites.get(res.bola.id);
+    // El grupo sale empezando por la de arriba; cada bola cae a su hueco con un pequeño desfase
     const encima = this.posicionLevantada(destino);
-    const hueco = this.posicionHueco(destino, huecoDestino);
-    const duracion = 260;
+    const desfase = 50;
+    const duracion = 260 + desfase * (res.bolas.length - 1);
     this.bloquear(duracion);
 
-    if (sprite) {
+    const ordenSalida = [...res.bolas].reverse();
+    ordenSalida.forEach((bola, n) => {
+      const sprite = this.sprites.get(bola.id);
+      if (!sprite) return;
+      const hueco = this.posicionHueco(destino, primerHueco + res.bolas.indexOf(bola));
       this.tweens.killTweensOf(sprite);
       this.tweens.chain({
         targets: sprite,
+        delay: n * desfase,
         tweens: [
           { x: encima.x, y: encima.y, duration: 140, ease: 'Sine.easeInOut' },
           { y: hueco.y, duration: 120, ease: 'Quad.easeIn' },
         ],
       });
-    }
+    });
 
     this.time.delayedCall(duracion, () => {
       if (res.movimiento.tipo === 'fusionar' && res.creada) {
-        this.animarFusion(res.bola, res.fusionadaCon!, res.creada, hueco);
+        this.animarFusion(res.bolas[0], res.fusionadaCon!, res.creada, this.posicionHueco(destino, primerHueco));
         this.sumarPuntos(PUNTOS_FUSION);
         reproducirEfecto(this, 'fusion');
       } else {
@@ -432,7 +438,15 @@ export class GameScene extends Phaser.Scene {
       if (sellados / this.nivel.coloresBase.length >= 0.5) this.iniciarLluvia();
     }
 
-    if (nivelCompleto(this.tubos) && this.lluviaPendiente.length === 0) this.victoria();
+    if (nivelCompleto(this.tubos)) {
+      if (this.lluviaPendiente.length === 0) this.victoria();
+      return;
+    }
+
+    // Sin jugadas posibles y sin Gravedad cargada (que podría desbloquear la partida): se pierde
+    if (!hayMovimientos(this.tubos) && this.carga < PUNTOS_CARGA) {
+      this.derrota('sinMovimientos');
+    }
   }
 
   // ───────────────────────── Gravedad ─────────────────────────
@@ -524,7 +538,7 @@ export class GameScene extends Phaser.Scene {
 
     const conHueco = this.tubos.map((tubo, i) => ({ tubo, i })).filter(({ tubo }) => !tubo.sellado && tubo.bolas.length < CAPACIDAD);
     if (conHueco.length === 0) {
-      this.derrota();
+      this.derrota('lluvia');
       return;
     }
 
@@ -601,7 +615,7 @@ export class GameScene extends Phaser.Scene {
     );
   }
 
-  private derrota() {
+  private derrota(motivo: 'lluvia' | 'sinMovimientos') {
     this.terminado = true;
     this.temporizadorLluvia?.remove();
     this.cameras.main.shake(250, 0.01);
@@ -609,8 +623,8 @@ export class GameScene extends Phaser.Scene {
 
     this.time.delayedCall(500, () =>
       this.abrirDialogo({
-        titulo: t('derrota'),
-        texto: t('derrotaTexto'),
+        titulo: motivo === 'lluvia' ? t('derrota') : t('sinSalida'),
+        texto: motivo === 'lluvia' ? t('derrotaTexto') : t('sinMovimientos'),
         botones: [
           { texto: t('reintentar'), accion: 'jugar' },
           { texto: t('menu'), accion: 'menu' },
