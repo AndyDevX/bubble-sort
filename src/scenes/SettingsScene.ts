@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { Colores } from '../constantes';
 import { CODIGOS_IDIOMA, getIdioma, nombreDeIdioma, setIdioma, t } from '../i18n';
 import { actualizarAjustes, getAjustes } from '../sistemas/ajustes';
-import { aplicarVolumenMusica } from '../sistemas/audio';
+import { aplicarVolumenMusica, reproducirEfecto } from '../sistemas/audio';
 import { crearBoton } from '../ui/Boton';
 import { crearSlider } from '../ui/Slider';
 
@@ -52,9 +52,15 @@ export class SettingsScene extends Phaser.Scene {
 
     // Efectos
     this.add.text(xEtiqueta, arriba + 370, t('efectos'), estiloEtiqueta).setOrigin(0, 0.5);
-    crearSlider(this, xSlider, arriba + 440, anchoSlider, ajustes.volumenEfectos, (valor) => {
-      actualizarAjustes({ volumenEfectos: valor });
-    });
+    crearSlider(
+      this,
+      xSlider,
+      arriba + 440,
+      anchoSlider,
+      ajustes.volumenEfectos,
+      (valor) => actualizarAjustes({ volumenEfectos: valor }),
+      () => reproducirEfecto(this, 'sellar'), // muestra de cómo suena con el volumen elegido
+    );
 
     // Idioma: selector con flechas, preparado para cuando haya más idiomas
     this.add.text(xEtiqueta, arriba + 540, t('idioma'), estiloEtiqueta).setOrigin(0, 0.5);

@@ -13,6 +13,7 @@ export function crearSlider(
   ancho: number,
   valorInicial: number,
   alCambiar: (valor: number) => void,
+  alSoltar?: (valor: number) => void,
 ): Slider {
   const altoPista = 16;
   const radioTirador = 28;
@@ -58,15 +59,17 @@ export function crearSlider(
   const alMover = (p: Phaser.Input.Pointer) => {
     if (arrastrando && p.isDown) moverA(p.worldX);
   };
-  const alSoltar = () => {
+  const terminarArrastre = () => {
+    if (!arrastrando) return;
     arrastrando = false;
     tirador.setScale(1);
+    alSoltar?.(valor);
   };
   escena.input.on('pointermove', alMover);
-  escena.input.on('pointerup', alSoltar);
+  escena.input.on('pointerup', terminarArrastre);
   escena.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
     escena.input.off('pointermove', alMover);
-    escena.input.off('pointerup', alSoltar);
+    escena.input.off('pointerup', terminarArrastre);
   });
 
   pintar();

@@ -17,6 +17,8 @@ Diseño del juego y decisiones tomadas: `docs/diseno-juego.md`. Guías: `docs/gu
 - `src/sistemas/` — ajustes guardados, audio (volumen música/efectos), medidor de FPS (solo dev)
 - `src/i18n/` — textos; todo texto visible sale de `t('clave')`
 - `public/assets/` — assets estáticos (se cargan como `assets/...`)
+- `public/assets/sfx/` — efectos de sonido de vidrio, generados con `python3 scripts/generar-sonidos.py` (Python + ffmpeg); para cambiar un sonido, edita su función en el script y vuelve a ejecutarlo
+- `src/assets/musica/` — canciones de las partidas (se detectan solas; aleatorias y sin fin)
 
 ## Skills del proyecto (`.claude/skills/`)
 Úsalas según la tarea:

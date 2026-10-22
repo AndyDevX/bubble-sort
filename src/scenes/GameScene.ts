@@ -331,7 +331,7 @@ export class GameScene extends Phaser.Scene {
     const pos = this.posicionLevantada(i);
     this.tweens.killTweensOf(sprite);
     this.tweens.add({ targets: sprite, y: pos.y, duration: 120, ease: 'Quad.easeOut' });
-    reproducirEfecto(this, 'seleccionar');
+    reproducirEfecto(this, 'seleccionar', true);
   }
 
   private bajar(i: number) {
@@ -387,7 +387,7 @@ export class GameScene extends Phaser.Scene {
         this.sumarPuntos(PUNTOS_FUSION);
         reproducirEfecto(this, 'fusion');
       } else {
-        reproducirEfecto(this, 'mover');
+        reproducirEfecto(this, 'mover', true);
       }
       this.revelar(res.reveladas);
       if (res.sellado) this.animarSellado(destino);
@@ -559,7 +559,7 @@ export class GameScene extends Phaser.Scene {
     const duracion = 450;
     this.bloquear(duracion);
     this.tweens.add({ targets: sprite, y: destino.y, duration: duracion, ease: 'Quad.easeIn' });
-    reproducirEfecto(this, 'gota');
+    reproducirEfecto(this, 'gota', true);
 
     this.time.delayedCall(duracion, () => {
       if (sellado) this.animarSellado(i);

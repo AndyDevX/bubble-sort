@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { Colores } from '../constantes';
+import { reproducirEfecto } from '../sistemas/audio';
 
 // Botón reutilizable: rectángulo redondeado + texto, con feedback al tocar
 export function crearBoton(
@@ -40,6 +41,7 @@ export function crearBoton(
   boton.on('pointerdown', () => boton.setScale(0.95));
   boton.on('pointerup', () => {
     boton.setScale(1);
+    reproducirEfecto(escena, 'boton');
     alPulsar();
   });
 

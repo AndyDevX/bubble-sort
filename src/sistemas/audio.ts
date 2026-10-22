@@ -61,9 +61,36 @@ export function detenerMusica(): void {
   musicaActual = null;
 }
 
-export function reproducirEfecto(escena: Phaser.Scene, clave: string): void {
-  if (!escena.cache.audio.exists(clave)) return;
-  escena.sound.play(clave, { volume: getAjustes().volumenEfectos });
+// Efectos de sonido (vidrio), generados con scripts/generar-sonidos.py
+export const EFECTOS = [
+  'seleccionar',
+  'mover',
+  'error',
+  'fusion',
+  'sellar',
+  'gravedad',
+  'lluvia',
+  'gota',
+  'victoria',
+  'derrota',
+  'boton',
+] as const;
+
+export type Efecto = (typeof EFECTOS)[number];
+
+// Se llama en BootScene.preload: son archivos pequeños (~10 KB cada uno)
+export function cargarEfectos(escena: Phaser.Scene): void {
+  for (const efecto of EFECTOS) {
+    escena.load.audio(efecto, [`assets/sfx/${efecto}.ogg`, `assets/sfx/${efecto}.mp3`]);
+  }
+}
+
+// `variar`: cambia un poco el tono al azar para que los sonidos repetidos no cansen
+export function reproducirEfecto(escena: Phaser.Scene, efecto: Efecto, variar = false): void {
+  if (!escena.cache.audio.exists(efecto)) return;
+  const volumen = getAjustes().volumenEfectos;
+  if (volumen <= 0) return;
+  escena.sound.play(efecto, { volume: volumen, rate: variar ? Phaser.Math.FloatBetween(0.9, 1.1) : 1 });
 }
 
 // Llamar tras cambiar el volumen de la música para aplicarlo a la pista que suena

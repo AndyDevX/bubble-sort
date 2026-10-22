@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { generarTexturasBolas } from '../juego/texturas';
+import { cargarEfectos } from '../sistemas/audio';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -7,8 +8,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    // Carga aquí tus assets desde /public/assets, p. ej.:
-    // this.load.audio('mover', ['assets/mover.ogg', 'assets/mover.mp3']);
+    cargarEfectos(this);
   }
 
   create() {

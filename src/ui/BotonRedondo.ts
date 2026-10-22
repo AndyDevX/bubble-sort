@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { Colores } from '../constantes';
+import { reproducirEfecto } from '../sistemas/audio';
 
 export type DibujarIcono = (g: Phaser.GameObjects.Graphics, colorFondo: number) => void;
 
@@ -36,6 +37,7 @@ export function crearBotonRedondo(
   boton.on('pointerdown', () => boton.setScale(0.92));
   boton.on('pointerup', () => {
     boton.setScale(1);
+    reproducirEfecto(escena, 'boton');
     alPulsar();
   });
 
