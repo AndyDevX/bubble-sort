@@ -1,6 +1,18 @@
 {
   "version": 1,
   "skills": {
+    "ads-google": {
+      "source": "agricidaniel/claude-ads",
+      "sourceType": "github",
+      "skillPath": "skills/ads-google/SKILL.md",
+      "computedHash": "a9c0919b7cc1d93481ee699c25f108b4b0f02b6022c23b000b7662607be87c4a"
+    },
+    "android-security-best-practices": {
+      "source": "krutikjain/android-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/android-security-best-practices/SKILL.md",
+      "computedHash": "33d8c2d14efe6c96b4a204916bc1e36bcc139853d7488e7e87acb4d21204d1e0"
+    },
     "animations": {
       "source": "phaserjs/phaser",
       "sourceType": "github",
@@ -30,6 +42,12 @@
       "sourceType": "github",
       "skillPath": "skills/disciplines/create-game-assets/SKILL.md",
       "computedHash": "e0991db4ed544179782a60a7020aa49c7469b66744de5a5eda28eb3a35f856be"
+    },
+    "create-github-action-workflow-specification": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "skillPath": "skills/create-github-action-workflow-specification/SKILL.md",
+      "computedHash": "527e6c77d921d58a9d0059aa95d0d14b441d2166f9c20518263048a56ca8fbbb"
     },
     "debugging-capacitor": {
       "source": "cap-go/capgo-skills",
@@ -84,6 +102,24 @@
       "sourceType": "github",
       "skillPath": "skills/scale-and-responsive/SKILL.md",
       "computedHash": "a0a25c250fd0e4348c302d2f839a829767626d1dd961babeb9063ccb3849928d"
+    },
+    "security-and-hardening": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/security-and-hardening/SKILL.md",
+      "computedHash": "32a1243d6eb45fd342c1f4e9f9ee5f1651a1e9fdccb86dcbbbee5d6f455ed362"
+    },
+    "security-best-practices": {
+      "source": "openai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/.curated/security-best-practices/SKILL.md",
+      "computedHash": "c27616fb4e27999605b90b261dc729784420c8d77bd1a98748384ffaa5b35704"
+    },
+    "security-review": {
+      "source": "getsentry/skills",
+      "sourceType": "github",
+      "skillPath": "skills/security-review/SKILL.md",
+      "computedHash": "6b3e784d5589c67a11bbcc881b479fc8c2fdc1661a28d3f9d0213772b38fbd80"
     },
     "sprites-and-images": {
       "source": "phaserjs/phaser",

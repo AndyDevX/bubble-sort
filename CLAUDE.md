@@ -2,7 +2,7 @@
 
 Juego: **Odi Sort**. Stack: Phaser 4.2 · Vite 8 · TypeScript 6 · Capacitor 8.
 **Lee también [`AGENTS.md`](AGENTS.md)**: flujo de trabajo, reglas y trampas conocidas para agentes.
-Documentación: `README.md` (portada) · `docs/diseno-juego.md` (todo lo jugable) · `docs/tecnico.md` (arquitectura, sistemas, despliegue) · `docs/historial.md` (versiones y builds) · guías `docs/guia-phaser.md`, `docs/guia-typescript.md`.
+Documentación: `README.md` (portada) · `docs/diseno-juego.md` (todo lo jugable) · `docs/tecnico.md` (arquitectura, sistemas, despliegue) · `docs/historial.md` (versiones y builds) · `docs/seguridad.md` (revisión de seguridad) · guías `docs/guia-phaser.md`, `docs/guia-typescript.md`.
 
 ## Comandos
 - `npm run dev` — servidor local (http://localhost:5173)
@@ -37,7 +37,9 @@ Documentación: `README.md` (portada) · `docs/diseno-juego.md` (todo lo jugable
   `game-object-components`, `geometry-and-math`, `groups-and-containers`
 - Diseño: `game-ui-ux`, `create-game-assets`
 - Capacitor: `capacitor-best-practices`, `capacitor-performance`, `debugging-capacitor`
-- Herramientas: `typescript-pro`, `vite`
+- Herramientas: `typescript-pro`, `vite`, `create-github-action-workflow-specification` (documentar workflows)
+- Seguridad: `security-review`, `security-best-practices`, `security-and-hardening`, `android-security-best-practices` (informe en `docs/seguridad.md`)
+- `ads-google` sirve para **auditar campañas de Google Ads como anunciante**, no para poner anuncios en el juego (eso es AdMob/AdSense)
 
 ## Convenciones
 - Es Phaser 4: no uses APIs ni pipelines de Phaser 3 sin comprobarlo.
