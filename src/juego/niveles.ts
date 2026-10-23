@@ -12,21 +12,19 @@ export interface ConfigNivel {
   intervaloLluviaMs: number;
 }
 
-// Orden en que aparecen los colores: 5 de salida y el resto se desbloquean alternando básicos y
-// especiales (Azul divino es el 6.º). Las recetas de alquimia solo salen cuando sus 3 colores
-// están desbloqueados.
+// Orden de los colores: los 11 básicos están disponibles desde el principio y los 7 especiales
+// (con dibujo propio) se desbloquean después, uno a uno. Las recetas de alquimia usan solo básicos.
 export const ORDEN_COLORES: ColorId[] = [
-  'rojo', 'azul', 'amarillo', 'verde', 'naranja',
-  'azulDivino', 'morado', 'plata', 'rosa', 'jade', 'cian',
-  'amatista', 'lima', 'esmeralda', 'marron', 'oro', 'blanco', 'carmesi',
+  'rojo', 'azul', 'amarillo', 'verde', 'naranja', 'morado', 'rosa', 'cian', 'lima', 'marron', 'blanco',
+  'azulDivino', 'jade', 'plata', 'amatista', 'esmeralda', 'carmesi', 'oro',
 ];
-const COLORES_DE_SALIDA = 5;
+export const COLORES_DE_SALIDA = 11;
 
-// Niveles que pasan entre un desbloqueo y el siguiente (8–12, distinto según el color), en el
-// orden de ORDEN_COLORES a partir del 6.º: Azul divino llega 8 niveles después del nivel 1, etc.
-const SALTOS_DESBLOQUEO = [8, 11, 9, 12, 10, 8, 12, 9, 11, 10, 12, 8, 11];
+// Niveles entre un desbloqueo y el siguiente (3–6, distinto según el color; media ≈ 4,6, es decir,
+// más de un color nuevo cada 5 niveles). El primero cuenta desde el nivel 1.
+const SALTOS_DESBLOQUEO = [4, 5, 3, 6, 4, 5, 5];
 
-// Nivel en que se desbloquea cada color a partir del 6.º (acumulado desde el nivel 1)
+// Nivel en que se desbloquea cada especial (acumulado desde el nivel 1)
 const NIVELES_DESBLOQUEO = SALTOS_DESBLOQUEO.reduce<number[]>((lista, salto) => [...lista, (lista.at(-1) ?? 1) + salto], []);
 
 // Cuántos colores hay desbloqueados al jugar un nivel
@@ -34,19 +32,24 @@ function desbloqueadosEn(nivel: number): number {
   return COLORES_DE_SALIDA + NIVELES_DESBLOQUEO.filter((n) => n <= nivel).length;
 }
 
-// Dificultad por nivel. La paleta desbloqueada manda: cada nivel usa tantos colores como haya
-// desbloqueados (menos los 2 ingredientes de la receta si hay fusión), con un máximo de 7.
-// Así los colores por nivel crecen justo cuando se desbloquea uno nuevo.
+// Colores a ordenar: muy pocos al principio y uno más cada vez más niveles
+function coloresPorNivel(nivel: number): number {
+  if (nivel <= 3) return 3;
+  if (nivel <= 7) return 4;
+  if (nivel <= 12) return 5;
+  if (nivel <= 19) return 6;
+  return 7;
+}
+
+// Dificultad por nivel: todas las mecánicas activas, con intensidad creciente. Con 11 colores de
+// salida siempre caben base (máx. 7) + 2 ingredientes + 2 colores de lluvia.
 export function configNivel(nivel: number): ConfigNivel {
-  const desbloqueados = desbloqueadosEn(nivel);
-  const fusiones = nivel < 3 ? 0 : nivel < 9 ? 1 : 2;
-  const colores = nivel < 3 ? 3 : Math.min(7, desbloqueados - (fusiones > 0 ? 2 : 0));
   const lotesLluvia = nivel < 9 ? 1 : 2;
   return {
-    colores,
+    colores: coloresPorNivel(nivel),
     tubosVacios: 2 + lotesLluvia,
-    desbloqueados,
-    fusiones,
+    desbloqueados: desbloqueadosEn(nivel),
+    fusiones: nivel < 3 ? 0 : nivel < 9 ? 1 : 2,
     niebla: Math.min(0.6, (nivel - 1) * 0.05),
     lotesLluvia,
     intervaloLluviaMs: Math.max(2500, 6000 - nivel * 150),
@@ -116,8 +119,8 @@ export function generarNivel(nivel: number, rnd: Aleatorio = Math.random): Nivel
     }
     libres.push(...repetidos);
     const coloresBase = receta ? [receta.resultado, ...libres.slice(0, config.colores - 1)] : libres.slice(0, config.colores);
-    // Lluvia: colores desbloqueados que no salen en el nivel; si no quedan, uno aún por descubrir
-    // (cae congelado, así que no se ve como bola normal antes de tiempo)
+    // Lluvia: colores desbloqueados que no salen en el nivel (con 11 de salida siempre quedan; por
+    // si acaso, se recurre a uno aún por descubrir, que cae congelado)
     const sinUsar = libres.slice(config.colores - (receta ? 1 : 0));
     const porDescubrir = barajar(ORDEN_COLORES.slice(config.desbloqueados), rnd);
     const coloresLluvia = [...sinUsar, ...porDescubrir].slice(0, config.lotesLluvia);

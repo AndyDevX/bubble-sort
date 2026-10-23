@@ -8,7 +8,8 @@ Al publicar, añade la nueva versión arriba del todo (lo indica la skill `publi
 
 | Versión | Build | Commit | Fecha | Cambios |
 | --- | --- | --- | --- | --- |
-| 0.1.6 | 21 | (este) | 2026-10-23 | Colores desbloqueados cada 8–12 niveles (salto distinto por color; Azul divino en el 9, Carmesí en el 132). La paleta marca cuántos colores tiene cada nivel |
+| 0.1.7 | 22 | (este) | 2026-10-23 | Los 11 colores básicos, disponibles desde el inicio; los 7 especiales se desbloquean de media cada 4,6 niveles (azul divino 5, jade 10, plata 13, amatista 19, esmeralda 23, carmesí 28, oro 33). Se recuperan en `diseno-juego.md` las secciones de colores especiales borradas por error en 0.1.6 |
+| 0.1.6 | 21 | f053ebe | 2026-10-23 | Colores desbloqueados cada 8–12 niveles (salto distinto por color; Azul divino en el 9, Carmesí en el 132). La paleta marca cuántos colores tiene cada nivel |
 | 0.1.5 | 20 | 64881f8 | 2026-10-23 | Catálogo **Colores** en el menú (descubiertos con nombre; los demás en negro con «?» y su nivel). Orden de desbloqueo verificado y comprobado en `npm run simular` |
 | 0.1.4 | 19 | 173fb15 | 2026-10-23 | 6 colores especiales nuevos con dibujo propio a partir de imágenes de referencia: Plata, Jade, Amatista, Esmeralda, Oro y Carmesí (paleta de 18) |
 | 0.1.3 | 18 | 885bcbf | 2026-10-23 | El color nuevo se llama **Azul divino** y se parece más a la referencia: sin líneas blancas, paleta medida de la imagen, barridos diagonales y resplandor azul |

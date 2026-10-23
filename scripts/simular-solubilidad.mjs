@@ -21,23 +21,29 @@ for (const f of readdirSync(salida)) {
   writeFileSync(ruta, readFileSync(ruta, 'utf8').replace(/from '(\.\/[a-zA-Z]+)'/g, "from '$1.js'"));
 }
 writeFileSync(join(salida, 'package.json'), '{"type":"module"}');
-const { generarNivel, configNivel, colorNuevo, ORDEN_COLORES } = await import(pathToFileURL(join(salida, 'niveles.js')).href);
+const { generarNivel, configNivel, colorNuevo, ORDEN_COLORES, COLORES_DE_SALIDA, nivelDesbloqueo } = await import(pathToFileURL(join(salida, 'niveles.js')).href);
 const { buscarFusion, COLORES } = await import(pathToFileURL(join(salida, 'colores.js')).href);
 
-// Orden de desbloqueo: todos los colores una vez, Azul divino el 6.º (lo pidió el usuario), los
-// desbloqueos siguen ORDEN_COLORES y el color nuevo sale siempre en su nivel
+// Orden de desbloqueo (lo pidió el usuario): todos los colores una vez, los 11 básicos de salida y
+// los especiales después; de media, al menos un color nuevo cada 5 niveles; los desbloqueos siguen
+// ORDEN_COLORES y el color nuevo sale siempre en su nivel
 {
   const errores = [];
   if (ORDEN_COLORES.length !== COLORES.length || new Set(ORDEN_COLORES).size !== COLORES.length) errores.push('ORDEN_COLORES no tiene cada color una vez');
-  if (ORDEN_COLORES.indexOf('azulDivino') !== 5) errores.push('Azul divino no es el 6.º');
+  const ESPECIALES = ['azulDivino', 'plata', 'jade', 'amatista', 'esmeralda', 'oro', 'carmesi'];
+  if (ORDEN_COLORES.slice(0, COLORES_DE_SALIDA).some((c) => ESPECIALES.includes(c))) errores.push('hay un especial entre los de salida');
+  if (!ORDEN_COLORES.slice(COLORES_DE_SALIDA).every((c) => ESPECIALES.includes(c))) errores.push('hay un básico entre los desbloqueables');
+  const niveles = ORDEN_COLORES.slice(COLORES_DE_SALIDA).map(nivelDesbloqueo);
+  const media = (niveles.at(-1) - 1) / niveles.length;
+  if (media > 5) errores.push(`de media se desbloquea un color cada ${media.toFixed(1)} niveles (máx. 5)`);
   const secuencia = [];
   for (let n = 2; n <= 200; n++) {
     const c = colorNuevo(n);
     if (c) secuencia.push([n, c]);
   }
-  if (secuencia.length !== ORDEN_COLORES.length - 5 || !secuencia.every(([, c], i) => c === ORDEN_COLORES[5 + i])) errores.push('los desbloqueos no siguen ORDEN_COLORES');
+  if (secuencia.length !== ORDEN_COLORES.length - COLORES_DE_SALIDA || !secuencia.every(([, c], i) => c === ORDEN_COLORES[COLORES_DE_SALIDA + i])) errores.push('los desbloqueos no siguen ORDEN_COLORES');
   for (const [n, c] of secuencia) for (let k = 0; k < 30; k++) if (!generarNivel(n).coloresBase.includes(c)) errores.push(`el nivel ${n} no trae su color nuevo (${c})`);
-  console.log('Orden de desbloqueo:', secuencia.map(([n, c]) => `${n}:${c}`).join(' '));
+  console.log('Orden de desbloqueo:', secuencia.map(([n, c]) => `${n}:${c}`).join(' '), `(media: uno cada ${media.toFixed(1)} niveles)`);
   if (errores.length) {
     console.error('ERROR en el orden:', [...new Set(errores)].join('; '));
     process.exit(1);

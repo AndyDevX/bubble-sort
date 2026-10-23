@@ -103,9 +103,9 @@ BootScene ──► MenuScene ──► GameScene
   solucionador** (y `scripts/simular-solubilidad.mjs`).
 - `tieneSolucion(tubos, limite, coloresObjetivo?)`: sin objetivo exige todo sellado o vacío (al
   generar); con `coloresObjetivo` basta con sellar esos colores (partida con lluvia).
-- `configNivel(n)`: `desbloqueados` sale de `SALTOS_DESBLOQUEO` (un color cada 8–12 niveles) y
-  manda: `colores` = desbloqueados − 2 si hay fusión (máx. 7); `tubosVacios` = 2 + tandas de
-  lluvia. La lluvia puede usar un color aún no desbloqueado (cae congelada). `colorNuevo(n)` dice qué color se desbloquea en el nivel n (siempre sale en él);
+- `configNivel(n)`: colores por nivel (3 → 7), `desbloqueados` = 11 básicos (`COLORES_DE_SALIDA`)
+  + especiales según `SALTOS_DESBLOQUEO` (media ≤ 5 niveles por color), `tubosVacios` = 2 +
+  tandas de lluvia. `colorNuevo(n)` dice qué color se desbloquea en el nivel n (siempre sale en él);
   `GameScene.avisarColorNuevo` lo anuncia con `DialogoScene` (campo `bola`: textura de la bola).
 
 ### Lluvia justa
@@ -181,7 +181,8 @@ nivel no llega al 100 %.
   descubierto si `mejorNivel >= nivelDesbloqueo(color)`. Textura `bola-bloqueada`. Los nombres de
   los colores están en `src/i18n/nombresColor.ts` (`nombreColor`).
 - `npm run simular` comprueba además el **orden de desbloqueo**: cada color una vez, Azul divino
-  el 6.º, los desbloqueos siguen `ORDEN_COLORES` y el color nuevo sale en su nivel.
+  los 11 básicos de salida y los especiales después, de media ≤ 5 niveles por desbloqueo, los
+  desbloqueos siguen `ORDEN_COLORES` y el color nuevo sale en su nivel.
 - Tubos (`src/juego/texturasTubo.ts`): texturas `tubo-atras`, `tubo-delante`, `tubo-liquido`,
   `tubo-tapon` y `tubo-corto-*` (emergencia), dibujadas una vez con degradados de Canvas y
   escaladas a `anchoTubo / TUBO_ANCHO` con origen `ORIGEN_TUBO`. Cada tubo en pantalla

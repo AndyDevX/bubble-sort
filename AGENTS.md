@@ -143,6 +143,9 @@ el usuario exige que **todos los niveles se puedan resolver sin habilidades**.
   que un planificador de prueba reasignaba los colores en cada paso.
 - En Canvas 2D, **`putImageData` ignora `clip()`**: para pintar píxeles dentro de la bola, píntalos
   en un lienzo aparte y cópialo con `drawImage` (ver `pintarPixeles` en `src/juego/interiores.ts`).
+- Al reescribir una sección de un `.md` cortando «desde el texto A hasta el texto B», revisa
+  antes qué hay entre A y B: en la 0.1.6 se borraron así, sin querer, las viñetas de colores
+  especiales de `docs/diseno-juego.md`. Comprueba el `git diff` de la documentación.
 - **No mates procesos con `pkill -f '<patrón>'`** si el patrón aparece en tu propio comando: matas
   tu terminal (salida 144). Usa `kill $(lsof -t -i:PUERTO)`.
 - Desde la nube no se puede abrir `*.github.io` ni cambiar la configuración de Pages por API:
