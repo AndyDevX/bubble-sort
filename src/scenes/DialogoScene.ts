@@ -7,6 +7,7 @@ export type AccionDialogo = 'continuar' | 'deshacer' | 'reiniciar' | 'nuevo' | '
 export interface DatosDialogo {
   titulo: string;
   texto?: string;
+  bola?: string; // textura de una bola grande bajo el título (aviso de color nuevo)
   botones: { texto: string; accion: AccionDialogo }[];
   recalcular?: () => DatosDialogo; // si existe, el diálogo se rehace al volver de la tienda o los ajustes
 }
@@ -25,13 +26,14 @@ export class DialogoScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.scale;
-    const { titulo, texto, botones } = this.datos;
+    const { titulo, texto, bola, botones } = this.datos;
 
     // Fondo oscuro que además bloquea los toques a la partida
     this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6).setInteractive();
 
     const separacion = 140;
-    const primerBoton = texto ? 270 : 200; // distancia del borde superior al primer botón
+    const altoBola = bola ? 170 : 0; // hueco para la bola, entre el título y el texto
+    const primerBoton = (texto ? 270 : 200) + altoBola; // distancia del borde superior al primer botón
     const altoPanel = primerBoton + (botones.length - 1) * separacion + 115;
     const anchoPanel = Math.min(620, width - 60);
     const arriba = (height - altoPanel) / 2;
@@ -44,9 +46,23 @@ export class DialogoScene extends Phaser.Scene {
       .text(width / 2, arriba + 90, titulo, { fontFamily: 'sans-serif', fontSize: '56px', color: '#ffffff', fontStyle: 'bold' })
       .setOrigin(0.5);
 
+    if (bola) {
+      // Aparece con un salto y queda flotando suavemente
+      const imagen = this.add.image(width / 2, arriba + 165 + altoBola / 2 - 20, bola).setDisplaySize(150, 150);
+      const escala = imagen.scaleX;
+      imagen.setScale(0);
+      this.tweens.chain({
+        targets: imagen,
+        tweens: [
+          { scale: escala, duration: 380, ease: 'Back.easeOut' },
+          { y: imagen.y - 8, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' },
+        ],
+      });
+    }
+
     if (texto) {
       this.add
-        .text(width / 2, arriba + 165, texto, { fontFamily: 'sans-serif', fontSize: '32px', color: '#aaaacc' })
+        .text(width / 2, arriba + 165 + altoBola, texto, { fontFamily: 'sans-serif', fontSize: '32px', color: '#aaaacc' })
         .setOrigin(0.5);
     }
 

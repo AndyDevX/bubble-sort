@@ -104,7 +104,8 @@ BootScene ──► MenuScene ──► GameScene
 - `tieneSolucion(tubos, limite, coloresObjetivo?)`: sin objetivo exige todo sellado o vacío (al
   generar); con `coloresObjetivo` basta con sellar esos colores (partida con lluvia).
 - `configNivel(n)`: colores, `desbloqueados` (paleta `ORDEN_COLORES`), `tubosVacios` = 2 + tandas de
-  lluvia. `colorNuevo(n)` dice qué color se desbloquea en el nivel n (siempre sale en él).
+  lluvia. `colorNuevo(n)` dice qué color se desbloquea en el nivel n (siempre sale en él);
+  `GameScene.avisarColorNuevo` lo anuncia con `DialogoScene` (campo `bola`: textura de la bola).
 
 ### Lluvia justa
 

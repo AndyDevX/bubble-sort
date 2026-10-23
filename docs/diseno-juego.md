@@ -21,7 +21,7 @@ del giro de gravedad y de las ayudas que compras en la tienda (deshacer y tubo e
 | Modos | **Un único modo** con todas las mecánicas activas (no hay selector de modos) |
 | Flujo | Menú → **Jugar** → partida directamente |
 | Niveles | **Aleatorios**, generados por procedimiento y comprobados con un solucionador: **todos tienen solución sin habilidades**, también con la lluvia (ver «Solubilidad») |
-| Colores | Pocos al principio (3) y se van **desbloqueando** con los niveles; aviso «¡Nuevo color!» |
+| Colores | Pocos al principio (3) y se van **desbloqueando** con los niveles; ventana «¡Nuevo color!» |
 | Ganar | Al **sellar todos los colores iniciales** del nivel |
 | Lluvia | Obstáculo: empieza al **35 %** del nivel y sus bolas no hay que ordenarlas. Es **justa**: nunca deja el nivel sin solución |
 | Giro de gravedad | **Habilidad** con barra de carga (150 pts), una sola carga por nivel |
@@ -155,7 +155,9 @@ La dificultad sube con el número de nivel (`configNivel` en `src/juego/niveles.
 - **Colores**: 3 hasta el nivel 3, 4 hasta el 7, 5 hasta el 12, 6 hasta el 19 y 7 a partir del 20.
 - **Paleta**: empieza con rojo, azul, amarillo, verde y naranja; se desbloquea uno nuevo cada pocos
   niveles (morado, rosa, cian, lima, marrón, blanco). El color nuevo aparece seguro en ese nivel y
-  se anuncia con «¡Nuevo color!».
+  se anuncia en una **ventana** «¡Nuevo color!» (bola grande y su nombre, botón Continuar) cuando
+  los tubos terminan de entrar; la partida queda en pausa. Solo la primera vez que se llega al
+  nivel (no al reiniciarlo ni con «Nivel nuevo»).
 - **Tubos** = colores + 2 vacíos + 1 por tanda de lluvia.
 
 ### Solubilidad (medida)

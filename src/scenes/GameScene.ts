@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { t } from '../i18n';
+import { t, type ClaveTexto } from '../i18n';
 import type { ColorId } from '../juego/colores';
 import {
   CAPACIDAD,
@@ -36,6 +36,21 @@ import type { DatosDialogo } from './DialogoScene';
 
 // Cómo empieza la partida: seguir con el nivel guardado, reiniciarlo igual o generar uno nuevo
 export type ModoInicio = 'continuar' | 'reiniciar' | 'nuevo';
+
+// Nombre visible de cada color (aviso de color nuevo)
+const NOMBRES_COLOR: Record<ColorId, ClaveTexto> = {
+  rojo: 'colorRojo',
+  azul: 'colorAzul',
+  amarillo: 'colorAmarillo',
+  verde: 'colorVerde',
+  naranja: 'colorNaranja',
+  morado: 'colorMorado',
+  rosa: 'colorRosa',
+  cian: 'colorCian',
+  lima: 'colorLima',
+  marron: 'colorMarron',
+  blanco: 'colorBlanco',
+};
 
 const PUNTOS_SELLAR = 100;
 const PUNTOS_FUSION = 25;
@@ -161,6 +176,8 @@ export class GameScene extends Phaser.Scene {
 
     // La configuración inicial del nivel se guarda al generarlo; reiniciar la vuelve a cargar igual
     const guardado = this.modo === 'nuevo' ? null : cargarNivel(this.numeroNivel);
+    // El color nuevo se anuncia solo la primera vez que se llega al nivel (no al reiniciarlo)
+    const primeraVez = !guardado && this.modo === 'continuar';
     if (guardado) {
       this.nivel = guardado;
     } else {
@@ -186,7 +203,7 @@ export class GameScene extends Phaser.Scene {
     this.crearEfectos();
     alRedimensionar(this, (ancho) => this.colocarTodo(ancho));
     this.animarEntrada();
-    this.avisarColorNuevo();
+    if (primeraVez) this.avisarColorNuevo();
 
     // El diálogo de derrota puede pedir deshacer
     const alPedirDeshacer = () => this.deshacer();
@@ -651,24 +668,21 @@ export class GameScene extends Phaser.Scene {
     this.bloquear(duracion + desfase * this.tubos.length);
   }
 
-  // Al llegar a un nivel que desbloquea un color: aviso con la bola nueva (no bloquea los toques)
+  // Al llegar a un nivel que desbloquea un color: ventana con la bola nueva (la partida queda en
+  // pausa y no se tapa nada). Se abre cuando los tubos ya han entrado.
   private avisarColorNuevo() {
     const color = colorNuevo(this.numeroNivel);
     if (!color) return;
-    const d = Math.max(70, this.col.d);
-    const bola = this.add.image(0, -d * 0.2, `bola-${color}`).setDisplaySize(d, d);
-    const texto = this.add
-      .text(0, d * 0.65, t('nuevoColor'), { fontFamily: 'sans-serif', fontSize: '44px', fontStyle: 'bold', color: '#ffffff', stroke: '#1d1d2b', strokeThickness: 8 })
-      .setOrigin(0.5);
-    const aviso = this.add.container(this.scale.width / 2, this.scale.height * 0.45, [bola, texto]).setDepth(10).setAlpha(0).setScale(0.6);
-    this.tweens.chain({
-      targets: aviso,
-      tweens: [
-        { alpha: 1, scale: 1, duration: 350, delay: 500, ease: 'Back.easeOut' },
-        { alpha: 0, y: aviso.y - 40, duration: 400, delay: 1400, ease: 'Quad.easeIn', onComplete: () => aviso.destroy() },
-      ],
+    this.time.delayedCall(this.bloqueadoHasta - this.time.now + 100, () => {
+      if (this.terminado) return;
+      reproducirEfecto(this, 'sellar');
+      this.abrirDialogo({
+        titulo: t('nuevoColor'),
+        bola: `bola-${color}`,
+        texto: t(NOMBRES_COLOR[color]),
+        botones: [{ texto: t('continuar'), accion: 'continuar' }],
+      });
     });
-    this.time.delayedCall(550, () => this.estallarChispas(aviso.x, aviso.y - d * 0.2, colorHex(color), 18));
   }
 
   // Celebración: los tubos saltan en ola con chispas
