@@ -22,6 +22,7 @@ Diseño del juego y decisiones tomadas: `docs/diseno-juego.md`. Guías: `docs/gu
 - `public/assets/sfx/` — efectos de sonido de vidrio, generados con `python3 scripts/generar-sonidos.py` (Python + ffmpeg); para cambiar un sonido, edita su función en el script y vuelve a ejecutarlo
 - `src/assets/musica/` — canciones de las partidas (se detectan solas; aleatorias y sin fin). Súbelas ya comprimidas, **máximo 1,5 MB cada una**: `ffmpeg -i entrada -map_metadata -1 -ar 16000 -c:a libmp3lame -b:a 32k salida.mp3` (no uses 8 kHz en MP3: Safari no lo reproduce bien)
 - Audio: nada bloquea el arranque; efectos y canciones se cargan en segundo plano (`cargarAudioEnSegundoPlano`)
+- Versión: `MAJOR.MINOR.PATCH` en `package.json`; la skill `publicar` sube el PATCH en cada despliegue (MINOR/MAJOR solo si el usuario lo pide). Se muestra en el menú
 - Build: el número de despliegue (`github.run_number`) y el commit se inyectan en el workflow (`VITE_NUMERO_BUILD`, `VITE_COMMIT`) y se muestran en el menú; en local sale «Build dev»
 
 ## Skills del proyecto (`.claude/skills/`)

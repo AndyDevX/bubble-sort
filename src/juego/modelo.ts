@@ -140,8 +140,10 @@ export function invertirTubos(tubos: Tubo[]): Bola[] {
   return revelarTopes(tubos);
 }
 
-export function nivelCompleto(tubos: Tubo[]): boolean {
-  return tubos.every((t) => t.sellado || t.bolas.length === 0);
+// El nivel se gana cuando cada color inicial tiene su tubo sellado. Las bolas de lluvia
+// son solo un obstáculo: da igual dónde queden.
+export function nivelCompleto(tubos: Tubo[], coloresIniciales: readonly ColorId[]): boolean {
+  return coloresIniciales.every((color) => tubos.some((t) => t.sellado && t.bolas[0]?.color === color));
 }
 
 // ¿Queda alguna jugada válida?

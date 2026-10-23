@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { COMMIT_BUILD, NOMBRE_JUEGO, NUMERO_BUILD } from '../constantes';
+import { COMMIT_BUILD, NOMBRE_JUEGO, NUMERO_BUILD, VERSION } from '../constantes';
 import { t } from '../i18n';
 import { cargarAudioEnSegundoPlano, detenerMusica } from '../sistemas/audio';
 import { getGuardado } from '../sistemas/guardado';
@@ -38,9 +38,9 @@ export class MenuScene extends Phaser.Scene {
       .text(0, 0, t('nivel', { n: getGuardado().nivel }), { fontFamily: 'sans-serif', fontSize: '32px', color: '#aaaacc' })
       .setOrigin(0.5);
 
-    // Número de build abajo a la izquierda (el engranaje ocupa la esquina derecha)
+    // Versión y build abajo a la izquierda (el engranaje ocupa la esquina derecha)
     const build = this.add
-      .text(0, 0, [t('build', { n: NUMERO_BUILD }), COMMIT_BUILD].filter(Boolean).join(' · '), {
+      .text(0, 0, [t('version', { v: VERSION, n: NUMERO_BUILD }), COMMIT_BUILD].filter(Boolean).join(' · '), {
         fontFamily: 'sans-serif',
         fontSize: '24px',
         color: '#66667a',

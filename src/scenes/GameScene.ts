@@ -545,10 +545,9 @@ export class GameScene extends Phaser.Scene {
   private trasJugada() {
     if (this.terminado) return;
 
-    // Se gana en cuanto todos los tubos están completos (sellados) o vacíos:
-    // - si aún no ha caído ninguna gota, la lluvia pendiente se cancela;
-    // - si ya cayeron gotas, sus bolas también tienen que estar en tubos completos.
-    if (nivelCompleto(this.tubos)) {
+    // Se gana al sellar todos los colores iniciales; la lluvia pendiente se cancela y las
+    // bolas de lluvia que hayan caído pueden quedar en cualquier tubo
+    if (nivelCompleto(this.tubos, this.nivel.coloresBase)) {
       this.victoria();
       return;
     }

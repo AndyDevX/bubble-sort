@@ -12,7 +12,7 @@ Juego de ordenar colores en tubos para móvil, en vertical. Partimos del documen
 | Giro de gravedad | **Habilidad**, no modo: se recarga al ir sumando puntos en cada nivel y se muestra con una **barra**; una sola carga |
 | Lluvia | Empieza al 35 % de completado el nivel (contado en bolas bien colocadas) |
 | Sin salida | Si no queda ninguna jugada válida y la Gravedad no está cargada → derrota («No quedan movimientos») |
-| Nivel superado | Todos los tubos ordenados |
+| Nivel superado | Todos los colores iniciales ordenados (la lluvia es solo un obstáculo) |
 | Plataforma | Navegador móvil y APK con Capacitor; siempre vertical |
 
 ## Regla base
@@ -54,7 +54,7 @@ interface Guardado {
 | --- | --- |
 | Mover | Se mueve el **grupo** de bolas seguidas del mismo color de arriba, tantas como quepan en el destino (las ocultas del grupo se mueven y se revelan). Las fusiones son de una en una |
 | Tubo completo | 4 bolas del mismo color → el tubo **se sella** (tapón de color, ya no se puede tocar) · +100 pts |
-| Nivel superado | En cuanto todos los tubos están sellados o vacíos. Si aún no ha caído ninguna gota, la lluvia pendiente se cancela; si ya cayeron, esas bolas también deben estar en tubos sellados (con una tanda a medias no se puede completar) |
+| Nivel superado | Al **sellar todos los colores iniciales** del nivel. La lluvia es solo un obstáculo: sus bolas pueden quedar en cualquier tubo (ocupando huecos) y la lluvia pendiente se cancela al ganar. Una gota encima de un color sin sellar sí impide sellarlo hasta apartarla |
 | Lluvia | Empieza al llevar resuelto el **35 %** del nivel, contado en **bolas bien colocadas** (las de cada color apiladas desde el fondo de un tubo; si varios tubos empiezan por el mismo color, cuenta el mejor). Se mide el avance desde el inicio: las bolas que ya estaban bien por azar al empezar no cuentan. Caen tandas de 4 bolas de un color nuevo, una cada pocos segundos, en un tubo al azar con hueco. Si no queda hueco → derrota |
 | Alquimia | Algunas bolas llegan "partidas" en dos ingredientes (anillo blanco). Ingrediente sobre ingrediente de su receta → se fusionan en el color resultado · +25 pts |
 | Niebla | Las bolas ocultas se ven como «?» y se revelan al quedar arriba (y se quedan reveladas) |

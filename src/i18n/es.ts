@@ -8,7 +8,7 @@ export const es = {
   volver: 'Volver',
   menu: 'Menú',
   escenaJuego: 'Escena de juego',
-  build: 'Build {n}',
+  version: 'v{v} · build {n}',
   nivel: 'Nivel {n}',
   puntos: '{n} pts',
   gravedad: 'Gravedad',

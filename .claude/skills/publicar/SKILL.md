@@ -27,12 +27,23 @@ push a `main` publica el juego en GitHub Pages: https://andydevx.github.io/bubbl
   `src/assets/musica/`. Si un audio cambia **con el mismo nombre** y debe oírse ya, sube
   `VERSION` en `public/sw.js` (si no, el caché del Service Worker sirve el viejo una visita más).
 
-## 3. Commit y push a main
+## 3. Versión (MAJOR.MINOR.PATCH en `package.json`)
+
+Cada despliegue sube el **PATCH** (0.0.8 → 0.0.9). **MINOR** y **MAJOR** solo cuando el usuario
+lo pida (al subirlos, el PATCH vuelve a 0). La versión se muestra en el menú («v0.0.9 · build N»).
+
+```bash
+npm version patch --no-git-tag-version   # o: minor / major si el usuario lo pide
+```
+
+(actualiza `package.json` y `package-lock.json`; no lo repitas si en este mismo cambio ya se ajustó a mano)
+
+## 4. Commit y push a main
 
 ```bash
 git checkout main && git pull origin main
 git add -A && git status --short        # revisa que no se cuelen archivos ajenos (node_modules, dist)
-git commit -m "<Resumen en español, en imperativo>" -m "<viñetas con lo que cambia>"
+git commit -m "<Resumen en español, en imperativo> (vX.Y.Z)" -m "<viñetas con lo que cambia>"
 git push origin main
 ```
 
@@ -40,7 +51,7 @@ git push origin main
 - Añade al final del mensaje las líneas de atribución que indique la sesión.
 - Si el push falla por red, reintenta hasta 4 veces (2 s, 4 s, 8 s, 16 s).
 
-## 4. Comprobar la publicación en GitHub Pages
+## 5. Comprobar la publicación en GitHub Pages
 
 El workflow `.github/workflows/deploy.yml` («Publicar en GitHub Pages») se lanza solo con el push.
 
@@ -59,10 +70,10 @@ gh run view "$ID" --repo AndyDevX/bubble-sort --log-failed   # si falló
 - La web tarda 1–2 minutos en reflejar el cambio. Puede que la sesión no pueda abrir
   `github.io` (red restringida): en ese caso dilo y pide al usuario que lo compruebe.
 
-## 5. Informar al usuario
+## 6. Informar al usuario
 
 Breve y en español:
 - qué cambió (y cómo se usa si es algo nuevo);
 - qué se probó y con qué resultado (y qué no se pudo comprobar);
-- hash del commit, **número de build** (el `run_number` del workflow, que es el que sale en el menú) y estado del despliegue con el enlace https://andydevx.github.io/bubble-sort/;
+- **versión** (vX.Y.Z), hash del commit, **número de build** (el `run_number` del workflow, que es el que sale en el menú) y estado del despliegue con el enlace https://andydevx.github.io/bubble-sort/;
 - cómo verlo en local: `git pull` y `npm run dev`.

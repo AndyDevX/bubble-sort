@@ -1,5 +1,8 @@
 export const NOMBRE_JUEGO = 'Odi Sort';
 
+// Versión del juego (package.json): el PATCH sube en cada despliegue
+export const VERSION = import.meta.env.VITE_VERSION;
+
 // Build: cada despliegue en GitHub Pages es un número nuevo; en local es "dev"
 export const NUMERO_BUILD = import.meta.env.VITE_NUMERO_BUILD ?? 'dev';
 export const COMMIT_BUILD = (import.meta.env.VITE_COMMIT ?? '').slice(0, 7);
