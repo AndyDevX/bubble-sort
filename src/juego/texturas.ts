@@ -138,6 +138,26 @@ export function generarTexturasBolas(escena: Phaser.Scene): void {
     ctx.textBaseline = 'middle';
     ctx.fillText('?', TAMANO / 2, TAMANO / 2 + 4);
   });
+
+  // Chispa: estrella blanca de 4 puntas con halo (las partículas la tiñen del color de la bola)
+  crear(escena, 'chispa', (ctx) => {
+    const c = TAMANO / 2;
+    const halo = ctx.createRadialGradient(c, c, 0, c, c, c);
+    halo.addColorStop(0, 'rgba(255,255,255,0.9)');
+    halo.addColorStop(0.25, 'rgba(255,255,255,0.35)');
+    halo.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = halo;
+    ctx.fillRect(0, 0, TAMANO, TAMANO);
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    for (let i = 0; i < 8; i++) {
+      const angulo = (i / 8) * Math.PI * 2 - Math.PI / 2;
+      const r = i % 2 === 0 ? c * 0.95 : c * 0.3;
+      ctx.lineTo(c + Math.cos(angulo) * r, c + Math.sin(angulo) * r);
+    }
+    ctx.closePath();
+    ctx.fill();
+  });
 }
 
 export function claveTextura(bola: Bola): string {

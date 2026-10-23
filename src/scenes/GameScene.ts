@@ -89,6 +89,10 @@ export class GameScene extends Phaser.Scene {
   private historial: Instantanea[] = [];
   private tuboUsado = false; // el tubo de emergencia se puede poner una vez por nivel
 
+  private chispas!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private escalaChispa = 0.2; // depende del tamaño de bola
+  private flechasGiro!: Phaser.GameObjects.Graphics;
+
   private textoNivel!: Phaser.GameObjects.Text;
   private textoPuntos!: Phaser.GameObjects.Text;
   private textoMonedas!: Phaser.GameObjects.Text;
@@ -158,7 +162,9 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.crearInterfaz();
+    this.crearEfectos();
     alRedimensionar(this, (ancho) => this.colocarTodo(ancho));
+    this.animarEntrada();
 
     // El diálogo de derrota puede pedir deshacer
     const alPedirDeshacer = () => this.deshacer();
@@ -206,6 +212,50 @@ export class GameScene extends Phaser.Scene {
     this.actualizarTuboEmergencia();
   }
 
+  // Un solo emisor de chispas para todo el nivel (se reutiliza en cada estallido)
+  private crearEfectos() {
+    this.chispas = this.add
+      .particles(0, 0, 'chispa', {
+        emitting: false,
+        lifespan: { min: 380, max: 700 },
+        speed: { onEmit: () => Phaser.Math.Between(70, 230) * this.escalaChispa * 5 },
+        angle: { min: 0, max: 360 },
+        rotate: { min: 0, max: 360 },
+        scale: {
+          onEmit: () => this.escalaChispa * Phaser.Math.FloatBetween(0.6, 1.2),
+          onUpdate: (_p: Phaser.GameObjects.Particles.Particle, _k: string, t: number, valor: number) => valor * (1 - t * 0.08),
+        },
+        alpha: { start: 1, end: 0 },
+        gravityY: 260,
+        blendMode: Phaser.BlendModes.ADD,
+      })
+      .setDepth(6);
+
+    // Dos flechas en círculo con un aro: aparecen girando al usar la Gravedad
+    const g = this.add.graphics().setDepth(7).setAlpha(0);
+    const r = 90;
+    g.lineStyle(10, 0xffffff, 0.9).strokeCircle(0, 0, r + 34);
+    g.lineStyle(16, 0xffffff, 1);
+    for (const inicio of [Phaser.Math.DegToRad(-40), Phaser.Math.DegToRad(140)]) {
+      const fin = inicio + Phaser.Math.DegToRad(120);
+      g.beginPath();
+      g.arc(0, 0, r - 20, inicio, fin);
+      g.strokePath();
+      const px = Math.cos(fin) * (r - 20);
+      const py = Math.sin(fin) * (r - 20);
+      const tx = -Math.sin(fin);
+      const ty = Math.cos(fin);
+      g.fillStyle(0xffffff, 1);
+      g.fillTriangle(px + tx * 30, py + ty * 30, px - ty * 22, py + tx * 22, px + ty * 22, py - tx * 22);
+    }
+    this.flechasGiro = g;
+  }
+
+  private estallarChispas(x: number, y: number, color: number, cantidad: number) {
+    this.chispas.setParticleTint(color);
+    this.chispas.explode(cantidad, x, y);
+  }
+
   private colocarTodo(ancho: number) {
     const zona = zonaSegura(this);
     const yBarraSuperior = zona.y + 70;
@@ -231,12 +281,14 @@ export class GameScene extends Phaser.Scene {
     const arribaTubos = zona.y + 160;
     const abajoTubos = zona.y + zona.alto - 200;
     this.col = this.calcularColocacion(zona.x + 20, arribaTubos, zona.ancho - 40, abajoTubos - arribaTubos);
+    this.escalaChispa = this.col.d / 330;
     this.avisoLluvia.setPosition(ancho / 2, arribaTubos + 10);
     this.veloAlerta.setSize(ancho, this.scale.height);
 
     this.tubos.forEach((_, i) => {
       const c = this.col.centros[i];
-      this.graficosTubo[i].setPosition(c.x, c.y).setAngle(0);
+      this.tweens.killTweensOf(this.graficosTubo[i]);
+      this.graficosTubo[i].setPosition(c.x, c.y).setAngle(0).setScale(1);
       this.dibujarTubo(i);
       const altoZona = this.col.altoTubo + this.col.d * 1.4;
       this.zonasTubo[i].setPosition(c.x, c.y - this.col.d * 0.5).setSize(this.col.anchoTubo * 1.5, altoZona);
@@ -258,8 +310,8 @@ export class GameScene extends Phaser.Scene {
     const columnas = Math.ceil(n / filas);
 
     // En unidades de diámetro de bola
-    const anchoTuboU = 1.3;
-    const separacionU = 0.55;
+    const anchoTuboU = 1.12; // tubo de ensayo: la bola casi llena el ancho
+    const separacionU = 0.72;
     const altoTuboU = CAPACIDAD + 0.5;
     const espacioLevantarU = 1.4;
     const separacionFilasU = 0.4;
@@ -287,32 +339,58 @@ export class GameScene extends Phaser.Scene {
     return { d, anchoTubo, altoTubo, centros };
   }
 
+  // Tubo de ensayo de cristal: boca con reborde arriba, fondo redondo, brillo vertical a la izquierda.
+  // Se redibuja solo cuando cambia (sellado, recolocar), nunca por frame.
   private dibujarTubo(i: number) {
     const g = this.graficosTubo[i];
     const tubo = this.tubos[i];
     const { anchoTubo: w, d } = this.col;
-    const radio = w * 0.45;
+    const emergencia = capacidadDe(tubo) < CAPACIDAD;
+    // El tubo de emergencia es más bajo (1 hueco) y comparte la base con los demás
+    const alto = emergencia ? d * (capacidadDe(tubo) + 0.5) : this.col.altoTubo;
+    const abajo = this.col.altoTubo / 2;
+    const arriba = abajo - alto;
+    const colorSellado = tubo.sellado && tubo.bolas.length > 0 ? colorHex(tubo.bolas[0].color) : null;
+    const borde = colorSellado ?? (emergencia ? 0xffb74d : 0xb3e5fc);
+    const grosor = Math.max(3, w * 0.045);
+    const fondo = { tl: 0, tr: 0, bl: w / 2, br: w / 2 };
     g.clear();
 
-    // El tubo de emergencia es más bajo (1 hueco) y comparte la base con los demás
-    if (capacidadDe(tubo) < CAPACIDAD) {
-      const alto = d * (capacidadDe(tubo) + 0.5);
-      const arriba = this.col.altoTubo / 2 - alto;
-      g.fillStyle(0xffb74d, 0.12).fillRoundedRect(-w / 2, arriba, w, alto, radio);
-      g.lineStyle(4, 0xffb74d, 0.9).strokeRoundedRect(-w / 2, arriba, w, alto, radio);
-      return;
-    }
-    const h = this.col.altoTubo;
+    // Cristal: relleno translúcido (teñido si está sellado) y contorno
+    g.fillStyle(colorSellado ?? 0xd6f1ff, colorSellado ? 0.2 : 0.1).fillRoundedRect(-w / 2, arriba, w, alto, fondo);
+    // Contorno abierto por arriba (la boca lo tapa): lado, fondo redondo y otro lado
+    const contorno = (margen: number) => {
+      const r = w / 2 - margen;
+      g.beginPath();
+      g.moveTo(-r, arriba + margen);
+      g.lineTo(-r, abajo - w / 2);
+      g.arc(0, abajo - w / 2, r, Math.PI, 0, true);
+      g.lineTo(r, arriba + margen);
+      g.strokePath();
+    };
+    g.lineStyle(grosor, borde, 0.85);
+    contorno(0);
+    // Grosor del cristal: un segundo contorno tenue por dentro
+    g.lineStyle(grosor * 0.6, 0xffffff, 0.12);
+    contorno(grosor);
 
-    if (tubo.sellado) {
-      const color = colorHex(tubo.bolas[0].color);
-      g.fillStyle(color, 0.22).fillRoundedRect(-w / 2, -h / 2, w, h, radio);
-      g.lineStyle(5, color, 1).strokeRoundedRect(-w / 2, -h / 2, w, h, radio);
-      // tapón
-      g.fillStyle(color, 1).fillRoundedRect(-w / 2 - 6, -h / 2 - 14, w + 12, 18, 8);
-    } else {
-      g.fillStyle(0xffffff, 0.06).fillRoundedRect(-w / 2, -h / 2, w, h, radio);
-      g.lineStyle(4, 0xffffff, 0.35).strokeRoundedRect(-w / 2, -h / 2, w, h, radio);
+    // Brillos: franja larga a la izquierda y otra corta a la derecha
+    const anchoBrillo = w * 0.09;
+    g.fillStyle(0xffffff, 0.38).fillRoundedRect(-w / 2 + w * 0.16, arriba + d * 0.35, anchoBrillo, Math.max(0, alto - d * 0.35 - w * 0.55), anchoBrillo / 2);
+    g.fillStyle(0xffffff, 0.2).fillRoundedRect(w / 2 - w * 0.2, arriba + d * 0.35, anchoBrillo * 0.7, alto * 0.22, anchoBrillo / 3);
+
+    // Boca: reborde un poco más ancho que el tubo
+    const altoBoca = Math.max(10, d * 0.16);
+    const sobresale = w * 0.09;
+    g.fillStyle(0xe1f5fe, colorSellado ? 0.35 : 0.22).fillRoundedRect(-w / 2 - sobresale, arriba - altoBoca / 2, w + sobresale * 2, altoBoca, altoBoca / 2);
+    g.lineStyle(grosor * 0.8, borde, 0.9).strokeRoundedRect(-w / 2 - sobresale, arriba - altoBoca / 2, w + sobresale * 2, altoBoca, altoBoca / 2);
+
+    // Sellado: tapón del color, encajado en la boca
+    if (colorSellado !== null) {
+      const altoTapon = d * 0.42;
+      const yTapon = arriba - altoTapon * 0.75;
+      g.fillStyle(colorSellado, 1).fillRoundedRect(-w / 2 + grosor, yTapon, w - grosor * 2, altoTapon, altoTapon * 0.3);
+      g.fillStyle(0xffffff, 0.3).fillRoundedRect(-w / 2 + grosor * 2.5, yTapon + altoTapon * 0.15, w * 0.18, altoTapon * 0.45, w * 0.06);
     }
   }
 
@@ -320,7 +398,7 @@ export class GameScene extends Phaser.Scene {
 
   private posicionHueco(tubo: number, indice: number) {
     const c = this.col.centros[tubo];
-    return { x: c.x, y: c.y + this.col.altoTubo / 2 - this.col.d * 0.25 - this.col.d * (indice + 0.5) };
+    return { x: c.x, y: c.y + this.col.altoTubo / 2 - this.col.d * 0.1 - this.col.d * (indice + 0.5) };
   }
 
   private posicionLevantada(tubo: number) {
@@ -418,7 +496,14 @@ export class GameScene extends Phaser.Scene {
     if (!sprite) return;
     const pos = this.posicionLevantada(i);
     this.tweens.killTweensOf(sprite);
-    this.tweens.add({ targets: sprite, y: pos.y, duration: 120, ease: 'Quad.easeOut' });
+    // Sube y queda flotando suavemente mientras está seleccionada
+    this.tweens.chain({
+      targets: sprite,
+      tweens: [
+        { y: pos.y, duration: 120, ease: 'Quad.easeOut' },
+        { y: pos.y - this.col.d * 0.08, duration: 520, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' },
+      ],
+    });
     reproducirEfecto(this, 'seleccionar', true);
   }
 
@@ -475,10 +560,11 @@ export class GameScene extends Phaser.Scene {
         delay: n * desfase,
         tweens: [
           { x: encima.x, y: encima.y, duration: 140, ease: 'Sine.easeInOut' },
-          { y: hueco.y, duration: 120, ease: 'Quad.easeIn' },
+          { y: hueco.y, duration: 120, ease: 'Quad.easeIn', onComplete: () => this.aterrizar(sprite) },
         ],
       });
     });
+    this.time.delayedCall(duracion, () => this.balancearTubo(destino));
 
     this.time.delayedCall(duracion, () => {
       if (res.movimiento.tipo === 'fusionar' && res.creada) {
@@ -491,10 +577,79 @@ export class GameScene extends Phaser.Scene {
       if (aciertos > 0) {
         this.sumarPuntos(aciertos * PUNTOS_ACIERTO);
         this.mostrarPuntosFlotantes(destino, aciertos * PUNTOS_ACIERTO);
+        // Chispas del color donde la bola toca a su pareja
+        const contacto = this.posicionHueco(destino, primerHueco);
+        this.estallarChispas(contacto.x, contacto.y + this.col.d * 0.45, colorHex(res.bolas[0].color), 10 + aciertos * 4);
       }
       this.revelar(res.reveladas);
       if (res.sellado) this.animarSellado(destino);
       this.trasJugada();
+    });
+  }
+
+  // La bola se aplasta un instante al tocar fondo
+  private aterrizar(sprite: Phaser.GameObjects.Image) {
+    const sx = sprite.scaleX;
+    const sy = sprite.scaleY;
+    this.tweens.add({ targets: sprite, scaleX: sx * 1.12, scaleY: sy * 0.86, duration: 70, yoyo: true, ease: 'Quad.easeOut', onComplete: () => sprite.setScale(sx, sy) });
+  }
+
+  // El tubo se balancea un poco al recibir bolas
+  private balancearTubo(i: number) {
+    const g = this.graficosTubo[i];
+    this.tweens.killTweensOf(g);
+    g.setAngle(0);
+    this.tweens.chain({
+      targets: g,
+      tweens: [
+        { angle: 3, duration: 70, ease: 'Sine.easeOut' },
+        { angle: -2, duration: 110, ease: 'Sine.easeInOut' },
+        { angle: 0, duration: 90, ease: 'Sine.easeIn' },
+      ],
+    });
+  }
+
+  // Al empezar el nivel los tubos entran deslizándose desde la derecha, uno tras otro
+  private animarEntrada() {
+    const desfase = 60;
+    const duracion = 520;
+    const distancia = this.scale.width;
+    this.tubos.forEach((tubo, i) => {
+      const objetivos: (Phaser.GameObjects.Graphics | Phaser.GameObjects.Image)[] = [this.graficosTubo[i]];
+      for (const bola of tubo.bolas) {
+        const s = this.sprites.get(bola.id);
+        if (s) objetivos.push(s);
+      }
+      for (const o of objetivos) {
+        const x = o.x;
+        o.x = x + distancia;
+        this.tweens.add({ targets: o, x, delay: i * desfase, duration: duracion, ease: 'Back.easeOut' });
+      }
+    });
+    this.bloquear(duracion + desfase * this.tubos.length);
+  }
+
+  // Celebración: los tubos saltan en ola con chispas
+  private animarVictoria() {
+    this.tubos.forEach((tubo, i) => {
+      const objetivos: (Phaser.GameObjects.Graphics | Phaser.GameObjects.Image)[] = [this.graficosTubo[i]];
+      for (const bola of tubo.bolas) {
+        const s = this.sprites.get(bola.id);
+        if (s) objetivos.push(s);
+      }
+      this.tweens.add({
+        targets: objetivos,
+        y: `-=${this.col.d * 0.35}`,
+        delay: i * 70,
+        duration: 160,
+        yoyo: true,
+        ease: 'Quad.easeOut',
+        onStart: () => {
+          if (!tubo.sellado || tubo.bolas.length === 0) return;
+          const c = this.col.centros[i];
+          this.estallarChispas(c.x, c.y - this.col.altoTubo / 2, colorHex(tubo.bolas[0].color), 14);
+        },
+      });
     });
   }
 
@@ -516,6 +671,7 @@ export class GameScene extends Phaser.Scene {
     }
     if (this.sprites.has(creada.id)) return; // ya creada al recolocar la pantalla
     const nueva = this.crearSprite(creada, pos.x, pos.y);
+    this.estallarChispas(pos.x, pos.y, colorHex(creada.color), 16);
     const escala = nueva.scaleX;
     nueva.setScale(0);
     this.tweens.add({ targets: nueva, scale: escala, duration: 260, delay: 80, ease: 'Back.easeOut' });
@@ -524,6 +680,14 @@ export class GameScene extends Phaser.Scene {
 
   private animarSellado(i: number) {
     this.dibujarTubo(i);
+    const g = this.graficosTubo[i];
+    const c = this.col.centros[i];
+    const color = colorHex(this.tubos[i].bolas[0].color);
+    this.tweens.killTweensOf(g);
+    g.setAngle(0).setScale(1);
+    this.tweens.add({ targets: g, scaleX: 1.08, scaleY: 1.04, duration: 130, yoyo: true, ease: 'Quad.easeOut' });
+    for (let k = 0; k < CAPACIDAD; k++) this.estallarChispas(c.x, this.posicionHueco(i, k).y, color, 6);
+    this.estallarChispas(c.x, c.y - this.col.altoTubo / 2, 0xffffff, 10);
     this.sumarPuntos(PUNTOS_SELLAR);
     reproducirEfecto(this, 'sellar');
     for (const bola of this.tubos[i].bolas) {
@@ -590,6 +754,21 @@ export class GameScene extends Phaser.Scene {
     const caida = 250;
     this.bloquear(giro + caida + 50);
     reproducirEfecto(this, 'gravedad');
+
+    // Flechas que giran sobre los tubos con un destello
+    const centroY = (this.col.centros[0].y + this.col.centros[this.col.centros.length - 1].y) / 2;
+    const tamano = Math.min(1.2, this.col.altoTubo / 260);
+    this.tweens.killTweensOf(this.flechasGiro);
+    this.flechasGiro.setPosition(this.scale.width / 2, centroY).setAngle(0).setScale(tamano * 0.6).setAlpha(0);
+    this.tweens.add({ targets: this.flechasGiro, angle: 360, duration: giro + caida + 150, ease: 'Cubic.easeInOut' });
+    this.tweens.chain({
+      targets: this.flechasGiro,
+      tweens: [
+        { alpha: 0.85, scale: tamano, duration: 180, ease: 'Back.easeOut' },
+        { alpha: 0, scale: tamano * 1.15, duration: 250, delay: giro + caida - 260, ease: 'Quad.easeIn' },
+      ],
+    });
+    this.estallarChispas(this.scale.width / 2, centroY, 0xfff3c4, 18);
 
     this.tubos.forEach((tubo, ti) => {
       if (tubo.sellado || tubo.bolas.length === 0 || capacidadDe(tubo) < CAPACIDAD) return;
@@ -726,7 +905,16 @@ export class GameScene extends Phaser.Scene {
     const sprite = this.crearSprite(bola, destino.x, -this.col.d);
     const duracion = 450;
     this.bloquear(duracion);
-    this.tweens.add({ targets: sprite, y: destino.y, duration: duracion, ease: 'Quad.easeIn' });
+    this.tweens.add({
+      targets: sprite,
+      y: destino.y,
+      duration: duracion,
+      ease: 'Quad.easeIn',
+      onComplete: () => {
+        this.aterrizar(sprite);
+        this.estallarChispas(destino.x, destino.y + this.col.d * 0.4, 0xe1f5fe, 8);
+      },
+    });
     reproducirEfecto(this, 'gota', true);
 
     this.time.delayedCall(duracion, () => {
@@ -780,8 +968,9 @@ export class GameScene extends Phaser.Scene {
     this.textoMonedas.setText(String(getGuardado().monedas));
     this.colocarIconoMoneda();
     reproducirEfecto(this, 'victoria');
+    this.animarVictoria();
 
-    this.time.delayedCall(600, () =>
+    this.time.delayedCall(950, () =>
       this.abrirDialogo({
         titulo: t('nivelCompletado'),
         texto: t('recompensa', { puntos: this.puntos, monedas }),

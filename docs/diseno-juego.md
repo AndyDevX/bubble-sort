@@ -164,6 +164,22 @@ La dificultad sube con el número de nivel (`configNivel` en `src/juego/niveles.
 6. **Tienda**: saldo, una tarjeta por oferta (icono, nombre, «Tienes: N», precio) y Volver.
 7. **Ajustes**: volumen de música y de efectos (sliders) e idioma (de momento solo español).
 
+## Aspecto y animaciones
+
+Inspirado en un vídeo de referencia del usuario (solo tubos y animaciones; botones y fondo aún no).
+
+- **Tubos de ensayo de cristal**: boca con reborde, fondo redondo, cristal translúcido azulado y
+  brillo vertical. Sellado: el cristal se tiñe del color y lleva un **tapón** encajado. El de
+  emergencia, igual pero bajo y con borde naranja.
+- **Entrada del nivel**: los tubos llegan deslizándose desde la derecha, uno tras otro.
+- **Seleccionar**: la bola sube y queda **flotando** suavemente.
+- **Soltar**: las bolas se aplastan un instante al tocar fondo y el tubo **se balancea**. Si caen
+  sobre su color, saltan **chispas** de ese color.
+- **Fusión** y **sellado**: estallido de chispas; el tubo sellado da un saltito.
+- **Gravedad**: unas flechas en círculo aparecen girando sobre los tubos mientras giran.
+- **Lluvia**: la bola congelada se aplasta al caer y suelta escarcha.
+- **Victoria**: los tubos saltan en ola con chispas antes del diálogo.
+
 ## Sonido y música
 
 - **Efectos de vidrio** (sintetizados): seleccionar, mover, gota, sellar, fusión, error,

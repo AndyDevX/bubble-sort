@@ -138,6 +138,12 @@ BootScene ──► MenuScene ──► GameScene
 - Bolas dibujadas una vez al arrancar en `CanvasTexture` de 128 px (esfera con degradado,
   ingrediente con anillo discontinuo, oculta con «?», **congelada** para la lluvia: `hielo-<color>`,
   según `bola.lluvia`) — `src/juego/texturas.ts`. Todo es procedural (sin imágenes de terceros).
+- `chispa`: estrella blanca con halo para las partículas. `GameScene` crea **un solo emisor**
+  (`crearEfectos`, `emitting: false`) y lo reutiliza con `estallarChispas(x, y, color, n)`
+  (`setParticleTint` + `explode`); el tamaño se escala con el diámetro de bola.
+- Tubos: `dibujarTubo` dibuja el tubo de ensayo con `Graphics` (contorno abierto arriba, boca,
+  brillos, tapón) solo al cambiar; las animaciones (balanceo, entrada, saltos) son tweens sobre
+  ese `Graphics`. `colocarTodo` cancela sus tweens al recolocar.
 
 ### Guardado (`localStorage`)
 
