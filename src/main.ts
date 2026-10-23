@@ -6,6 +6,7 @@ import { SettingsScene } from './scenes/SettingsScene';
 import { DialogoScene } from './scenes/DialogoScene';
 import { TiendaScene } from './scenes/TiendaScene';
 import { ColeccionScene } from './scenes/ColeccionScene';
+import { EstadisticasScene } from './scenes/EstadisticasScene';
 import { setIdioma } from './i18n';
 import { getAjustes } from './sistemas/ajustes';
 import { registrarCacheOffline } from './sistemas/cacheOffline';
@@ -37,7 +38,7 @@ const config: Phaser.Types.Core.GameConfig = {
     default: 'arcade',
     arcade: { gravity: { x: 0, y: 0 } },
   },
-  scene: [BootScene, MenuScene, GameScene, DialogoScene, TiendaScene, ColeccionScene, SettingsScene],
+  scene: [BootScene, MenuScene, GameScene, DialogoScene, TiendaScene, ColeccionScene, EstadisticasScene, SettingsScene],
 };
 
 setIdioma(getAjustes().idioma);

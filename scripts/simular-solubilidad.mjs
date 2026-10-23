@@ -6,33 +6,28 @@
 // cae la lluvia, con la misma regla de "lluvia justa" que el juego (GameScene.elegirTuboGota).
 // Comprueba además que cada nivel generado tiene solución sin lluvia.
 // Termina con error si algún perfil no llega al 100 %: úsalo al cambiar la dificultad.
-import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, dirname } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { CAP, cargarJuego, codificarNivel, crearCodigo, ganado, progreso, resolver, soltar } from './lib/juego.mjs';
 
-const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
-const salida = mkdtempSync(join(tmpdir(), 'odi-sort-sim-'));
-const fuentes = ['modelo', 'colores', 'niveles', 'solucionador'].map((f) => join(RAIZ, 'src', 'juego', f + '.ts'));
-execFileSync(join(RAIZ, 'node_modules', '.bin', 'tsc'), ['--ignoreConfig', ...fuentes, '--outDir', salida, '--module', 'esnext', '--target', 'es2022', '--moduleResolution', 'bundler', '--skipLibCheck'], { stdio: 'inherit' });
-for (const f of readdirSync(salida)) {
-  const ruta = join(salida, f);
-  writeFileSync(ruta, readFileSync(ruta, 'utf8').replace(/from '(\.\/[a-zA-Z]+)'/g, "from '$1.js'"));
-}
-writeFileSync(join(salida, 'package.json'), '{"type":"module"}');
-const { generarNivel, configNivel, colorNuevo, ORDEN_COLORES, COLORES_DE_SALIDA, nivelDesbloqueo } = await import(pathToFileURL(join(salida, 'niveles.js')).href);
-const { buscarFusion, COLORES } = await import(pathToFileURL(join(salida, 'colores.js')).href);
+const { generarNivel, configNivel, colorNuevo, ORDEN_COLORES, COLORES_DE_SALIDA, nivelDesbloqueo, COLORES } = await cargarJuego();
 
-// Orden de desbloqueo (lo pidió el usuario): todos los colores una vez, los 11 básicos de salida y
-// los especiales después; de media, al menos un color nuevo cada 5 niveles; los desbloqueos siguen
-// ORDEN_COLORES y el color nuevo sale siempre en su nivel
+// Orden de desbloqueo (lo pidió el usuario): todos los colores una vez, se empieza con 4 básicos,
+// después el resto de básicos y al final los especiales; de media, al menos un color nuevo cada 5
+// niveles; los desbloqueos siguen ORDEN_COLORES y el color nuevo sale siempre en su nivel. Además,
+// los colores a ordenar siempre están desbloqueados y la curva de colores no baja nunca.
 {
   const errores = [];
   if (ORDEN_COLORES.length !== COLORES.length || new Set(ORDEN_COLORES).size !== COLORES.length) errores.push('ORDEN_COLORES no tiene cada color una vez');
   const ESPECIALES = ['azulDivino', 'plata', 'jade', 'amatista', 'esmeralda', 'oro', 'carmesi'];
-  if (ORDEN_COLORES.slice(0, COLORES_DE_SALIDA).some((c) => ESPECIALES.includes(c))) errores.push('hay un especial entre los de salida');
-  if (!ORDEN_COLORES.slice(COLORES_DE_SALIDA).every((c) => ESPECIALES.includes(c))) errores.push('hay un básico entre los desbloqueables');
+  if (COLORES_DE_SALIDA !== 4) errores.push(`se empieza con ${COLORES_DE_SALIDA} colores (deben ser 4)`);
+  const primerEspecial = ORDEN_COLORES.findIndex((c) => ESPECIALES.includes(c));
+  if (primerEspecial < COLORES_DE_SALIDA || ORDEN_COLORES.slice(primerEspecial).some((c) => !ESPECIALES.includes(c))) errores.push('los especiales no van después de todos los básicos');
+  let anterior = 0;
+  for (let n = 1; n <= 200; n++) {
+    const c = configNivel(n);
+    if (c.colores < anterior) errores.push(`el nivel ${n} tiene menos colores que el anterior`);
+    anterior = c.colores;
+    if (c.colores + (c.fusiones > 0 ? 2 : 0) > c.desbloqueados) errores.push(`el nivel ${n} necesita colores no desbloqueados`);
+  }
   const niveles = ORDEN_COLORES.slice(COLORES_DE_SALIDA).map(nivelDesbloqueo);
   const media = (niveles.at(-1) - 1) / niveles.length;
   if (media > 5) errores.push(`de media se desbloquea un color cada ${media.toFixed(1)} niveles (máx. 5)`);
@@ -51,126 +46,14 @@ const { buscarFusion, COLORES } = await import(pathToFileURL(join(salida, 'color
   console.log('Orden de desbloqueo correcto\n');
 }
 
-const CAP = 4;
 const args = Object.fromEntries(process.argv.slice(2).map((a) => a.split('=')));
 const NIVELES = Number(args.niveles ?? 50);
 const PRUEBAS = Number(args.pruebas ?? 10);
 
-function crearCodigo() {
-  const letraDe = new Map();
-  const colorDe = new Map();
-  const letra = (c) => {
-    let l = letraDe.get(c);
-    if (!l) {
-      l = String.fromCharCode(97 + letraDe.size);
-      letraDe.set(c, l);
-      colorDe.set(l, c);
-    }
-    return l;
-  };
-  return { letra, colorDe };
-}
-
-// Estado: array de strings. Tubo sellado: '#' + letra del color.
-function vecinos(e, cod) {
-  const res = [];
-  for (let o = 0; o < e.length; o++) {
-    const desde = e[o];
-    if (desde === '' || desde[0] === '#') continue;
-    const bola = desde[desde.length - 1];
-    const mono = desde === bola.repeat(desde.length);
-    let grupo = 0;
-    while (grupo < desde.length && desde[desde.length - 1 - grupo] === bola) grupo++;
-    for (let d = 0; d < e.length; d++) {
-      if (d === o) continue;
-      const hacia = e[d];
-      if (hacia[0] === '#') continue;
-      const tope = hacia[hacia.length - 1];
-      let nuevo = null;
-      let quitar = 1;
-      let prioridad = 0;
-      if (hacia === '' || tope === bola) {
-        if (hacia === '' && mono) continue;
-        const libres = CAP - hacia.length;
-        if (libres <= 0) continue;
-        quitar = Math.min(grupo, libres);
-        nuevo = hacia + bola.repeat(quitar);
-        prioridad = hacia === '' ? 0 : hacia === bola.repeat(hacia.length) ? 3 : 1;
-      } else if (bola === bola.toUpperCase() && tope === tope.toUpperCase()) {
-        const r = buscarFusion(cod.colorDe.get(bola.toLowerCase()), cod.colorDe.get(tope.toLowerCase()));
-        if (!r) continue;
-        nuevo = hacia.slice(0, -1) + cod.letra(r);
-        prioridad = 2;
-      } else continue;
-      const s = [...e];
-      s[o] = desde.slice(0, -quitar);
-      s[d] = nuevo.length === CAP && nuevo === nuevo[0].repeat(CAP) && nuevo[0] === nuevo[0].toLowerCase() ? '#' + nuevo[0] : nuevo;
-      res.push({ e: s, prioridad });
-    }
-  }
-  return res;
-}
-
-const ganado = (e, base) => base.every((l) => e.includes('#' + l));
-
-// DFS con prioridades (como el juego); devuelve el camino de estados o null
-function resolver(inicio, cod, base, limite = 40000) {
-  const clave = (e) => [...e].sort().join('|');
-  const padre = new Map([[clave(inicio), null]]);
-  const estados = new Map([[clave(inicio), inicio]]);
-  const pila = [inicio];
-  let nodos = 0;
-  while (pila.length) {
-    const e = pila.pop();
-    if (ganado(e, base)) {
-      const camino = [];
-      let k = clave(e);
-      while (k) {
-        camino.unshift(estados.get(k));
-        k = padre.get(k);
-      }
-      return camino;
-    }
-    if (++nodos > limite) return null;
-    const hijos = vecinos(e, cod).sort((a, b) => a.prioridad - b.prioridad);
-    for (const h of hijos) {
-      const k = clave(h.e);
-      if (padre.has(k)) continue;
-      padre.set(k, clave(e));
-      estados.set(k, h.e);
-      pila.push(h.e);
-    }
-  }
-  return null;
-}
-
-function progreso(e, base) {
-  let bien = 0;
-  for (const l of base) {
-    let mejor = 0;
-    for (const t of e) {
-      if (t === '#' + l) mejor = CAP;
-      else if (t[0] === l) {
-        let n = 0;
-        while (n < t.length && t[n] === l) n++;
-        mejor = Math.max(mejor, n);
-      }
-    }
-    bien += mejor;
-  }
-  return bien;
-}
-
-function soltar(e, i, letra) {
-  const s = [...e];
-  const t = s[i] + letra;
-  s[i] = t.length === CAP && t === letra.repeat(CAP) ? '#' + letra : t;
-  return s;
-}
 
 // Una partida: jugada cada `msJugada`; lluvia 'aleatoria' (como ahora) o 'justa'
 function partida(nivel, cod, base, msJugada, modoLluvia) {
-  let e = nivel.tubos.map((t) => t.bolas.map((b) => (b.ingrediente ? cod.letra(b.color).toUpperCase() : cod.letra(b.color))).join(''));
+  let e = codificarNivel(nivel, cod);
   const lluvia = nivel.coloresLluvia.flatMap((c) => Array(CAP).fill(cod.letra(c)));
   const inicioBien = progreso(e, base);
   const porHacer = CAP * base.length - inicioBien;
@@ -233,7 +116,7 @@ for (let n = 1; n <= NIVELES; n++) {
       const cod = crearCodigo();
       const base = nivel.coloresBase.map((col) => cod.letra(col));
       if (nombre === 'rápido') {
-        const e0 = nivel.tubos.map((t) => t.bolas.map((b) => (b.ingrediente ? cod.letra(b.color).toUpperCase() : cod.letra(b.color))).join(''));
+        const e0 = codificarNivel(nivel, cod);
         totales.sinLluvia.total++;
         if (resolver(e0, cod, base, 200000)) totales.sinLluvia.gana++;
       }

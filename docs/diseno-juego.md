@@ -143,31 +143,34 @@ La dificultad sube con el número de nivel (`configNivel` en `src/juego/niveles.
 
 | Nivel | Colores a ordenar | Paleta desbloqueada | Tubos | Fusiones | Niebla | Tandas de lluvia | Intervalo |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 3 | 11 (básicos) | 6 | 0 | 0 % | 1 | 5,85 s |
-| 3 | 3 | 11 | 6 | 1 | 10 % | 1 | 5,55 s |
-| 4 | 4 | 11 | 7 | 1 | 15 % | 1 | 5,4 s |
-| 5 | 4 | 12 (+azul divino) | 7 | 1 | 20 % | 1 | 5,25 s |
-| 8 | 5 | 12 | 8 | 1 | 35 % | 1 | 4,8 s |
-| 9 | 5 | 12 | 9 | 2 | 40 % | 2 | 4,65 s |
-| 10 | 5 | 13 (+jade) | 9 | 2 | 45 % | 2 | 4,5 s |
-| 13 | 6 | 14 (+plata) | 10 | 2 | 60 % | 2 | 4,05 s |
-| 19 | 6 | 15 (+amatista) | 10 | 2 | 60 % | 2 | 3,15 s |
-| 20 | 7 | 15 | 11 | 2 | 60 % | 2 | 3,0 s |
-| 23 | 7 | 16 (+esmeralda) | 11 | 2 | 60 % | 2 | 2,55 s |
-| 28 | 7 | 17 (+carmesí) | 11 | 2 | 60 % | 2 | 2,5 s |
-| 33+ | 7 | 18 (+oro) | 11 | 2 | 60 % | 2 | 2,5 s |
+| 1 | 3 | 4 | 6 | 0 | 0 % | 1 | 5,85 s |
+| 3 | 3 | 5 (+naranja) | 6 | 1 | 10 % | 1 | 5,55 s |
+| 6 | 4 | 6 (+morado) | 7 | 1 | 25 % | 1 | 5,1 s |
+| 8 | 5 | 7 (+rosa) | 8 | 1 | 35 % | 1 | 4,8 s |
+| 9 | 5 | 7 | 9 | 2 | 40 % | 2 | 4,65 s |
+| 12 | 5 | 8 (+cian) | 9 | 2 | 55 % | 2 | 4,2 s |
+| 13 | 6 | 8 | 10 | 2 | 60 % | 2 | 4,05 s |
+| 15 | 6 | 9 (+lima) | 10 | 2 | 60 % | 2 | 3,75 s |
+| 19 | 6 | 10 (+marrón) | 10 | 2 | 60 % | 2 | 3,15 s |
+| 20 | 7 | 10 | 11 | 2 | 60 % | 2 | 3,0 s |
+| 22 | 7 | 11 (+blanco) | 11 | 2 | 60 % | 2 | 2,7 s |
+| 26 → 54 | 7 | 12 → 18 (especiales) | 11 | 2 | 60 % | 2 | 2,5 s |
 
-- **Colores a ordenar**: 3 hasta el nivel 3, 4 hasta el 7, 5 hasta el 12, 6 hasta el 19 y 7 desde el 20.
-- **Paleta** (18 colores): 11 **básicos** disponibles desde el principio (rojo, azul, amarillo,
-  verde, naranja, morado, rosa, cian, lima, marrón y blanco) y 7 **especiales** que se desbloquean
-  después, con saltos de 3–6 niveles distintos según el color (`SALTOS_DESBLOQUEO`). El usuario
-  pidió **de media al menos un color nuevo cada 5 niveles**; ahora es uno cada 4,6:
+- **Colores a ordenar**: 3 hasta el nivel 5 (la curva pide 4 en el 4–5, pero aún no hay paleta),
+  4 desde el 6, 5 desde el 8, 6 desde el 13 y 7 desde el 20. Nunca bajan.
+- **Paleta** (18 colores): se empieza con **4 básicos** (rojo, azul, amarillo y verde); después se
+  desbloquean los otros 7 básicos y al final los 7 especiales. Saltos distintos según el color
+  (`SALTOS_DESBLOQUEO`): los básicos llegan rápido (2–4 niveles) porque la curva de colores los
+  necesita y los especiales más espaciados (3–6). El usuario pidió **de media al menos un color
+  nuevo cada 5 niveles**; ahora es uno cada 3,8:
 
-  | Especial | Azul divino | Jade | Plata | Amatista | Esmeralda | Carmesí | Oro |
-  | --- | --- | --- | --- | --- | --- | --- | --- |
-  | Nivel | 5 | 10 | 13 | 19 | 23 | 28 | 33 |
-  | Salto | +4 | +5 | +3 | +6 | +4 | +5 | +5 |
+  | Color | Naranja | Morado | Rosa | Cian | Lima | Marrón | Blanco | Azul divino | Jade | Plata | Amatista | Esmeralda | Carmesí | Oro |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | Nivel | 3 | 6 | 8 | 12 | 15 | 19 | 22 | 26 | 31 | 34 | 40 | 44 | 49 | 54 |
+  | Salto | +2 | +3 | +2 | +4 | +3 | +4 | +3 | +4 | +5 | +3 | +6 | +4 | +5 | +5 |
 
+- Los colores a ordenar y los ingredientes de una fusión siempre están desbloqueados; si la paleta
+  no da para todo, el nivel lleva menos colores o ninguna fusión (`npm run simular` lo comprueba).
 - **Colores especiales**: cada uno imita una imagen de referencia del usuario, con la paleta
   medida en ella, bajo el mismo vidrio de canica que el resto:
 
@@ -184,13 +187,33 @@ La dificultad sube con el número de nivel (`configNivel` en `src/juego/niveles.
   «Amatista» es el nombre propuesto para el morado especial (el usuario no tenía uno).
 - **Familias**: azul/azul divino, rojo/carmesí, amarillo/oro, verde/esmeralda, cian/jade,
   morado/amatista y blanco/plata. El generador evita juntar dos de la misma familia en un nivel
-  cuando hay colores de sobra; con 11 básicos de salida, casi siempre (solo ~4 % de los niveles
-  junta dos, y los especiales se distinguen por su dibujo).
+  cuando hay colores de sobra (con la paleta justa a veces hay que mezclarlas; los especiales se
+  distinguen por su dibujo).
 - **Aviso**: el color nuevo aparece seguro en el nivel que lo desbloquea y se anuncia en una **ventana** «¡Nuevo color!» (bola grande y su nombre, botón Continuar) cuando
   los tubos terminan de entrar; la partida queda en pausa. Solo la primera vez que se llega al
   nivel (no al reiniciarlo ni con «Nivel nuevo»).
-- **Lluvia**: usa colores desbloqueados que no estén en el nivel (con 11 de salida siempre quedan).
+- **Lluvia**: usa colores desbloqueados que no estén en el nivel; si no queda ninguno (primeros
+  niveles), uno aún por descubrir, que cae **congelado** (no se ve como bola normal).
 - **Tubos** = colores + 2 vacíos + 1 por tanda de lluvia.
+
+### Curva de dificultad (medida)
+
+`npm run analizar` genera [analisis-dificultad.md](./analisis-dificultad.md) con un índice 0–100 por
+nivel (movimientos, esfuerzo de búsqueda, éxito de un jugador casual **con lluvia y tiempo real**,
+niebla y ritmo de la lluvia) y su estadística. Resultado (80 niveles × 20 muestras):
+
+| Niveles | Índice | Éxito del jugador casual |
+| --- | --- | --- |
+| 1–10 | 19 | 98 % |
+| 11–20 | 54 | 95 % |
+| 21–30 | 74 | 73 % |
+| 31–80 | ≈ 74 (meseta) | ≈ 73 % |
+
+- La dificultad **sube bien hasta el nivel ~25** y luego **se estanca**: todos los parámetros llegan
+  a su máximo entre los niveles 13 y 25 (niebla 60 % en el 13, 7 colores en el 20, lluvia cada
+  2,5 s en el 24). Los colores que se desbloquean después no hacen el nivel más difícil.
+- Sin lluvia los niveles son fáciles (un jugador al azar que no repite posiciones gana casi
+  siempre con 2–3 tubos vacíos): la dificultad real la ponen la **lluvia** (tiempo) y la **niebla**.
 
 ### Solubilidad (medida)
 
@@ -212,7 +235,7 @@ el nivel tenía solución sin lluvia, la lluvia al azar lo hacía imposible much
 
 ## Pantallas
 
-1. **Menú**: título «Odi Sort», **Jugar**, **Tienda**, **Colores** (catálogo), monedas (arriba a la derecha), papelera casi
+1. **Menú**: título «Odi Sort», **Jugar**, **Tienda**, **Colores** (catálogo), **Estadísticas**, monedas (arriba a la derecha), papelera casi
    invisible arriba a la izquierda para **borrar el progreso** (mantener pulsado 1,5 s y confirmar;
    borra nivel, récord, monedas y compras, conserva los ajustes), nivel actual, versión y build (abajo a la izquierda) y
    **Ajustes** (engranaje, esquina inferior derecha).
@@ -229,8 +252,12 @@ el nivel tenía solución sin lluvia, la lluvia al azar lo hacía imposible much
    nombre; los demás, una **canica negra con «?»** y «Nivel N». Arriba, contador «Descubiertos: N
    de 18» y vista grande del color tocado («Desbloqueado en el nivel N» / «Se desbloquea en el
    nivel N» / «Disponible desde el inicio»).
-7. **Tienda**: saldo, una tarjeta por oferta (icono, nombre, «Tienes: N», precio) y Volver.
-8. **Ajustes**: volumen de música y de efectos (sliders) e idioma (de momento solo español).
+7. **Estadísticas**: niveles superados, fallidos y generados (y % de victorias); habilidades
+   usadas (Deshacer, Tubo extra, Gravedad); tubos llenos y canicas movidas, en total y por color
+   (cuadrícula de bolas con su cifra; al tocar una se ve el nombre del color). Una derrota cuenta
+   una vez por partida y cada color sellado una vez por partida (deshacer no duplica).
+8. **Tienda**: saldo, una tarjeta por oferta (icono, nombre, «Tienes: N», precio) y Volver.
+9. **Ajustes**: volumen de música y de efectos (sliders) e idioma (de momento solo español).
 
 ## Aspecto y animaciones
 
@@ -268,6 +295,7 @@ Inspirado en un vídeo de referencia del usuario (solo tubos y animaciones; boto
 ## Guardado (en el dispositivo)
 
 - **Progreso**: nivel actual, mejor nivel, monedas e **inventario** (deshacer y tubos extra comprados).
+- **Estadísticas** (`odi-sort:estadisticas`). Borrar el progreso también las borra.
 - **Nivel en curso**: su configuración inicial (para reiniciarlo igual).
 - **Ajustes**: volúmenes e idioma.
 

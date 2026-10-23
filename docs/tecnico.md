@@ -103,9 +103,10 @@ BootScene ──► MenuScene ──► GameScene
   solucionador** (y `scripts/simular-solubilidad.mjs`).
 - `tieneSolucion(tubos, limite, coloresObjetivo?)`: sin objetivo exige todo sellado o vacío (al
   generar); con `coloresObjetivo` basta con sellar esos colores (partida con lluvia).
-- `configNivel(n)`: colores por nivel (3 → 7), `desbloqueados` = 11 básicos (`COLORES_DE_SALIDA`)
-  + especiales según `SALTOS_DESBLOQUEO` (media ≤ 5 niveles por color), `tubosVacios` = 2 +
-  tandas de lluvia. `colorNuevo(n)` dice qué color se desbloquea en el nivel n (siempre sale en él);
+- `configNivel(n)`: `desbloqueados` = 4 de salida (`COLORES_DE_SALIDA`) + los que marca
+  `SALTOS_DESBLOQUEO` (media ≤ 5 niveles por color); colores por nivel (3 → 7) y fusiones
+  limitados por la paleta; `tubosVacios` = 2 + tandas de lluvia. La lluvia puede usar un color
+  aún no desbloqueado (cae congelada). `colorNuevo(n)` dice qué color se desbloquea en el nivel n (siempre sale en él);
   `GameScene.avisarColorNuevo` lo anuncia con `DialogoScene` (campo `bola`: textura de la bola).
 
 ### Lluvia justa
@@ -181,8 +182,18 @@ nivel no llega al 100 %.
   descubierto si `mejorNivel >= nivelDesbloqueo(color)`. Textura `bola-bloqueada`. Los nombres de
   los colores están en `src/i18n/nombresColor.ts` (`nombreColor`).
 - `npm run simular` comprueba además el **orden de desbloqueo**: cada color una vez, Azul divino
-  los 11 básicos de salida y los especiales después, de media ≤ 5 niveles por desbloqueo, los
-  desbloqueos siguen `ORDEN_COLORES` y el color nuevo sale en su nivel.
+  se empieza con 4 básicos, luego el resto de básicos y al final los especiales, de media ≤ 5
+  niveles por desbloqueo, los desbloqueos siguen `ORDEN_COLORES`, el color nuevo sale en su nivel,
+  la curva de colores no baja y los colores necesarios están desbloqueados.
+- `npm run analizar [niveles=60 muestras=20 obvia=0.6 ms=1500]` (`scripts/analizar-dificultad.mjs`):
+  índice de dificultad por nivel y estadística (Spearman, pendientes, retrocesos, mesetas) →
+  `docs/analisis-dificultad.md` + `.svg`. El jugador casual juega con lluvia justa y tiempo real.
+- `scripts/lib/juego.mjs`: compilación de `src/juego` y motor de búsqueda compartidos por ambos
+  scripts.
+- Estadísticas (`src/sistemas/estadisticas.ts`, clave `odi-sort:estadisticas`): contadores que
+  `GameScene` suma (niveles generados/superados/fallidos, habilidades, tubos llenos y canicas
+  movidas por color); se guardan con 800 ms de retraso y al ocultar la página. Pantalla:
+  `EstadisticasScene`.
 - Tubos (`src/juego/texturasTubo.ts`): texturas `tubo-atras`, `tubo-delante`, `tubo-liquido`,
   `tubo-tapon` y `tubo-corto-*` (emergencia), dibujadas una vez con degradados de Canvas y
   escaladas a `anchoTubo / TUBO_ANCHO` con origen `ORIGEN_TUBO`. Cada tubo en pantalla

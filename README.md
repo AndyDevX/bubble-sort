@@ -32,6 +32,7 @@ npm run dev        # http://localhost:5173 (también desde el móvil con la IP d
 | `npm run build` | Comprueba tipos y genera `dist/` |
 | `npm run preview` | Sirve `dist/` en local |
 | `npm run simular` | Mide que todos los niveles se pueden resolver sin habilidades (con lluvia) |
+| `npm run analizar` | Análisis estadístico de la curva de dificultad (`docs/analisis-dificultad.md`) |
 | `npm run compartir` | Con `npm run dev` abierto, crea un enlace público temporal |
 | `npm run cap:android` | Compila, sincroniza y abre el proyecto en Android Studio |
 
@@ -48,5 +49,6 @@ npm run dev        # http://localhost:5173 (también desde el móvil con la IP d
 | [docs/diseno-juego.md](docs/diseno-juego.md) | Todo lo jugable: reglas, mecánicas, ayudas, puntos, niveles, pantallas |
 | [docs/tecnico.md](docs/tecnico.md) | Arquitectura, sistemas, guardado, audio, versionado, despliegue y APK |
 | [docs/historial.md](docs/historial.md) | Versiones y builds publicados |
+| [docs/analisis-dificultad.md](docs/analisis-dificultad.md) | Curva de dificultad medida (generado por `npm run analizar`) |
 | [AGENTS.md](AGENTS.md) | Instrucciones para agentes de IA que trabajen en el repo |
 | [docs/guia-phaser.md](docs/guia-phaser.md) · [docs/guia-typescript.md](docs/guia-typescript.md) | Manuales del stack |

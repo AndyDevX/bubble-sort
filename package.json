@@ -1,7 +1,7 @@
 {
   "name": "phaser-capacitor-template",
   "private": true,
-  "version": "0.1.7",
+  "version": "0.1.8",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,8 @@
     "compartir": "npx --yes cloudflared tunnel --url http://localhost:5173",
     "cap:sync": "npm run build && cap sync",
     "cap:android": "npm run build && cap sync android && cap open android",
-    "simular": "node scripts/simular-solubilidad.mjs"
+    "simular": "node scripts/simular-solubilidad.mjs",
+    "analizar": "node scripts/analizar-dificultad.mjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.3",

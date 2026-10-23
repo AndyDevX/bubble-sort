@@ -4,6 +4,7 @@ import { t } from '../i18n';
 import { cargarAudioEnSegundoPlano, detenerMusica } from '../sistemas/audio';
 import { borrarProgreso, getGuardado } from '../sistemas/guardado';
 import { borrarNivelGuardado } from '../sistemas/nivelGuardado';
+import { borrarEstadisticas } from '../sistemas/estadisticas';
 import { crearBoton } from '../ui/Boton';
 import { crearBotonAjustes } from '../ui/BotonAjustes';
 import { crearBotonBorrarProgreso } from '../ui/BorrarProgreso';
@@ -47,6 +48,11 @@ export class MenuScene extends Phaser.Scene {
       this.scene.launch('Coleccion', { origen: this.scene.key });
     });
 
+    const estadisticas = crearBoton(this, 0, 0, t('estadisticas'), () => {
+      this.scene.pause();
+      this.scene.launch('Estadisticas', { origen: this.scene.key });
+    });
+
     // Monedas arriba a la derecha (se actualizan al volver de la tienda)
     const iconoMoneda = crearIconoMoneda(this, 22);
     const monedas = this.add
@@ -82,6 +88,7 @@ export class MenuScene extends Phaser.Scene {
     const borrar = crearBotonBorrarProgreso(this, () => {
       borrarProgreso();
       borrarNivelGuardado();
+      borrarEstadisticas();
       this.scene.restart({ borrado: true });
     });
     if ((this.sys.settings.data as { borrado?: boolean } | undefined)?.borrado) {
@@ -89,16 +96,19 @@ export class MenuScene extends Phaser.Scene {
         .text(0, 0, t('progresoBorrado'), { fontFamily: 'sans-serif', fontSize: '30px', color: '#a5d6a7' })
         .setOrigin(0.5);
       this.tweens.add({ targets: aviso, alpha: 0, delay: 1800, duration: 500 });
-      alRedimensionar(this, (ancho, alto) => aviso.setPosition(ancho / 2, alto * 0.55 - 110));
+      alRedimensionar(this, (ancho, alto) => aviso.setPosition(ancho / 2, alto * 0.5 - 100));
     }
 
     alRedimensionar(this, (ancho, alto) => {
       const zona = zonaSegura(this);
       titulo.setPosition(ancho / 2, alto * 0.3);
-      jugar.setPosition(ancho / 2, alto * 0.55);
-      tienda.setPosition(ancho / 2, alto * 0.55 + 140);
-      colores.setPosition(ancho / 2, alto * 0.55 + 280);
-      nivel.setPosition(ancho / 2, alto * 0.55 + 390);
+      // Cuatro botones en columna, centrados en la parte baja (130 px entre ellos)
+      const primero = alto * 0.5;
+      jugar.setPosition(ancho / 2, primero);
+      tienda.setPosition(ancho / 2, primero + 130);
+      colores.setPosition(ancho / 2, primero + 260);
+      estadisticas.setPosition(ancho / 2, primero + 390);
+      nivel.setPosition(ancho / 2, primero + 490);
       monedas.setPosition(zona.x + zona.ancho - 40, zona.y + 60);
       colocarMonedas();
       // Esquina inferior derecha, respetando notch y barra de gestos

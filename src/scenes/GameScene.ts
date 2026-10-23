@@ -26,6 +26,7 @@ import { ORIGEN_TUBO, TUBO_ANCHO } from '../juego/texturasTubo';
 import { iniciarEfecto, iniciarMusicaPartida, reproducirEfecto } from '../sistemas/audio';
 import { actualizarGuardado, getGuardado } from '../sistemas/guardado';
 import { cargarNivel, guardarNivel } from '../sistemas/nivelGuardado';
+import { sumarColor, sumarHabilidad, sumarNivel } from '../sistemas/estadisticas';
 import { cantidadDe, gastar } from '../sistemas/tienda';
 import { crearBarraHabilidad, type BarraHabilidad } from '../ui/BarraHabilidad';
 import { crearBotonRedondo, iconoPausa, type BotonRedondo } from '../ui/BotonRedondo';
@@ -108,6 +109,9 @@ export class GameScene extends Phaser.Scene {
 
   private historial: Instantanea[] = [];
   private tuboUsado = false; // el tubo de emergencia se puede poner una vez por nivel
+  // Estadísticas: cada derrota y cada color sellado cuentan una vez por partida (deshacer no duplica)
+  private derrotaContada = false;
+  private sellosContados = new Set<ColorId>();
 
   private chispas!: Phaser.GameObjects.Particles.ParticleEmitter;
   private escalaChispa = 0.2; // depende del tamaño de bola
@@ -153,6 +157,8 @@ export class GameScene extends Phaser.Scene {
     this.esperasGota = 0;
     this.historial = [];
     this.tuboUsado = false;
+    this.derrotaContada = false;
+    this.sellosContados = new Set();
     this.sonidoAlarma = null;
   }
 
@@ -169,6 +175,7 @@ export class GameScene extends Phaser.Scene {
     } else {
       this.nivel = generarNivel(this.numeroNivel);
       guardarNivel(this.numeroNivel, this.nivel);
+      sumarNivel('nivelesGenerados');
     }
     this.bienAlEmpezar = bolasBienColocadas(this.nivel.tubos, this.nivel.coloresBase);
     this.tubos = this.nivel.tubos;
@@ -552,6 +559,7 @@ export class GameScene extends Phaser.Scene {
     this.seleccionado = null;
     const primerHueco = this.tubos[destino].bolas.length - (mov.tipo === 'fusionar' ? 1 : 0);
     const res = aplicarMovimiento(this.tubos, origen, destino, mov);
+    for (const bola of res.bolas) sumarColor('canicasMovidas', bola.color);
 
     // Acierto: cada bola colocada sobre una de su color puntúa (solo la primera vez en el nivel,
     // para que mover la misma bola de un lado a otro no llene la barra)
@@ -722,6 +730,11 @@ export class GameScene extends Phaser.Scene {
 
   private animarSellado(i: number) {
     this.dibujarTubo(i);
+    const colorSellado = this.tubos[i].bolas[0].color;
+    if (!this.sellosContados.has(colorSellado)) {
+      this.sellosContados.add(colorSellado);
+      sumarColor('tubosLlenos', colorSellado);
+    }
     const capas = this.capas(i);
     const c = this.col.centros[i];
     const color = colorHex(this.tubos[i].bolas[0].color);
@@ -789,6 +802,7 @@ export class GameScene extends Phaser.Scene {
     if (this.seleccionado !== null) this.bajar(this.seleccionado);
 
     this.guardarInstantanea();
+    sumarHabilidad('gravedad');
     this.carga = 0;
     this.barra.setProgreso(0);
 
@@ -1045,6 +1059,7 @@ export class GameScene extends Phaser.Scene {
     this.lluviaPendiente = [];
     this.textoLluvia.setVisible(false);
 
+    sumarNivel('nivelesSuperados');
     const monedas = 5 + Math.floor(this.puntos / 10);
     const guardado = getGuardado();
     const siguiente = this.numeroNivel + 1;
@@ -1072,6 +1087,10 @@ export class GameScene extends Phaser.Scene {
 
   private derrota(motivo: 'lluvia' | 'sinMovimientos') {
     this.terminado = true;
+    if (!this.derrotaContada) {
+      this.derrotaContada = true;
+      sumarNivel('nivelesFallidos');
+    }
     this.pararLluvia();
     this.actualizarDeshacer();
     this.actualizarTuboEmergencia();
@@ -1144,6 +1163,7 @@ export class GameScene extends Phaser.Scene {
   private deshacer() {
     if (!this.puedeDeshacer() || this.time.now < this.bloqueadoHasta) return;
     if (!gastar('deshacer')) return;
+    sumarHabilidad('deshacer');
     const previo = this.historial.pop()!;
 
     // Tubo de cada bola antes de deshacer, para animar el camino de vuelta
@@ -1259,6 +1279,7 @@ export class GameScene extends Phaser.Scene {
   private usarTuboEmergencia() {
     if (!this.tuboDisponible() || this.bloqueado()) return;
     if (!gastar('tuboExtra')) return;
+    sumarHabilidad('tuboExtra');
     if (this.seleccionado !== null) this.bajar(this.seleccionado);
 
     this.tuboUsado = true;
