@@ -199,6 +199,16 @@ export function generarTexturasBolas(escena: Phaser.Scene): void {
     });
   }
 
+  // Catálogo: color aún no descubierto (canica negra con interrogación)
+  crear(escena, 'bola-bloqueada', (ctx) => {
+    dibujarEsfera(ctx, 0x101018);
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.font = `bold ${TAMANO * 0.5}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('?', TAMANO / 2, TAMANO / 2 + 4);
+  });
+
   // Niebla: bola gris con interrogación
   crear(escena, 'bola-oculta', (ctx) => {
     dibujarEsfera(ctx, 0x4a4a66);

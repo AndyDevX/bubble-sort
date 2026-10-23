@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { t, type ClaveTexto } from '../i18n';
+import { t } from '../i18n';
+import { nombreColor } from '../i18n/nombresColor';
 import type { ColorId } from '../juego/colores';
 import {
   CAPACIDAD,
@@ -36,28 +37,6 @@ import type { DatosDialogo } from './DialogoScene';
 
 // Cómo empieza la partida: seguir con el nivel guardado, reiniciarlo igual o generar uno nuevo
 export type ModoInicio = 'continuar' | 'reiniciar' | 'nuevo';
-
-// Nombre visible de cada color (aviso de color nuevo)
-const NOMBRES_COLOR: Record<ColorId, ClaveTexto> = {
-  rojo: 'colorRojo',
-  azul: 'colorAzul',
-  azulDivino: 'colorAzulDivino',
-  amarillo: 'colorAmarillo',
-  verde: 'colorVerde',
-  naranja: 'colorNaranja',
-  morado: 'colorMorado',
-  rosa: 'colorRosa',
-  cian: 'colorCian',
-  lima: 'colorLima',
-  marron: 'colorMarron',
-  blanco: 'colorBlanco',
-  plata: 'colorPlata',
-  jade: 'colorJade',
-  amatista: 'colorAmatista',
-  esmeralda: 'colorEsmeralda',
-  oro: 'colorOro',
-  carmesi: 'colorCarmesi',
-};
 
 const PUNTOS_SELLAR = 100;
 const PUNTOS_FUSION = 25;
@@ -686,7 +665,7 @@ export class GameScene extends Phaser.Scene {
       this.abrirDialogo({
         titulo: t('nuevoColor'),
         bola: `bola-${color}`,
-        texto: t(NOMBRES_COLOR[color]),
+        texto: nombreColor(color),
         botones: [{ texto: t('continuar'), accion: 'continuar' }],
       });
     });

@@ -206,7 +206,7 @@ el nivel tenía solución sin lluvia, la lluvia al azar lo hacía imposible much
 
 ## Pantallas
 
-1. **Menú**: título «Odi Sort», **Jugar**, **Tienda**, monedas (arriba a la derecha), papelera casi
+1. **Menú**: título «Odi Sort», **Jugar**, **Tienda**, **Colores** (catálogo), monedas (arriba a la derecha), papelera casi
    invisible arriba a la izquierda para **borrar el progreso** (mantener pulsado 1,5 s y confirmar;
    borra nivel, récord, monedas y compras, conserva los ajustes), nivel actual, versión y build (abajo a la izquierda) y
    **Ajustes** (engranaje, esquina inferior derecha).
@@ -218,8 +218,13 @@ el nivel tenía solución sin lluvia, la lluvia al azar lo hacía imposible much
 3. **Pausa**: Continuar · Reiniciar nivel · Nivel nuevo · Tienda · Ajustes · Menú.
 4. **Victoria**: puntos y monedas ganadas · Siguiente · Menú.
 5. **Derrota**: motivo · Deshacer (si tienes) · Reiniciar nivel · Nivel nuevo · Tienda · Menú.
-6. **Tienda**: saldo, una tarjeta por oferta (icono, nombre, «Tienes: N», precio) y Volver.
-7. **Ajustes**: volumen de música y de efectos (sliders) e idioma (de momento solo español).
+6. **Colores** (catálogo): los 18 colores en orden de desbloqueo, en una cuadrícula de 4
+   columnas. Los descubiertos (nivel alcanzado ≥ nivel en que aparecen) muestran su bola y su
+   nombre; los demás, una **canica negra con «?»** y «Nivel N». Arriba, contador «Descubiertos: N
+   de 18» y vista grande del color tocado («Desbloqueado en el nivel N» / «Se desbloquea en el
+   nivel N» / «Disponible desde el inicio»).
+7. **Tienda**: saldo, una tarjeta por oferta (icono, nombre, «Tienes: N», precio) y Volver.
+8. **Ajustes**: volumen de música y de efectos (sliders) e idioma (de momento solo español).
 
 ## Aspecto y animaciones
 

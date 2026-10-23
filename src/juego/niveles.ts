@@ -50,6 +50,14 @@ export function configNivel(nivel: number): ConfigNivel {
   };
 }
 
+// Nivel en que se desbloquea un color (1 = de salida). Se deriva de configNivel, así el catálogo
+// nunca puede contradecir al juego.
+export function nivelDesbloqueo(color: ColorId): number {
+  const posicion = ORDEN_COLORES.indexOf(color);
+  for (let n = 1; n < 500; n++) if (configNivel(n).desbloqueados > posicion) return n;
+  return Infinity;
+}
+
 // Color que se desbloquea al empezar este nivel (para avisar al jugador), o null
 export function colorNuevo(nivel: number): ColorId | null {
   if (nivel <= 1) return null;

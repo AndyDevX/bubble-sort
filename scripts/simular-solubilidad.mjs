@@ -21,8 +21,29 @@ for (const f of readdirSync(salida)) {
   writeFileSync(ruta, readFileSync(ruta, 'utf8').replace(/from '(\.\/[a-zA-Z]+)'/g, "from '$1.js'"));
 }
 writeFileSync(join(salida, 'package.json'), '{"type":"module"}');
-const { generarNivel, configNivel } = await import(pathToFileURL(join(salida, 'niveles.js')).href);
-const { buscarFusion } = await import(pathToFileURL(join(salida, 'colores.js')).href);
+const { generarNivel, configNivel, colorNuevo, ORDEN_COLORES } = await import(pathToFileURL(join(salida, 'niveles.js')).href);
+const { buscarFusion, COLORES } = await import(pathToFileURL(join(salida, 'colores.js')).href);
+
+// Orden de desbloqueo: todos los colores una vez, Azul divino el 6.º (lo pidió el usuario), los
+// desbloqueos siguen ORDEN_COLORES y el color nuevo sale siempre en su nivel
+{
+  const errores = [];
+  if (ORDEN_COLORES.length !== COLORES.length || new Set(ORDEN_COLORES).size !== COLORES.length) errores.push('ORDEN_COLORES no tiene cada color una vez');
+  if (ORDEN_COLORES.indexOf('azulDivino') !== 5) errores.push('Azul divino no es el 6.º');
+  const secuencia = [];
+  for (let n = 2; n <= 200; n++) {
+    const c = colorNuevo(n);
+    if (c) secuencia.push([n, c]);
+  }
+  if (secuencia.length !== ORDEN_COLORES.length - 5 || !secuencia.every(([, c], i) => c === ORDEN_COLORES[5 + i])) errores.push('los desbloqueos no siguen ORDEN_COLORES');
+  for (const [n, c] of secuencia) for (let k = 0; k < 30; k++) if (!generarNivel(n).coloresBase.includes(c)) errores.push(`el nivel ${n} no trae su color nuevo (${c})`);
+  console.log('Orden de desbloqueo:', secuencia.map(([n, c]) => `${n}:${c}`).join(' '));
+  if (errores.length) {
+    console.error('ERROR en el orden:', [...new Set(errores)].join('; '));
+    process.exit(1);
+  }
+  console.log('Orden de desbloqueo correcto\n');
+}
 
 const CAP = 4;
 const args = Object.fromEntries(process.argv.slice(2).map((a) => a.split('=')));

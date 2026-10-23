@@ -42,6 +42,11 @@ export class MenuScene extends Phaser.Scene {
       this.scene.launch('Tienda', { origen: this.scene.key });
     });
 
+    const colores = crearBoton(this, 0, 0, t('colores'), () => {
+      this.scene.pause();
+      this.scene.launch('Coleccion', { origen: this.scene.key });
+    });
+
     // Monedas arriba a la derecha (se actualizan al volver de la tienda)
     const iconoMoneda = crearIconoMoneda(this, 22);
     const monedas = this.add
@@ -92,7 +97,8 @@ export class MenuScene extends Phaser.Scene {
       titulo.setPosition(ancho / 2, alto * 0.3);
       jugar.setPosition(ancho / 2, alto * 0.55);
       tienda.setPosition(ancho / 2, alto * 0.55 + 140);
-      nivel.setPosition(ancho / 2, alto * 0.55 + 250);
+      colores.setPosition(ancho / 2, alto * 0.55 + 280);
+      nivel.setPosition(ancho / 2, alto * 0.55 + 390);
       monedas.setPosition(zona.x + zona.ancho - 40, zona.y + 60);
       colocarMonedas();
       // Esquina inferior derecha, respetando notch y barra de gestos

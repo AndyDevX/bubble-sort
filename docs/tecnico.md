@@ -175,6 +175,12 @@ nivel no llega al 100 %.
 - `pintarPixeles` (interiores por píxel) pinta en un lienzo aparte y lo copia con `drawImage`:
   **`putImageData` ignora el recorte** (`clip`) y la bola saldría cuadrada.
 - `FAMILIA` (colores.ts): el generador pone primero los colores de familias aún no usadas.
+- Catálogo: `ColeccionScene` (overlay con `origen`, como la tienda). `nivelDesbloqueo(color)` se
+  deriva de `configNivel`, así el catálogo no puede contradecir al juego; un color está
+  descubierto si `mejorNivel >= nivelDesbloqueo(color)`. Textura `bola-bloqueada`. Los nombres de
+  los colores están en `src/i18n/nombresColor.ts` (`nombreColor`).
+- `npm run simular` comprueba además el **orden de desbloqueo**: cada color una vez, Azul divino
+  el 6.º, los desbloqueos siguen `ORDEN_COLORES` y el color nuevo sale en su nivel.
 - Tubos (`src/juego/texturasTubo.ts`): texturas `tubo-atras`, `tubo-delante`, `tubo-liquido`,
   `tubo-tapon` y `tubo-corto-*` (emergencia), dibujadas una vez con degradados de Canvas y
   escaladas a `anchoTubo / TUBO_ANCHO` con origen `ORIGEN_TUBO`. Cada tubo en pantalla
