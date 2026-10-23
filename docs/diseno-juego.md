@@ -144,46 +144,27 @@ La dificultad sube con el número de nivel (`configNivel` en `src/juego/niveles.
 | Nivel | Colores a ordenar | Paleta desbloqueada | Tubos | Fusiones | Niebla | Tandas de lluvia | Intervalo |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | 3 | 5 | 6 | 0 | 0 % | 1 | 5,85 s |
-| 3 | 3 | 6 (+azul divino) | 6 | 1 | 10 % | 1 | 5,55 s |
-| 4 | 4 | 7 (+morado) | 7 | 1 | 15 % | 1 | 5,4 s |
-| 8 | 5 | 8 (+plata) | 8 | 1 | 35 % | 1 | 4,8 s |
-| 9 | 5 | 9 (+rosa) | 9 | 2 | 40 % | 2 | 4,65 s |
-| 13 | 6 | 10 (+jade) | 10 | 2 | 60 % | 2 | 4,05 s |
-| 19 | 6 | 11 (+cian) | 10 | 2 | 60 % | 2 | 3,15 s |
-| 20 | 7 | 11 | 11 | 2 | 60 % | 2 | 3,0 s |
-| 22 | 7 | 12 (+amatista) | 11 | 2 | 60 % | 2 | 2,7 s |
-| 25 | 7 | 13 (+lima) | 11 | 2 | 60 % | 2 | 2,5 s |
-| 28 | 7 | 14 (+esmeralda) | 11 | 2 | 60 % | 2 | 2,5 s |
-| 31 | 7 | 15 (+marrón) | 11 | 2 | 60 % | 2 | 2,5 s |
-| 34 | 7 | 16 (+oro) | 11 | 2 | 60 % | 2 | 2,5 s |
-| 37 | 7 | 17 (+blanco) | 11 | 2 | 60 % | 2 | 2,5 s |
-| 40+ | 7 | 18 (+carmesí) | 11 | 2 | 60 % | 2 | 2,5 s |
+| 3 | 3 | 5 | 6 | 1 | 10 % | 1 | 5,55 s |
+| 9 | 4 | 6 (+azul divino) | 8 | 2 | 40 % | 2 | 4,65 s |
+| 20 | 5 | 7 (+morado) | 9 | 2 | 60 % | 2 | 3,0 s |
+| 29 | 6 | 8 (+plata) | 10 | 2 | 60 % | 2 | 2,5 s |
+| 41 | 7 | 9 (+rosa) | 11 | 2 | 60 % | 2 | 2,5 s |
+| 51 | 7 | 10 (+jade) | 11 | 2 | 60 % | 2 | 2,5 s |
+| 59 → 132 | 7 | 11 → 18 | 11 | 2 | 60 % | 2 | 2,5 s |
 
-- **Colores**: 3 hasta el nivel 3, 4 hasta el 7, 5 hasta el 12, 6 hasta el 19 y 7 a partir del 20.
-- **Paleta** (18 colores): empieza con rojo, azul, amarillo, verde y naranja; se desbloquea uno
-  nuevo cada 3 niveles, alternando básicos y **especiales**: azul divino (6.º, nivel 3), morado,
-  plata, rosa, jade, cian, amatista, lima, esmeralda, marrón, oro, blanco y carmesí (nivel 40).
-- **Colores especiales**: cada uno imita una imagen de referencia del usuario, con la paleta
-  medida en ella, bajo el mismo vidrio de canica que el resto:
+- **Desbloqueo cada 8–12 niveles**, con un salto distinto según el color (`SALTOS_DESBLOQUEO`):
 
-  | Color | Aspecto | Paleta medida (oscuro → claro) |
-  | --- | --- | --- |
-  | Azul divino | Capas de seda azul sobre azul noche, filos de resplandor (sin blanco) | `rgb(0,7,49)` → `rgb(2,52,175)` → `rgb(37,107,228)` |
-  | Plata | Nebulosa gris con purpurina y algún destello | gris 76 → 134 → 248 |
-  | Jade | Satén líquido verde azulado con pliegues en diagonal y brillos | `rgb(1,62,69)` → `rgb(0,139,132)` → `rgb(203,230,227)` |
-  | Amatista | Barras verticales de luz violeta, claras arriba y abajo | `rgb(71,24,116)` → `rgb(124,71,187)` → `rgb(248,209,254)` |
-  | Esmeralda | Cristal verde con bokeh, facetas brillantes y luz arriba a la izquierda | `rgb(41,78,26)` → `rgb(105,159,67)` → `rgb(237,255,152)` |
-  | Oro | Luz dorada movida, como llamas desenfocadas, con foco a la izquierda | `rgb(136,91,6)` → `rgb(254,201,66)` → `rgb(255,254,234)` |
-  | Carmesí | Cáusticas de agua roja: red de líneas luminosas sobre rojo oscuro | `rgb(72,2,4)` → `rgb(166,7,10)` → `rgb(204,23,26)` |
+  | Color | Azul divino | Morado | Plata | Rosa | Jade | Cian | Amatista | Lima | Esmeralda | Marrón | Oro | Blanco | Carmesí |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | Nivel | 9 | 20 | 29 | 41 | 51 | 59 | 71 | 80 | 91 | 101 | 113 | 121 | 132 |
+  | Salto | +8 | +11 | +9 | +12 | +10 | +8 | +12 | +9 | +11 | +10 | +12 | +8 | +11 |
 
-  «Amatista» es el nombre propuesto para el morado especial (el usuario no tenía uno).
-- **Familias**: azul/azul divino, rojo/carmesí, amarillo/oro, verde/esmeralda, cian/jade,
-  morado/amatista y blanco/plata. El generador evita juntar dos de la misma familia en un nivel
-  **cuando hay colores de sobra**; hasta el nivel ~40 la paleta justa obliga a mezclarlas (los
-  especiales se distinguen por su dibujo).
-- **Aviso**: el color nuevo aparece seguro en el nivel que lo desbloquea y se anuncia en una **ventana** «¡Nuevo color!» (bola grande y su nombre, botón Continuar) cuando
-  los tubos terminan de entrar; la partida queda en pausa. Solo la primera vez que se llega al
-  nivel (no al reiniciarlo ni con «Nivel nuevo»).
+- **La paleta manda la dificultad**: cada nivel ordena tantos colores como haya desbloqueados
+  (menos los 2 ingredientes de la receta cuando hay fusión), con un máximo de 7. Los colores por
+  nivel suben justo al desbloquear uno nuevo: 3 hasta el 8, 4 desde el 9, 5 desde el 20, 6 desde
+  el 29 y 7 desde el 41. Los niveles 1–2 no tienen fusión.
+- **Lluvia**: usa un color desbloqueado que no esté en el nivel; si no queda ninguno, uno aún por
+  descubrir, que cae **congelado** (así no se ve como bola normal antes de tiempo).
 - **Tubos** = colores + 2 vacíos + 1 por tanda de lluvia.
 
 ### Solubilidad (medida)

@@ -5,7 +5,7 @@ import { tieneSolucion } from './solucionador';
 export interface ConfigNivel {
   colores: number;          // grupos de 4 a ordenar
   tubosVacios: number;      // 2 + uno por tanda de lluvia (la lluvia nunca llena el tablero)
-  desbloqueados: number;    // cuántos colores de ORDEN_COLORES se pueden usar en este nivel
+  desbloqueados: number;    // colores de ORDEN_COLORES desbloqueados (los únicos que se ordenan)
   fusiones: number;         // bolas del color resultado que llegan partidas en dos ingredientes
   niebla: number;           // 0..1: proporción de bolas (no de arriba) ocultas
   lotesLluvia: number;      // tandas de 4 bolas que caen a partir del 35 %
@@ -20,25 +20,28 @@ export const ORDEN_COLORES: ColorId[] = [
   'azulDivino', 'morado', 'plata', 'rosa', 'jade', 'cian',
   'amatista', 'lima', 'esmeralda', 'marron', 'oro', 'blanco', 'carmesi',
 ];
+const COLORES_DE_SALIDA = 5;
 
-// Colores a ordenar: muy pocos al principio y uno más cada vez más niveles
-function coloresPorNivel(nivel: number): number {
-  if (nivel <= 3) return 3;
-  if (nivel <= 7) return 4;
-  if (nivel <= 12) return 5;
-  if (nivel <= 19) return 6;
-  return 7;
+// Niveles que pasan entre un desbloqueo y el siguiente (8–12, distinto según el color), en el
+// orden de ORDEN_COLORES a partir del 6.º: Azul divino llega 8 niveles después del nivel 1, etc.
+const SALTOS_DESBLOQUEO = [8, 11, 9, 12, 10, 8, 12, 9, 11, 10, 12, 8, 11];
+
+// Nivel en que se desbloquea cada color a partir del 6.º (acumulado desde el nivel 1)
+const NIVELES_DESBLOQUEO = SALTOS_DESBLOQUEO.reduce<number[]>((lista, salto) => [...lista, (lista.at(-1) ?? 1) + salto], []);
+
+// Cuántos colores hay desbloqueados al jugar un nivel
+function desbloqueadosEn(nivel: number): number {
+  return COLORES_DE_SALIDA + NIVELES_DESBLOQUEO.filter((n) => n <= nivel).length;
 }
 
-// Dificultad por nivel: todas las mecánicas activas, con intensidad creciente
+// Dificultad por nivel. La paleta desbloqueada manda: cada nivel usa tantos colores como haya
+// desbloqueados (menos los 2 ingredientes de la receta si hay fusión), con un máximo de 7.
+// Así los colores por nivel crecen justo cuando se desbloquea uno nuevo.
 export function configNivel(nivel: number): ConfigNivel {
-  const colores = coloresPorNivel(nivel);
+  const desbloqueados = desbloqueadosEn(nivel);
   const fusiones = nivel < 3 ? 0 : nivel < 9 ? 1 : 2;
+  const colores = nivel < 3 ? 3 : Math.min(7, desbloqueados - (fusiones > 0 ? 2 : 0));
   const lotesLluvia = nivel < 9 ? 1 : 2;
-  // Paleta: empieza con 5 colores y se desbloquea uno nuevo cada 3 niveles; nunca menos de los
-  // que necesita el nivel (base + lluvia + los 2 ingredientes de la receta)
-  const necesarios = colores + lotesLluvia + (fusiones > 0 ? 2 : 0);
-  const desbloqueados = Math.min(ORDEN_COLORES.length, Math.max(necesarios, 5 + Math.floor((nivel - 1) / 3)));
   return {
     colores,
     tubosVacios: 2 + lotesLluvia,
@@ -113,7 +116,11 @@ export function generarNivel(nivel: number, rnd: Aleatorio = Math.random): Nivel
     }
     libres.push(...repetidos);
     const coloresBase = receta ? [receta.resultado, ...libres.slice(0, config.colores - 1)] : libres.slice(0, config.colores);
-    const coloresLluvia = libres.slice(config.colores - (receta ? 1 : 0)).slice(0, config.lotesLluvia);
+    // Lluvia: colores desbloqueados que no salen en el nivel; si no quedan, uno aún por descubrir
+    // (cae congelado, así que no se ve como bola normal antes de tiempo)
+    const sinUsar = libres.slice(config.colores - (receta ? 1 : 0));
+    const porDescubrir = barajar(ORDEN_COLORES.slice(config.desbloqueados), rnd);
+    const coloresLluvia = [...sinUsar, ...porDescubrir].slice(0, config.lotesLluvia);
 
     const bolas: Bola[] = [];
     for (const color of coloresBase) {

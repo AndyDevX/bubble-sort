@@ -103,8 +103,9 @@ BootScene ──► MenuScene ──► GameScene
   solucionador** (y `scripts/simular-solubilidad.mjs`).
 - `tieneSolucion(tubos, limite, coloresObjetivo?)`: sin objetivo exige todo sellado o vacío (al
   generar); con `coloresObjetivo` basta con sellar esos colores (partida con lluvia).
-- `configNivel(n)`: colores, `desbloqueados` (paleta `ORDEN_COLORES`), `tubosVacios` = 2 + tandas de
-  lluvia. `colorNuevo(n)` dice qué color se desbloquea en el nivel n (siempre sale en él);
+- `configNivel(n)`: `desbloqueados` sale de `SALTOS_DESBLOQUEO` (un color cada 8–12 niveles) y
+  manda: `colores` = desbloqueados − 2 si hay fusión (máx. 7); `tubosVacios` = 2 + tandas de
+  lluvia. La lluvia puede usar un color aún no desbloqueado (cae congelada). `colorNuevo(n)` dice qué color se desbloquea en el nivel n (siempre sale en él);
   `GameScene.avisarColorNuevo` lo anuncia con `DialogoScene` (campo `bola`: textura de la bola).
 
 ### Lluvia justa
