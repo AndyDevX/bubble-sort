@@ -8,6 +8,7 @@ Diseño del juego y decisiones tomadas: `docs/diseno-juego.md`. Guías: `docs/gu
 - `npm run build` — tsc + build a `dist/`
 - `npm run compartir` — (con `npm run dev` abierto en otra terminal) túnel público temporal `https://….trycloudflare.com`
 - `npm run cap:sync` / `npm run cap:android` — build y sincronizar con nativo
+- Publicación web: cada push a `main` compila y publica en GitHub Pages (`.github/workflows/deploy.yml`) → https://andydevx.github.io/bubble-sort/
 
 ## Estructura
 - `src/main.ts` — GameConfig
