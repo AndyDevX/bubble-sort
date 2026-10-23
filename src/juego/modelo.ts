@@ -12,6 +12,11 @@ export interface Bola {
 export interface Tubo {
   bolas: Bola[]; // bolas[0] = fondo, la última = arriba
   sellado: boolean;
+  capacidad?: number; // por defecto CAPACIDAD; el tubo de emergencia tiene 1
+}
+
+export function capacidadDe(tubo: Tubo): number {
+  return tubo.capacidad ?? CAPACIDAD;
 }
 
 // mover: se mueve el grupo de bolas iguales de arriba (tantas como quepan)
@@ -59,7 +64,7 @@ export function evaluarMovimiento(tubos: Tubo[], origen: number, destino: number
   if (!bola) return null;
 
   const tope = arriba(hacia);
-  const libres = CAPACIDAD - hacia.bolas.length;
+  const libres = capacidadDe(hacia) - hacia.bolas.length;
   if (!tope) return { tipo: 'mover', cantidad: Math.min(grupoSuperior(desde), libres) };
   if (tope.color === bola.color) {
     return libres > 0 ? { tipo: 'mover', cantidad: Math.min(grupoSuperior(desde), libres) } : null;
@@ -150,7 +155,7 @@ export function hayMovimientos(tubos: Tubo[]): boolean {
 }
 
 export function hayHueco(tubos: Tubo[]): boolean {
-  return tubos.some((t) => !t.sellado && t.bolas.length < CAPACIDAD);
+  return tubos.some((t) => !t.sellado && t.bolas.length < capacidadDe(t));
 }
 
 // Copia profunda de los tubos. Con `idsNuevos`, cada bola recibe un id nuevo
@@ -158,6 +163,7 @@ export function hayHueco(tubos: Tubo[]): boolean {
 export function clonarTubos(tubos: Tubo[], idsNuevos = false): Tubo[] {
   return tubos.map((t) => ({
     sellado: t.sellado,
+    ...(t.capacidad !== undefined ? { capacidad: t.capacidad } : {}),
     bolas: t.bolas.map((b) => (idsNuevos ? { ...b, id: nuevaBola(b.color).id } : { ...b })),
   }));
 }

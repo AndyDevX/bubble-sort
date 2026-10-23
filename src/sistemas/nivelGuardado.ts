@@ -1,6 +1,7 @@
 import { COLORES, type ColorId } from '../juego/colores';
 import { clonarTubos, type Tubo } from '../juego/modelo';
 import type { Nivel } from '../juego/niveles';
+import { ventajasValidas, type Ventajas } from './ventajas';
 
 // Configuración inicial del nivel en curso, para poder reiniciarlo igual
 // (también tras cerrar el juego). Se guarda al generar un nivel nuevo.
@@ -13,6 +14,7 @@ let enMemoria: string | null = null;
 interface NivelGuardado {
   numero: number;
   nivel: Nivel;
+  ventajas: Ventajas; // se sortean una vez por nivel: reiniciar no vuelve a tirar los dados
 }
 
 const esColor = (c: unknown): c is ColorId => typeof c === 'string' && (COLORES as string[]).includes(c);
@@ -27,8 +29,8 @@ function esTuboValido(t: unknown): t is Tubo {
   );
 }
 
-export function guardarNivel(numero: number, nivel: Nivel): void {
-  enMemoria = JSON.stringify({ numero, nivel } satisfies NivelGuardado);
+export function guardarNivel(numero: number, nivel: Nivel, ventajas: Ventajas): void {
+  enMemoria = JSON.stringify({ numero, nivel, ventajas } satisfies NivelGuardado);
   try {
     localStorage.setItem(CLAVE, enMemoria);
   } catch {
@@ -37,7 +39,7 @@ export function guardarNivel(numero: number, nivel: Nivel): void {
 }
 
 // Devuelve una copia del nivel guardado si es del número pedido (con ids de bola nuevos)
-export function cargarNivel(numero: number): Nivel | null {
+export function cargarNivel(numero: number): { nivel: Nivel; ventajas: Ventajas } | null {
   try {
     let texto: string | null = null;
     try {
@@ -52,7 +54,8 @@ export function cargarNivel(numero: number): Nivel | null {
     if (!Array.isArray(coloresBase) || !coloresBase.every(esColor)) return null;
     if (!Array.isArray(coloresLluvia) || !coloresLluvia.every(esColor)) return null;
     if (!config || typeof config.intervaloLluviaMs !== 'number') return null;
-    return { tubos: clonarTubos(tubos, true), coloresBase, coloresLluvia, config };
+    const ventajas = ventajasValidas(datos.ventajas) ? datos.ventajas : { tuboEmergencia: 0 };
+    return { nivel: { tubos: clonarTubos(tubos, true), coloresBase, coloresLluvia, config }, ventajas };
   } catch {
     return null;
   }

@@ -102,3 +102,12 @@ export const iconoDeshacer: DibujarIcono = (g) => {
   g.fillStyle(Colores.fondo);
   g.fillTriangle(px - 12, py + 2, px + 6, py - 12, px + 7, py + 9);
 };
+
+// Tubo pequeño con un "+": tubo de emergencia
+export const iconoTuboExtra: DibujarIcono = (g) => {
+  g.lineStyle(5, Colores.fondo);
+  g.strokeRoundedRect(-20, -14, 18, 30, 7);
+  g.fillStyle(Colores.fondo);
+  g.fillRect(4, -1, 18, 5);
+  g.fillRect(10.5, -7.5, 5, 18);
+};

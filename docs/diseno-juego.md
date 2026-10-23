@@ -60,8 +60,9 @@ interface Guardado {
 | Niebla | Las bolas ocultas se ven como «?» y se revelan al quedar arriba (y se quedan reveladas) |
 | Puntos | Bola colocada sobre una de su mismo color +10 (cada bola solo puntúa la primera vez en el nivel) · sellar +100 · fusionar +25 |
 | Giro de gravedad | Barra que se llena con **150 pts** de los de arriba (una sola carga, se vacía al usarla y al empezar nivel). Invierte todos los tubos sin sellar |
-| Deshacer | 5 por nivel: deshace la última jugada (movimiento o giro de gravedad) devolviendo tubos, puntos, barra y lluvia a como estaban. Disponible también en el diálogo de derrota |
+| Deshacer | 5 por nivel, con animación de vuelta: deshace la última jugada (movimiento o giro de gravedad) devolviendo tubos, puntos, barra y lluvia a como estaban. Disponible también en el diálogo de derrota |
 | Reiniciar | La configuración inicial de cada nivel se guarda al generarlo (también tras cerrar el juego). «Reiniciar nivel» la vuelve a cargar igual; «Nivel nuevo» genera otra con el mismo número |
+| Tubo de emergencia | Botón que añade un tubo de **un solo hueco** (borde naranja), una vez por nivel. En la demo se sortea si el nivel lo trae (50 %, se guarda con el nivel: reiniciar no vuelve a sortear). Pensado para conseguirse más adelante en la tienda o viendo un anuncio (`src/sistemas/ventajas.ts`). Mientras quede disponible no se pierde por falta de jugadas. Debe acabar vacío para ganar |
 | Recompensa | 5 + puntos/10 monedas al superar el nivel; el progreso se guarda |
 
 Dificultad por nivel (`src/juego/niveles.ts` → `configNivel`): de 3 a 7 colores, 0–2 fusiones, niebla del 0 % al 60 %, 1–2 tandas de lluvia y lluvia más rápida. Cada nivel se genera al azar y se comprueba con un solucionador que tiene solución.

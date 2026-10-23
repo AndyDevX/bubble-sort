@@ -1,5 +1,4 @@
 import Phaser from 'phaser';
-import { Colores } from '../constantes';
 import { t } from '../i18n';
 import type { ColorId } from '../juego/colores';
 import {
@@ -7,6 +6,7 @@ import {
   aplicarMovimiento,
   arriba,
   bolasBienColocadas,
+  capacidadDe,
   clonarTubos,
   evaluarMovimiento,
   hayMovimientos,
@@ -23,8 +23,10 @@ import { claveTextura, colorHex } from '../juego/texturas';
 import { iniciarMusicaPartida, reproducirEfecto } from '../sistemas/audio';
 import { actualizarGuardado, getGuardado } from '../sistemas/guardado';
 import { cargarNivel, guardarNivel } from '../sistemas/nivelGuardado';
+import { repartirVentajas } from '../sistemas/ventajas';
 import { crearBarraHabilidad, type BarraHabilidad } from '../ui/BarraHabilidad';
-import { crearBotonRedondo, iconoDeshacer, iconoPausa, type BotonRedondo } from '../ui/BotonRedondo';
+import { crearBotonRedondo, iconoDeshacer, iconoPausa, iconoTuboExtra, type BotonRedondo } from '../ui/BotonRedondo';
+import { crearInsignia, type Insignia } from '../ui/Insignia';
 import { alRedimensionar, zonaSegura } from '../ui/layout';
 import type { DatosDialogo } from './DialogoScene';
 
@@ -84,6 +86,7 @@ export class GameScene extends Phaser.Scene {
 
   private historial: Instantanea[] = [];
   private deshacerRestantes = MAX_DESHACER;
+  private usosTuboEmergencia = 0;
 
   private textoNivel!: Phaser.GameObjects.Text;
   private textoPuntos!: Phaser.GameObjects.Text;
@@ -94,8 +97,9 @@ export class GameScene extends Phaser.Scene {
   private barra!: BarraHabilidad;
   private botonPausa!: BotonRedondo;
   private botonDeshacer!: BotonRedondo;
-  private contadorDeshacer!: Phaser.GameObjects.Text;
-  private fondoContador!: Phaser.GameObjects.Graphics;
+  private insigniaDeshacer!: Insignia;
+  private botonTubo!: BotonRedondo;
+  private insigniaTubo!: Insignia;
 
   constructor() {
     super('Game');
@@ -121,6 +125,7 @@ export class GameScene extends Phaser.Scene {
     this.gotaEnEspera = false;
     this.historial = [];
     this.deshacerRestantes = MAX_DESHACER;
+    this.usosTuboEmergencia = 0;
   }
 
   create() {
@@ -129,8 +134,15 @@ export class GameScene extends Phaser.Scene {
 
     // La configuración inicial del nivel se guarda al generarlo; reiniciar la vuelve a cargar igual
     const guardado = this.modo === 'nuevo' ? null : cargarNivel(this.numeroNivel);
-    this.nivel = guardado ?? generarNivel(this.numeroNivel);
-    if (!guardado) guardarNivel(this.numeroNivel, this.nivel);
+    let ventajas = guardado?.ventajas;
+    if (guardado) {
+      this.nivel = guardado.nivel;
+    } else {
+      this.nivel = generarNivel(this.numeroNivel);
+      ventajas = repartirVentajas(); // demo: el tubo de emergencia se sortea por nivel
+      guardarNivel(this.numeroNivel, this.nivel, ventajas);
+    }
+    this.usosTuboEmergencia = ventajas?.tuboEmergencia ?? 0;
     this.bienAlEmpezar = bolasBienColocadas(this.nivel.tubos, this.nivel.coloresBase);
     this.tubos = this.nivel.tubos;
     for (const color of this.nivel.coloresLluvia) {
@@ -179,12 +191,12 @@ export class GameScene extends Phaser.Scene {
     this.barra = crearBarraHabilidad(this, t('gravedad'), () => this.usarGravedad());
 
     this.botonDeshacer = crearBotonRedondo(this, 0, 0, 44, iconoDeshacer, () => this.deshacer());
-    // Contador: círculo sobre la esquina superior derecha del botón
-    this.fondoContador = this.add.graphics().setDepth(3);
-    this.fondoContador.fillStyle(Colores.fondo).fillCircle(0, 0, 19);
-    this.fondoContador.lineStyle(3, Colores.primario).strokeCircle(0, 0, 19);
-    this.contadorDeshacer = this.add.text(0, 0, '', { ...estilo, fontSize: '24px', fontStyle: 'bold' }).setOrigin(0.5).setDepth(4);
+    this.insigniaDeshacer = crearInsignia(this);
     this.actualizarDeshacer();
+
+    this.botonTubo = crearBotonRedondo(this, 0, 0, 44, iconoTuboExtra, () => this.usarTuboEmergencia());
+    this.insigniaTubo = crearInsignia(this);
+    this.actualizarTuboEmergencia();
   }
 
   private colocarTodo(ancho: number) {
@@ -198,14 +210,15 @@ export class GameScene extends Phaser.Scene {
     this.colocarIconoMoneda();
     this.textoLluvia.setPosition(zona.x + zona.ancho - 40, yBarraSuperior + 50);
 
-    // Fila inferior: [deshacer] [barra de Gravedad + botón], centrada
+    // Fila inferior: [deshacer] [tubo de emergencia] [barra de Gravedad + botón], centrada
     const yInferior = zona.y + zona.alto - 100;
-    const anchoBarra = Math.min(600, zona.ancho - 180);
-    const izquierdaFila = ancho / 2 - (88 + 20 + anchoBarra) / 2;
+    const anchoBarra = Math.min(560, zona.ancho - 290);
+    const izquierdaFila = ancho / 2 - (88 + 16 + 88 + 20 + anchoBarra) / 2;
     this.botonDeshacer.setPosition(izquierdaFila + 44, yInferior);
-    this.fondoContador.setPosition(izquierdaFila + 44 + 34, yInferior - 34);
-    this.contadorDeshacer.setPosition(izquierdaFila + 44 + 34, yInferior - 34);
-    this.barra.colocar(izquierdaFila + 108 + anchoBarra / 2, yInferior, anchoBarra);
+    this.insigniaDeshacer.colocar(izquierdaFila + 44 + 34, yInferior - 34);
+    this.botonTubo.setPosition(izquierdaFila + 148, yInferior);
+    this.insigniaTubo.colocar(izquierdaFila + 148 + 34, yInferior - 34);
+    this.barra.colocar(izquierdaFila + 212 + anchoBarra / 2, yInferior, anchoBarra);
 
     // Zona de los tubos: entre la barra superior y la de Gravedad
     const arribaTubos = zona.y + 160;
@@ -269,9 +282,19 @@ export class GameScene extends Phaser.Scene {
   private dibujarTubo(i: number) {
     const g = this.graficosTubo[i];
     const tubo = this.tubos[i];
-    const { anchoTubo: w, altoTubo: h } = this.col;
+    const { anchoTubo: w, d } = this.col;
     const radio = w * 0.45;
     g.clear();
+
+    // El tubo de emergencia es más bajo (1 hueco) y comparte la base con los demás
+    if (capacidadDe(tubo) < CAPACIDAD) {
+      const alto = d * (capacidadDe(tubo) + 0.5);
+      const arriba = this.col.altoTubo / 2 - alto;
+      g.fillStyle(0xffb74d, 0.12).fillRoundedRect(-w / 2, arriba, w, alto, radio);
+      g.lineStyle(4, 0xffb74d, 0.9).strokeRoundedRect(-w / 2, arriba, w, alto, radio);
+      return;
+    }
+    const h = this.col.altoTubo;
 
     if (tubo.sellado) {
       const color = colorHex(tubo.bolas[0].color);
@@ -535,8 +558,8 @@ export class GameScene extends Phaser.Scene {
       this.iniciarLluvia();
     }
 
-    // Sin jugadas posibles y sin Gravedad cargada (que podría desbloquear la partida): se pierde
-    if (!hayMovimientos(this.tubos) && this.carga < PUNTOS_CARGA) {
+    // Sin jugadas posibles y sin ayudas que puedan desbloquear la partida (Gravedad o tubo de emergencia): se pierde
+    if (!hayMovimientos(this.tubos) && this.carga < PUNTOS_CARGA && this.usosTuboEmergencia === 0) {
       this.derrota('sinMovimientos');
     }
   }
@@ -562,7 +585,7 @@ export class GameScene extends Phaser.Scene {
     reproducirEfecto(this, 'gravedad');
 
     this.tubos.forEach((tubo, ti) => {
-      if (tubo.sellado || tubo.bolas.length === 0) return;
+      if (tubo.sellado || tubo.bolas.length === 0 || capacidadDe(tubo) < CAPACIDAD) return;
       const g = this.graficosTubo[ti];
       const cy = this.col.centros[ti].y;
       this.tweens.add({ targets: g, angle: 180, duration: giro, ease: 'Sine.easeInOut', onComplete: () => g.setAngle(0) });
@@ -639,7 +662,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    const conHueco = this.tubos.map((tubo, i) => ({ tubo, i })).filter(({ tubo }) => !tubo.sellado && tubo.bolas.length < CAPACIDAD);
+    const conHueco = this.tubos.map((tubo, i) => ({ tubo, i })).filter(({ tubo }) => !tubo.sellado && tubo.bolas.length < capacidadDe(tubo));
     if (conHueco.length === 0) {
       this.derrota('lluvia');
       return;
@@ -695,6 +718,7 @@ export class GameScene extends Phaser.Scene {
     this.terminado = true;
     this.pararLluvia();
     this.actualizarDeshacer();
+    this.actualizarTuboEmergencia();
     this.lluviaPendiente = [];
     this.textoLluvia.setVisible(false);
 
@@ -726,6 +750,7 @@ export class GameScene extends Phaser.Scene {
     this.terminado = true;
     this.pararLluvia();
     this.actualizarDeshacer();
+    this.actualizarTuboEmergencia();
     this.cameras.main.shake(250, 0.01);
     reproducirEfecto(this, 'derrota');
 
@@ -765,7 +790,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private actualizarDeshacer() {
-    this.contadorDeshacer.setText(String(this.deshacerRestantes));
+    this.insigniaDeshacer.setValor(this.deshacerRestantes);
     this.botonDeshacer.setHabilitado(this.puedeDeshacer() && !this.terminado);
   }
 
@@ -774,6 +799,10 @@ export class GameScene extends Phaser.Scene {
     if (!this.puedeDeshacer() || this.time.now < this.bloqueadoHasta) return;
     const previo = this.historial.pop()!;
     this.deshacerRestantes--;
+
+    // Tubo de cada bola antes de deshacer, para animar el camino de vuelta
+    const dondeEstaban = new Map<number, number>();
+    this.tubos.forEach((tubo, t) => tubo.bolas.forEach((b) => dondeEstaban.set(b.id, t)));
 
     this.tubos = clonarTubos(previo.tubos);
     this.puntos = previo.puntos;
@@ -793,9 +822,106 @@ export class GameScene extends Phaser.Scene {
     this.textoPuntos.setText(t('puntos', { n: this.puntos }));
     this.barra.setProgreso(this.carga / PUNTOS_CARGA);
     this.tubos.forEach((_, i) => this.dibujarTubo(i));
-    this.sincronizarSprites();
+    this.animarHaciaModelo(dondeEstaban);
     this.actualizarDeshacer();
-    reproducirEfecto(this, 'seleccionar');
+    this.actualizarTuboEmergencia();
+    reproducirEfecto(this, 'mover', true);
+  }
+
+  // Lleva cada bola desde donde está ahora a donde dice el modelo (el movimiento "al revés"):
+  // las que cambian de tubo suben, cruzan y bajan; las nuevas aparecen; las que sobran se van
+  private animarHaciaModelo(dondeEstaban: Map<number, number>) {
+    const subir = 110;
+    const cruzar = 140;
+    const bajar = 110;
+    const tamano = this.col.d * 0.92;
+    const vivos = new Set<number>();
+
+    this.tubos.forEach((tubo, t) => {
+      tubo.bolas.forEach((bola, i) => {
+        vivos.add(bola.id);
+        const destino = this.posicionHueco(t, i);
+        let sprite = this.sprites.get(bola.id);
+
+        if (!sprite) {
+          // Vuelve una bola que había desaparecido (p. ej. al deshacer una fusión)
+          sprite = this.crearSprite(bola, destino.x, destino.y);
+          const escala = sprite.scaleX;
+          sprite.setScale(0);
+          this.tweens.add({ targets: sprite, scale: escala, duration: 220, delay: subir + cruzar, ease: 'Back.easeOut' });
+          return;
+        }
+
+        this.tweens.killTweensOf(sprite);
+        sprite.setTexture(claveTextura(bola)).setDisplaySize(tamano, tamano).setAlpha(1).setAngle(0);
+        const tuboAntes = dondeEstaban.get(bola.id);
+        if (tuboAntes !== undefined && tuboAntes !== t) {
+          const desde = this.posicionLevantada(tuboAntes);
+          const encima = this.posicionLevantada(t);
+          this.tweens.chain({
+            targets: sprite,
+            tweens: [
+              { x: desde.x, y: desde.y, duration: subir, ease: 'Quad.easeOut' },
+              { x: encima.x, y: encima.y, duration: cruzar, ease: 'Sine.easeInOut' },
+              { y: destino.y, duration: bajar, ease: 'Quad.easeIn' },
+            ],
+          });
+        } else if (sprite.x !== destino.x || sprite.y !== destino.y) {
+          this.tweens.add({ targets: sprite, x: destino.x, y: destino.y, duration: subir + cruzar, ease: 'Sine.easeInOut' });
+        }
+      });
+    });
+
+    // Bolas que ya no están: las de lluvia vuelven al cielo, el resto se desvanece
+    for (const [id, sprite] of this.sprites) {
+      if (vivos.has(id)) continue;
+      this.sprites.delete(id);
+      this.tweens.killTweensOf(sprite);
+      const deLluvia = this.nivel.coloresLluvia.some((c) => sprite.texture.key.endsWith(`-${c}`));
+      this.tweens.add({
+        targets: sprite,
+        ...(deLluvia ? { y: -this.col.d } : { scale: 0 }),
+        alpha: 0,
+        duration: subir + cruzar,
+        ease: 'Quad.easeIn',
+        onComplete: () => sprite.destroy(),
+      });
+    }
+
+    this.bloquear(subir + cruzar + bajar + 20);
+  }
+
+  // ───────────────────────── Tubo de emergencia ─────────────────────────
+
+  private actualizarTuboEmergencia() {
+    this.insigniaTubo.setValor(this.usosTuboEmergencia);
+    this.botonTubo.setHabilitado(this.usosTuboEmergencia > 0 && !this.terminado);
+  }
+
+  // Añade un tubo con un solo hueco (una vez por nivel)
+  private usarTuboEmergencia() {
+    if (this.usosTuboEmergencia <= 0 || this.bloqueado()) return;
+    if (this.seleccionado !== null) this.bajar(this.seleccionado);
+
+    this.usosTuboEmergencia--;
+    const nuevo: Tubo = { bolas: [], sellado: false, capacidad: 1 };
+    this.tubos.push(nuevo);
+    // En las jugadas guardadas para deshacer el tubo ya existía (vacío): deshacer no lo quita
+    for (const previo of this.historial) previo.tubos.push({ ...nuevo, bolas: [] });
+
+    const i = this.tubos.length - 1;
+    this.graficosTubo.push(this.add.graphics());
+    const zona = this.add.zone(0, 0, 1, 1).setInteractive({ useHandCursor: true });
+    zona.on('pointerup', () => this.tocarTubo(i));
+    this.zonasTubo.push(zona);
+
+    this.colocarTodo(this.scale.width); // con un tubo más cambia la colocación
+    const g = this.graficosTubo[i];
+    g.setScale(0);
+    this.tweens.add({ targets: g, scale: 1, duration: 300, ease: 'Back.easeOut' });
+    this.bloquear(300);
+    reproducirEfecto(this, 'fusion');
+    this.actualizarTuboEmergencia();
   }
 
   update(_time: number, _delta: number) {
