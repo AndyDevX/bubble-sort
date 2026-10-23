@@ -87,3 +87,18 @@ export const iconoGiro: DibujarIcono = (g) => {
     g.fillTriangle(px + tx * 12, py + ty * 12, px - ty * 9, py + tx * 9, px + ty * 9, py - tx * 9);
   }
 };
+
+// Flecha curva hacia la izquierda: deshacer
+export const iconoDeshacer: DibujarIcono = (g) => {
+  const r = 18;
+  g.lineStyle(7, Colores.fondo);
+  g.beginPath();
+  g.arc(2, 4, r, Phaser.Math.DegToRad(200), Phaser.Math.DegToRad(80), false);
+  g.strokePath();
+  // punta de flecha en el extremo izquierdo superior
+  const a = Phaser.Math.DegToRad(200);
+  const px = 2 + Math.cos(a) * r;
+  const py = 4 + Math.sin(a) * r;
+  g.fillStyle(Colores.fondo);
+  g.fillTriangle(px - 12, py + 2, px + 6, py - 12, px + 7, py + 9);
+};

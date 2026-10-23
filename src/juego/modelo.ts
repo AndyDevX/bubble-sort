@@ -152,3 +152,12 @@ export function hayMovimientos(tubos: Tubo[]): boolean {
 export function hayHueco(tubos: Tubo[]): boolean {
   return tubos.some((t) => !t.sellado && t.bolas.length < CAPACIDAD);
 }
+
+// Copia profunda de los tubos. Con `idsNuevos`, cada bola recibe un id nuevo
+// (para cargar un nivel guardado sin chocar con los ids de esta sesión).
+export function clonarTubos(tubos: Tubo[], idsNuevos = false): Tubo[] {
+  return tubos.map((t) => ({
+    sellado: t.sellado,
+    bolas: t.bolas.map((b) => (idsNuevos ? { ...b, id: nuevaBola(b.color).id } : { ...b })),
+  }));
+}

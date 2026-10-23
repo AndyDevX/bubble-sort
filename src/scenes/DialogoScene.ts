@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { Colores } from '../constantes';
 import { crearBoton } from '../ui/Boton';
 
-export type AccionDialogo = 'continuar' | 'jugar' | 'ajustes' | 'menu';
+export type AccionDialogo = 'continuar' | 'deshacer' | 'reiniciar' | 'nuevo' | 'siguiente' | 'ajustes' | 'menu';
 
 export interface DatosDialogo {
   titulo: string;
@@ -67,8 +67,21 @@ export class DialogoScene extends Phaser.Scene {
         this.scene.stop();
         this.scene.resume('Game');
         break;
-      case 'jugar': // reiniciar el nivel o pasar al siguiente (lo decide el guardado)
-        this.scene.start('Game');
+      case 'deshacer': {
+        const juego = this.scene.get('Game');
+        this.scene.stop();
+        this.scene.resume('Game');
+        juego.events.emit('deshacer');
+        break;
+      }
+      case 'reiniciar': // mismo nivel, misma configuración inicial
+        this.scene.start('Game', { modo: 'reiniciar' });
+        break;
+      case 'nuevo': // mismo número de nivel, tubos generados de nuevo
+        this.scene.start('Game', { modo: 'nuevo' });
+        break;
+      case 'siguiente': // el guardado ya apunta al siguiente nivel
+        this.scene.start('Game', { modo: 'continuar' });
         break;
       case 'ajustes':
         this.scene.pause();

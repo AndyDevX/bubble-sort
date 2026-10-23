@@ -24,6 +24,7 @@ Diseño del juego y decisiones tomadas: `docs/diseno-juego.md`. Guías: `docs/gu
 
 ## Skills del proyecto (`.claude/skills/`)
 Úsalas según la tarea:
+- Publicar: `publicar` — verificar, documentar, commit y push a `main` y comprobar GitHub Pages (úsala siempre al subir cambios)
 - Phaser: `phaser-core` (base), `game-setup-and-config`, `sprites-and-images`, `animations`,
   `audio-and-sound`, `input-keyboard-mouse-touch`, `scale-and-responsive`,
   `game-object-components`, `geometry-and-math`, `groups-and-containers`

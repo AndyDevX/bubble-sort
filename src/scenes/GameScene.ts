@@ -1,10 +1,12 @@
 import Phaser from 'phaser';
+import { Colores } from '../constantes';
 import { t } from '../i18n';
 import type { ColorId } from '../juego/colores';
 import {
   CAPACIDAD,
   aplicarMovimiento,
   arriba,
+  clonarTubos,
   evaluarMovimiento,
   hayMovimientos,
   intentarSellar,
@@ -19,15 +21,30 @@ import { generarNivel, type Nivel } from '../juego/niveles';
 import { claveTextura, colorHex } from '../juego/texturas';
 import { iniciarMusicaPartida, reproducirEfecto } from '../sistemas/audio';
 import { actualizarGuardado, getGuardado } from '../sistemas/guardado';
+import { cargarNivel, guardarNivel } from '../sistemas/nivelGuardado';
 import { crearBarraHabilidad, type BarraHabilidad } from '../ui/BarraHabilidad';
-import { crearBotonRedondo, iconoPausa, type BotonRedondo } from '../ui/BotonRedondo';
+import { crearBotonRedondo, iconoDeshacer, iconoPausa, type BotonRedondo } from '../ui/BotonRedondo';
 import { alRedimensionar, zonaSegura } from '../ui/layout';
 import type { DatosDialogo } from './DialogoScene';
+
+// Cómo empieza la partida: seguir con el nivel guardado, reiniciarlo igual o generar uno nuevo
+export type ModoInicio = 'continuar' | 'reiniciar' | 'nuevo';
 
 const PUNTOS_SELLAR = 100;
 const PUNTOS_FUSION = 25;
 const PUNTOS_ACIERTO = 10; // por bola colocada sobre una de su mismo color
 const PUNTOS_CARGA = 150; // puntos para llenar la barra de Gravedad (una sola carga)
+const MAX_DESHACER = 5; // deshacer disponibles por nivel
+
+// Estado completo antes de una jugada, para poder deshacerla
+interface Instantanea {
+  tubos: Tubo[];
+  puntos: number;
+  carga: number;
+  bolasPuntuadas: number[];
+  lluviaPendiente: ColorId[];
+  lluviaIniciada: boolean;
+}
 
 // Medidas calculadas según el tamaño de pantalla
 interface Colocacion {
@@ -39,6 +56,7 @@ interface Colocacion {
 
 export class GameScene extends Phaser.Scene {
   private numeroNivel = 1;
+  private modo: ModoInicio = 'continuar';
   private nivel!: Nivel;
   private tubos: Tubo[] = [];
 
@@ -61,6 +79,9 @@ export class GameScene extends Phaser.Scene {
   private temporizadorLluvia: Phaser.Time.TimerEvent | null = null;
   private gotaEnEspera = false;
 
+  private historial: Instantanea[] = [];
+  private deshacerRestantes = MAX_DESHACER;
+
   private textoNivel!: Phaser.GameObjects.Text;
   private textoPuntos!: Phaser.GameObjects.Text;
   private textoMonedas!: Phaser.GameObjects.Text;
@@ -69,13 +90,17 @@ export class GameScene extends Phaser.Scene {
   private avisoLluvia!: Phaser.GameObjects.Text;
   private barra!: BarraHabilidad;
   private botonPausa!: BotonRedondo;
+  private botonDeshacer!: BotonRedondo;
+  private contadorDeshacer!: Phaser.GameObjects.Text;
+  private fondoContador!: Phaser.GameObjects.Graphics;
 
   constructor() {
     super('Game');
   }
 
-  init() {
+  init(datos?: { modo?: ModoInicio }) {
     // La escena se reutiliza al reiniciar: todo el estado se pone a cero aquí
+    this.modo = datos?.modo ?? 'continuar';
     this.numeroNivel = getGuardado().nivel;
     this.tubos = [];
     this.sprites = new Map();
@@ -91,13 +116,18 @@ export class GameScene extends Phaser.Scene {
     this.lluviaIniciada = false;
     this.temporizadorLluvia = null;
     this.gotaEnEspera = false;
+    this.historial = [];
+    this.deshacerRestantes = MAX_DESHACER;
   }
 
   create() {
     this.cameras.main.fadeIn(250);
     iniciarMusicaPartida(this);
 
-    this.nivel = generarNivel(this.numeroNivel);
+    // La configuración inicial del nivel se guarda al generarlo; reiniciar la vuelve a cargar igual
+    const guardado = this.modo === 'nuevo' ? null : cargarNivel(this.numeroNivel);
+    this.nivel = guardado ?? generarNivel(this.numeroNivel);
+    if (!guardado) guardarNivel(this.numeroNivel, this.nivel);
     this.tubos = this.nivel.tubos;
     for (const color of this.nivel.coloresLluvia) {
       for (let i = 0; i < CAPACIDAD; i++) this.lluviaPendiente.push(color);
@@ -113,6 +143,11 @@ export class GameScene extends Phaser.Scene {
 
     this.crearInterfaz();
     alRedimensionar(this, (ancho) => this.colocarTodo(ancho));
+
+    // El diálogo de derrota puede pedir deshacer
+    const alPedirDeshacer = () => this.deshacer();
+    this.events.on('deshacer', alPedirDeshacer);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.events.off('deshacer', alPedirDeshacer));
   }
 
   // ───────────────────────── Interfaz ─────────────────────────
@@ -138,6 +173,14 @@ export class GameScene extends Phaser.Scene {
       .setDepth(10);
 
     this.barra = crearBarraHabilidad(this, t('gravedad'), () => this.usarGravedad());
+
+    this.botonDeshacer = crearBotonRedondo(this, 0, 0, 44, iconoDeshacer, () => this.deshacer());
+    // Contador: círculo sobre la esquina superior derecha del botón
+    this.fondoContador = this.add.graphics().setDepth(3);
+    this.fondoContador.fillStyle(Colores.fondo).fillCircle(0, 0, 19);
+    this.fondoContador.lineStyle(3, Colores.primario).strokeCircle(0, 0, 19);
+    this.contadorDeshacer = this.add.text(0, 0, '', { ...estilo, fontSize: '24px', fontStyle: 'bold' }).setOrigin(0.5).setDepth(4);
+    this.actualizarDeshacer();
   }
 
   private colocarTodo(ancho: number) {
@@ -151,8 +194,14 @@ export class GameScene extends Phaser.Scene {
     this.colocarIconoMoneda();
     this.textoLluvia.setPosition(zona.x + zona.ancho - 40, yBarraSuperior + 50);
 
-    const anchoBarra = Math.min(600, zona.ancho - 80);
-    this.barra.colocar(ancho / 2, zona.y + zona.alto - 100, anchoBarra);
+    // Fila inferior: [deshacer] [barra de Gravedad + botón], centrada
+    const yInferior = zona.y + zona.alto - 100;
+    const anchoBarra = Math.min(600, zona.ancho - 180);
+    const izquierdaFila = ancho / 2 - (88 + 20 + anchoBarra) / 2;
+    this.botonDeshacer.setPosition(izquierdaFila + 44, yInferior);
+    this.fondoContador.setPosition(izquierdaFila + 44 + 34, yInferior - 34);
+    this.contadorDeshacer.setPosition(izquierdaFila + 44 + 34, yInferior - 34);
+    this.barra.colocar(izquierdaFila + 108 + anchoBarra / 2, yInferior, anchoBarra);
 
     // Zona de los tubos: entre la barra superior y la de Gravedad
     const arribaTubos = zona.y + 160;
@@ -314,6 +363,7 @@ export class GameScene extends Phaser.Scene {
     const origen = this.seleccionado;
     const mov = evaluarMovimiento(this.tubos, origen, i);
     if (mov) {
+      this.guardarInstantanea();
       this.mover(origen, i, mov);
       return;
     }
@@ -486,6 +536,7 @@ export class GameScene extends Phaser.Scene {
     if (this.bloqueado() || this.carga < PUNTOS_CARGA) return;
     if (this.seleccionado !== null) this.bajar(this.seleccionado);
 
+    this.guardarInstantanea();
     this.carga = 0;
     this.barra.setProgreso(0);
 
@@ -541,11 +592,21 @@ export class GameScene extends Phaser.Scene {
         { alpha: 0, duration: 400, delay: 1200 },
       ],
     });
+    this.arrancarLluvia();
+  }
+
+  private arrancarLluvia() {
+    this.temporizadorLluvia?.remove();
     this.temporizadorLluvia = this.time.addEvent({
       delay: this.nivel.config.intervaloLluviaMs,
       loop: true,
       callback: () => this.soltarGota(),
     });
+  }
+
+  private pararLluvia() {
+    this.temporizadorLluvia?.remove();
+    this.temporizadorLluvia = null;
   }
 
   private actualizarTextoLluvia() {
@@ -611,7 +672,8 @@ export class GameScene extends Phaser.Scene {
       titulo: t('pausa'),
       botones: [
         { texto: t('continuar'), accion: 'continuar' },
-        { texto: t('reiniciar'), accion: 'jugar' },
+        { texto: t('reiniciarNivel'), accion: 'reiniciar' },
+        { texto: t('nivelNuevo'), accion: 'nuevo' },
         { texto: t('ajustes'), accion: 'ajustes' },
         { texto: t('menu'), accion: 'menu' },
       ],
@@ -620,7 +682,8 @@ export class GameScene extends Phaser.Scene {
 
   private victoria() {
     this.terminado = true;
-    this.temporizadorLluvia?.remove();
+    this.pararLluvia();
+    this.actualizarDeshacer();
     this.lluviaPendiente = [];
     this.textoLluvia.setVisible(false);
 
@@ -641,7 +704,7 @@ export class GameScene extends Phaser.Scene {
         titulo: t('nivelCompletado'),
         texto: t('recompensa', { puntos: this.puntos, monedas }),
         botones: [
-          { texto: t('siguiente'), accion: 'jugar' },
+          { texto: t('siguiente'), accion: 'siguiente' },
           { texto: t('menu'), accion: 'menu' },
         ],
       }),
@@ -650,7 +713,8 @@ export class GameScene extends Phaser.Scene {
 
   private derrota(motivo: 'lluvia' | 'sinMovimientos') {
     this.terminado = true;
-    this.temporizadorLluvia?.remove();
+    this.pararLluvia();
+    this.actualizarDeshacer();
     this.cameras.main.shake(250, 0.01);
     reproducirEfecto(this, 'derrota');
 
@@ -659,11 +723,68 @@ export class GameScene extends Phaser.Scene {
         titulo: motivo === 'lluvia' ? t('derrota') : t('sinSalida'),
         texto: motivo === 'lluvia' ? t('derrotaTexto') : t('sinMovimientos'),
         botones: [
-          { texto: t('reintentar'), accion: 'jugar' },
+          // Si quedan deshacer, se puede volver atrás en vez de perder
+          ...(this.puedeDeshacer() ? [{ texto: t('deshacer', { n: this.deshacerRestantes }), accion: 'deshacer' as const }] : []),
+          { texto: t('reiniciarNivel'), accion: 'reiniciar' },
+          { texto: t('nivelNuevo'), accion: 'nuevo' },
           { texto: t('menu'), accion: 'menu' },
         ],
       }),
     );
+  }
+
+  // ───────────────────────── Deshacer ─────────────────────────
+
+  private guardarInstantanea() {
+    this.historial.push({
+      tubos: clonarTubos(this.tubos),
+      puntos: this.puntos,
+      carga: this.carga,
+      bolasPuntuadas: [...this.bolasPuntuadas],
+      lluviaPendiente: [...this.lluviaPendiente],
+      lluviaIniciada: this.lluviaIniciada,
+    });
+    // Solo hacen falta tantas como deshacer quedan
+    while (this.historial.length > this.deshacerRestantes) this.historial.shift();
+    this.actualizarDeshacer();
+  }
+
+  private puedeDeshacer() {
+    return this.deshacerRestantes > 0 && this.historial.length > 0;
+  }
+
+  private actualizarDeshacer() {
+    this.contadorDeshacer.setText(String(this.deshacerRestantes));
+    this.botonDeshacer.setHabilitado(this.puedeDeshacer() && !this.terminado);
+  }
+
+  // Vuelve al estado anterior a la última jugada (movimiento o giro de gravedad)
+  private deshacer() {
+    if (!this.puedeDeshacer() || this.time.now < this.bloqueadoHasta) return;
+    const previo = this.historial.pop()!;
+    this.deshacerRestantes--;
+
+    this.tubos = clonarTubos(previo.tubos);
+    this.puntos = previo.puntos;
+    this.carga = previo.carga;
+    this.bolasPuntuadas = new Set(previo.bolasPuntuadas);
+    this.lluviaPendiente = [...previo.lluviaPendiente];
+    this.lluviaIniciada = previo.lluviaIniciada;
+    this.seleccionado = null;
+    this.terminado = false;
+
+    // La lluvia vuelve a como estaba
+    if (this.lluviaIniciada && this.lluviaPendiente.length > 0) this.arrancarLluvia();
+    else this.pararLluvia();
+    this.actualizarTextoLluvia();
+    this.textoLluvia.setVisible(this.lluviaIniciada && this.lluviaPendiente.length > 0);
+
+    this.textoPuntos.setText(t('puntos', { n: this.puntos }));
+    this.barra.setProgreso(this.carga / PUNTOS_CARGA);
+    this.tubos.forEach((_, i) => this.dibujarTubo(i));
+    this.sincronizarSprites();
+    this.actualizarDeshacer();
+    reproducirEfecto(this, 'seleccionar');
   }
 
   update(_time: number, _delta: number) {

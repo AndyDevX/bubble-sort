@@ -10,15 +10,7 @@ export function crearBoton(
   texto: string,
   alPulsar: () => void,
 ): Phaser.GameObjects.Container {
-  const ancho = 360;
   const alto = 110;
-
-  const fondo = escena.add.graphics();
-  const pintar = (color: number) => {
-    fondo.clear();
-    fondo.fillStyle(color).fillRoundedRect(-ancho / 2, -alto / 2, ancho, alto, 28);
-  };
-  pintar(Colores.primario);
 
   const etiqueta = escena.add
     .text(0, 0, texto, {
@@ -28,6 +20,16 @@ export function crearBoton(
       fontStyle: 'bold',
     })
     .setOrigin(0.5);
+
+  // Mínimo 360 de ancho; si el texto es largo, el botón crece para dejarle margen
+  const ancho = Math.max(360, etiqueta.width + 72);
+
+  const fondo = escena.add.graphics();
+  const pintar = (color: number) => {
+    fondo.clear();
+    fondo.fillStyle(color).fillRoundedRect(-ancho / 2, -alto / 2, ancho, alto, 28);
+  };
+  pintar(Colores.primario);
 
   const boton = escena.add.container(x, y, [fondo, etiqueta]);
   boton.setSize(ancho, alto);
