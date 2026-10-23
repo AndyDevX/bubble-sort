@@ -161,3 +161,20 @@ export function clonarTubos(tubos: Tubo[], idsNuevos = false): Tubo[] {
     bolas: t.bolas.map((b) => (idsNuevos ? { ...b, id: nuevaBola(b.color).id } : { ...b })),
   }));
 }
+
+// Bolas bien colocadas: para cada color del nivel, las de ese color apiladas desde el fondo
+// de un tubo (si varios tubos empiezan por el mismo color, cuenta el mejor, porque al final
+// cada color acaba en un solo tubo). Ingredientes y colores de lluvia no cuentan.
+export function bolasBienColocadas(tubos: Tubo[], colores: readonly ColorId[]): number {
+  const mejor = new Map<ColorId, number>();
+  for (const tubo of tubos) {
+    const fondo = tubo.bolas[0];
+    if (!fondo || fondo.ingrediente || !colores.includes(fondo.color)) continue;
+    let n = 0;
+    while (n < tubo.bolas.length && tubo.bolas[n].color === fondo.color && !tubo.bolas[n].ingrediente) n++;
+    mejor.set(fondo.color, Math.max(mejor.get(fondo.color) ?? 0, n));
+  }
+  let total = 0;
+  for (const n of mejor.values()) total += n;
+  return total;
+}

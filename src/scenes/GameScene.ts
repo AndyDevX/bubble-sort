@@ -6,6 +6,7 @@ import {
   CAPACIDAD,
   aplicarMovimiento,
   arriba,
+  bolasBienColocadas,
   clonarTubos,
   evaluarMovimiento,
   hayMovimientos,
@@ -35,7 +36,7 @@ const PUNTOS_FUSION = 25;
 const PUNTOS_ACIERTO = 10; // por bola colocada sobre una de su mismo color
 const PUNTOS_CARGA = 150; // puntos para llenar la barra de Gravedad (una sola carga)
 const MAX_DESHACER = 5; // deshacer disponibles por nivel
-const UMBRAL_LLUVIA = 0.35; // la lluvia empieza al sellar este porcentaje de los colores del nivel
+const UMBRAL_LLUVIA = 0.35; // la lluvia empieza al llevar este porcentaje del nivel resuelto (bolas bien colocadas)
 
 // Estado completo antes de una jugada, para poder deshacerla
 interface Instantanea {
@@ -77,6 +78,7 @@ export class GameScene extends Phaser.Scene {
 
   private lluviaPendiente: ColorId[] = [];
   private lluviaIniciada = false;
+  private bienAlEmpezar = 0; // bolas bien colocadas por azar al empezar el nivel
   private temporizadorLluvia: Phaser.Time.TimerEvent | null = null;
   private gotaEnEspera = false;
 
@@ -129,6 +131,7 @@ export class GameScene extends Phaser.Scene {
     const guardado = this.modo === 'nuevo' ? null : cargarNivel(this.numeroNivel);
     this.nivel = guardado ?? generarNivel(this.numeroNivel);
     if (!guardado) guardarNivel(this.numeroNivel, this.nivel);
+    this.bienAlEmpezar = bolasBienColocadas(this.nivel.tubos, this.nivel.coloresBase);
     this.tubos = this.nivel.tubos;
     for (const color of this.nivel.coloresLluvia) {
       for (let i = 0; i < CAPACIDAD; i++) this.lluviaPendiente.push(color);
@@ -501,6 +504,14 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  // Avance del nivel (0..1) en bolas bien colocadas, sin contar las que ya lo estaban por azar al empezar
+  private progresoNivel(): number {
+    const total = CAPACIDAD * this.nivel.coloresBase.length;
+    const ahora = bolasBienColocadas(this.tubos, this.nivel.coloresBase);
+    const porHacer = total - this.bienAlEmpezar;
+    return porHacer > 0 ? Math.max(0, ahora - this.bienAlEmpezar) / porHacer : 1;
+  }
+
   private sumarPuntos(n: number) {
     this.puntos += n;
     this.carga = Math.min(PUNTOS_CARGA, this.carga + n);
@@ -519,10 +530,9 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    // La lluvia empieza al sellar el 35 % de los colores del nivel
-    if (!this.lluviaIniciada && this.lluviaPendiente.length > 0) {
-      const sellados = this.tubos.filter((t) => t.sellado && this.nivel.coloresBase.includes(t.bolas[0].color)).length;
-      if (sellados / this.nivel.coloresBase.length >= UMBRAL_LLUVIA) this.iniciarLluvia();
+    // La lluvia empieza al llevar resuelto el 35 % del nivel, contado en bolas bien colocadas
+    if (!this.lluviaIniciada && this.lluviaPendiente.length > 0 && this.progresoNivel() >= UMBRAL_LLUVIA) {
+      this.iniciarLluvia();
     }
 
     // Sin jugadas posibles y sin Gravedad cargada (que podría desbloquear la partida): se pierde
