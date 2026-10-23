@@ -8,7 +8,8 @@ Al publicar, añade la nueva versión arriba del todo (lo indica la skill `publi
 
 | Versión | Build | Commit | Fecha | Cambios |
 | --- | --- | --- | --- | --- |
-| 0.1.13 | 28 | (este) | 2026-10-23 | Preparación del APK: la app Android se **actualiza sola** desde GitHub Pages (Capgo en modo manual; `actualizacion/version.json` + .zip en cada despliegue). APK release firmado siempre con la misma clave y con la versión del juego |
+| 1.0.0 | 29 | (este) | 2026-10-23 | **MAJOR: primer APK de Android** en las Releases (`odi-sort-v1.0.0.apk`). Desde aquí la app se actualiza sola con cada versión 1.x publicada en Pages |
+| 0.1.13 | 28 | 181b2f7 | 2026-10-23 | Preparación del APK: la app Android se **actualiza sola** desde GitHub Pages (Capgo en modo manual; `actualizacion/version.json` + .zip en cada despliegue). APK release firmado siempre con la misma clave y con la versión del juego |
 | 0.1.12 | 27 | 55e1f39 | 2026-10-23 | **Lluvia fluida y variada**: las gotas y las fusiones ya no bloquean los toques; la lluvia empieza entre el 25 y el 45 %, mezcla colores y cambia de ritmo (ráfagas) en cada partida. **Menos tubos vacíos** (2 + 1 al llover, antes hasta 5): ya hace falta pensar o usar habilidades. La lluvia justa espera en vez de caer al azar (corrige un 100 % optimista del simulador) |
 | 0.1.11 | 26 | bfba440 | 2026-10-23 | **Registro de depuración**: cada nivel guarda todo lo que pasa (jugadas, toques ignorados, lluvia, habilidades, pausas, errores) con tiempo real y de juego; pantalla «Registro» en el menú para copiar o descargar |
 | 0.1.10 | 25 | 484ee75 | 2026-10-23 | La dificultad crece con cada desbloqueo (bloques): más niebla, lluvia más rápida, 3.ª tanda, 3.ª fusión y 8 colores. El último nivel de cada bloque es **difícil**: aviso al empezar y monedas dobles. Análisis: ρ bloque↔dificultad 0,99; el difícil supera a su bloque 16/16 |
