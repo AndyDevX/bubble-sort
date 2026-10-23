@@ -6,6 +6,7 @@ import { getGuardado } from '../sistemas/guardado';
 import { crearBoton } from '../ui/Boton';
 import { crearBotonAjustes } from '../ui/BotonAjustes';
 import { alRedimensionar, zonaSegura } from '../ui/layout';
+import { crearIconoMoneda } from '../ui/Moneda';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -34,6 +35,24 @@ export class MenuScene extends Phaser.Scene {
       });
     });
 
+    const tienda = crearBoton(this, 0, 0, t('tienda'), () => {
+      this.scene.pause();
+      this.scene.launch('Tienda', { origen: this.scene.key });
+    });
+
+    // Monedas arriba a la derecha (se actualizan al volver de la tienda)
+    const iconoMoneda = crearIconoMoneda(this, 22);
+    const monedas = this.add
+      .text(0, 0, String(getGuardado().monedas), { fontFamily: 'sans-serif', fontSize: '40px', color: '#ffffff', fontStyle: 'bold' })
+      .setOrigin(1, 0.5);
+    const colocarMonedas = () => iconoMoneda.setPosition(monedas.x - monedas.width - 36, monedas.y);
+    const alReanudar = () => {
+      monedas.setText(String(getGuardado().monedas));
+      colocarMonedas();
+    };
+    this.events.on(Phaser.Scenes.Events.RESUME, alReanudar);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.events.off(Phaser.Scenes.Events.RESUME, alReanudar));
+
     const nivel = this.add
       .text(0, 0, t('nivel', { n: getGuardado().nivel }), { fontFamily: 'sans-serif', fontSize: '32px', color: '#aaaacc' })
       .setOrigin(0.5);
@@ -55,8 +74,11 @@ export class MenuScene extends Phaser.Scene {
     alRedimensionar(this, (ancho, alto) => {
       const zona = zonaSegura(this);
       titulo.setPosition(ancho / 2, alto * 0.3);
-      jugar.setPosition(ancho / 2, alto * 0.6);
-      nivel.setPosition(ancho / 2, alto * 0.6 + 100);
+      jugar.setPosition(ancho / 2, alto * 0.55);
+      tienda.setPosition(ancho / 2, alto * 0.55 + 140);
+      nivel.setPosition(ancho / 2, alto * 0.55 + 250);
+      monedas.setPosition(zona.x + zona.ancho - 40, zona.y + 60);
+      colocarMonedas();
       // Esquina inferior derecha, respetando notch y barra de gestos
       ajustes.setPosition(zona.x + zona.ancho - 90, zona.y + zona.alto - 90);
       build.setPosition(zona.x + 30, zona.y + zona.alto - 30);

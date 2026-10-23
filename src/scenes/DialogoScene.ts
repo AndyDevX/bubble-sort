@@ -2,12 +2,13 @@ import Phaser from 'phaser';
 import { Colores } from '../constantes';
 import { crearBoton } from '../ui/Boton';
 
-export type AccionDialogo = 'continuar' | 'deshacer' | 'reiniciar' | 'nuevo' | 'siguiente' | 'ajustes' | 'menu';
+export type AccionDialogo = 'continuar' | 'deshacer' | 'reiniciar' | 'nuevo' | 'siguiente' | 'tienda' | 'ajustes' | 'menu';
 
 export interface DatosDialogo {
   titulo: string;
   texto?: string;
   botones: { texto: string; accion: AccionDialogo }[];
+  recalcular?: () => DatosDialogo; // si existe, el diálogo se rehace al volver de la tienda o los ajustes
 }
 
 // Ventana sobre la partida (que queda en pausa): pausa, victoria y derrota
@@ -58,7 +59,14 @@ export class DialogoScene extends Phaser.Scene {
 
     const alCambiarTamano = () => this.scene.restart(this.datos);
     this.scale.once(Phaser.Scale.Events.RESIZE, alCambiarTamano);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, alCambiarTamano));
+    const alReanudar = () => {
+      if (this.datos.recalcular) this.scene.restart(this.datos.recalcular());
+    };
+    this.events.on(Phaser.Scenes.Events.RESUME, alReanudar);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scale.off(Phaser.Scale.Events.RESIZE, alCambiarTamano);
+      this.events.off(Phaser.Scenes.Events.RESUME, alReanudar);
+    });
   }
 
   private ejecutar(accion: AccionDialogo) {
@@ -82,6 +90,10 @@ export class DialogoScene extends Phaser.Scene {
         break;
       case 'siguiente': // el guardado ya apunta al siguiente nivel
         this.scene.start('Game', { modo: 'continuar' });
+        break;
+      case 'tienda':
+        this.scene.pause();
+        this.scene.launch('Tienda', { origen: this.scene.key });
         break;
       case 'ajustes':
         this.scene.pause();

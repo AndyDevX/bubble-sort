@@ -50,8 +50,8 @@ python3 scripts/generar-sonidos.py   # regenerar los efectos de sonido (Python +
    ├─ assets/musica/          canciones (se detectan solas con import.meta.glob)
    ├─ i18n/                   textos: es.ts + t('clave', { valores })
    ├─ juego/                  lógica pura, sin Phaser (se puede probar con Node)
-   ├─ scenes/                 Boot, Menu, Game, Dialogo, Settings
-   ├─ sistemas/               guardado, audio, caché, ventajas, FPS
+   ├─ scenes/                 Boot, Menu, Game, Dialogo, Tienda, Settings
+   ├─ sistemas/               guardado (con inventario), tienda, audio, caché, FPS
    └─ ui/                     componentes y colocación adaptable
 ```
 
@@ -63,6 +63,7 @@ python3 scripts/generar-sonidos.py   # regenerar los efectos de sonido (Python +
 BootScene ──► MenuScene ──► GameScene
  (texturas)    │  ▲             │
                │  └── Dialogo ◄─┤  pausa / victoria / derrota (Game queda en pausa)
+               ├──► Tienda ◄────┤  (también desde Dialogo); vuelve a la escena de origen
                └──► Settings ◄──┘  (también desde Dialogo); vuelve a la escena de origen
 ```
 
@@ -71,7 +72,12 @@ BootScene ──► MenuScene ──► GameScene
 - **GameScene** contiene la partida. `init(datos)` recibe `modo`: `continuar` (cargar el nivel
   guardado), `reiniciar` (misma configuración) o `nuevo` (generar otro).
 - **DialogoScene** ejecuta acciones: `continuar`, `deshacer` (evento `'deshacer'` a Game),
-  `reiniciar`, `nuevo`, `siguiente`, `ajustes`, `menu`.
+  `reiniciar`, `nuevo`, `siguiente`, `tienda`, `ajustes`, `menu`. Si sus datos traen
+  `recalcular()`, al reanudarse (volver de la tienda) se rehace con datos nuevos: así el diálogo
+  de derrota muestra «Deshacer» en cuanto se compra uno.
+- **TiendaScene** (`init({ origen })`) se abre encima del menú, de la partida o de un diálogo y al
+  cerrar reanuda la escena de origen. Menú y partida escuchan el evento `RESUME` para repintar
+  monedas e inventario.
 - **SettingsScene** guarda al momento; si cambia el idioma, reinicia la escena de origen con sus
   mismos datos.
 
@@ -98,7 +104,8 @@ BootScene ──► MenuScene ──► GameScene
 ### Deshacer
 
 - Antes de cada jugada se guarda una **instantánea** (tubos clonados, puntos, carga, bolas
-  puntuadas, lluvia). Se guardan como mucho tantas como deshacer queden.
+  puntuadas, lluvia). Se guardan como mucho `MAX_HISTORIAL` (50); cada deshacer gasta un uso del
+  inventario (`gastar('deshacer')`).
 - Al deshacer se restaura y `animarHaciaModelo` anima cada bola de su posición actual a la del
   modelo restaurado.
 - Al añadir el tubo de emergencia se añade también (vacío) a las instantáneas.
@@ -136,18 +143,24 @@ BootScene ──► MenuScene ──► GameScene
 
 | Clave | Contenido | Módulo |
 | --- | --- | --- |
-| `odi-sort:partida` | `{ nivel, mejorNivel, monedas }` | `sistemas/guardado.ts` |
-| `odi-sort:nivel` | `{ numero, nivel (configuración inicial), ventajas }` | `sistemas/nivelGuardado.ts` |
+| `odi-sort:partida` | `{ nivel, mejorNivel, monedas, inventario: { deshacer, tuboExtra } }` | `sistemas/guardado.ts` |
+| `odi-sort:nivel` | `{ numero, nivel (configuración inicial) }` (los antiguos traen `ventajas`, que se ignora) | `sistemas/nivelGuardado.ts` |
 | `odi-sort:ajustes` | `{ volumenMusica, volumenEfectos, idioma }` | `sistemas/ajustes.ts` |
 
 Todas las lecturas validan los datos y vuelven a valores por defecto si algo no cuadra. Si el
 navegador no deja guardar, el nivel se mantiene en memoria.
 
-### Ventajas
+### Tienda e inventario
 
-`src/sistemas/ventajas.ts` centraliza los usos de habilidades especiales por nivel. Hoy:
-`repartirVentajas()` sortea el tubo de emergencia (50 %). Para la tienda o los anuncios solo hay
-que cambiar esa función.
+- `src/sistemas/tienda.ts`: `CATALOGO` (ofertas con `articulo`, `cantidad` y `precio`),
+  `comprar(oferta)` (cobra y suma al inventario; `false` si no llegan las monedas),
+  `gastar(articulo)` y `cantidadDe(articulo)`.
+- El inventario vive en `odi-sort:partida` (`sistemas/guardado.ts`); los guardados sin inventario
+  empiezan con 0.
+- En la partida, si un botón de ayuda no tiene usos, su insignia muestra «+» y tocarlo abre la
+  tienda. El límite de un tubo extra por nivel es `tuboUsado` (estado de la escena).
+- Para añadir un artículo: nuevo campo en `Inventario`, oferta en `CATALOGO` y textos/icono en
+  `TiendaScene`.
 
 ### Caché sin conexión
 

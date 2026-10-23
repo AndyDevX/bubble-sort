@@ -14,11 +14,11 @@ Documentación: `README.md` (portada) · `docs/diseno-juego.md` (todo lo jugable
 
 ## Estructura
 - `src/main.ts` — GameConfig
-- `src/scenes/` — una clase por escena: `BootScene` (carga) → `MenuScene` → `GameScene`; `DialogoScene` (pausa/victoria/derrota) y `SettingsScene` se abren encima
+- `src/scenes/` — una clase por escena: `BootScene` (carga) → `MenuScene` → `GameScene`; `DialogoScene` (pausa/victoria/derrota), `TiendaScene` y `SettingsScene` se abren encima
 - `src/juego/` — lógica pura sin Phaser: reglas (`modelo.ts`), colores y recetas, generador de niveles y solucionador
 - `src/ui/` — componentes (`Boton`, `BotonRedondo` + iconos, `Insignia`, `BarraHabilidad`, `Slider`) y `layout.ts` (colocación adaptable)
 - `public/sw.js` — Service Worker: guarda audio y build en el caché del dispositivo (sube `VERSION` para invalidarlo)
-- `src/sistemas/` — ajustes y partida guardados, nivel guardado (reiniciar igual), ventajas (tubo de emergencia; futura tienda/anuncios), audio (volumen música/efectos), registro del Service Worker, medidor de FPS (solo dev)
+- `src/sistemas/` — ajustes y partida guardados, nivel guardado (reiniciar igual), tienda (catálogo, comprar/gastar del inventario), audio (volumen música/efectos), registro del Service Worker, medidor de FPS (solo dev)
 - `src/i18n/` — textos; todo texto visible sale de `t('clave')`
 - `public/assets/` — assets estáticos (se cargan como `assets/...`)
 - `public/assets/sfx/` — efectos de sonido de vidrio, generados con `python3 scripts/generar-sonidos.py` (Python + ffmpeg); para cambiar un sonido, edita su función en el script y vuelve a ejecutarlo

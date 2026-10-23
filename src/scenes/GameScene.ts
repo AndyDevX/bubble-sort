@@ -23,11 +23,12 @@ import { claveTextura, colorHex } from '../juego/texturas';
 import { iniciarEfecto, iniciarMusicaPartida, reproducirEfecto } from '../sistemas/audio';
 import { actualizarGuardado, getGuardado } from '../sistemas/guardado';
 import { cargarNivel, guardarNivel } from '../sistemas/nivelGuardado';
-import { repartirVentajas } from '../sistemas/ventajas';
+import { cantidadDe, gastar } from '../sistemas/tienda';
 import { crearBarraHabilidad, type BarraHabilidad } from '../ui/BarraHabilidad';
 import { crearBotonRedondo, iconoDeshacer, iconoPausa, iconoTuboExtra, type BotonRedondo } from '../ui/BotonRedondo';
 import { crearInsignia, type Insignia } from '../ui/Insignia';
 import { alRedimensionar, zonaSegura } from '../ui/layout';
+import { crearIconoMoneda } from '../ui/Moneda';
 import type { DatosDialogo } from './DialogoScene';
 
 // Cómo empieza la partida: seguir con el nivel guardado, reiniciarlo igual o generar uno nuevo
@@ -37,7 +38,7 @@ const PUNTOS_SELLAR = 100;
 const PUNTOS_FUSION = 25;
 const PUNTOS_ACIERTO = 10; // por bola colocada sobre una de su mismo color
 const PUNTOS_CARGA = 150; // puntos para llenar la barra de Gravedad (una sola carga)
-const MAX_DESHACER = 5; // deshacer disponibles por nivel
+const MAX_HISTORIAL = 50; // jugadas que se recuerdan para deshacer (los usos salen de la tienda)
 const DURACION_ALERTA_LLUVIA = 2600; // ms de aviso (sonido + pantalla parpadeando) antes de la primera gota
 const UMBRAL_LLUVIA = 0.35; // la lluvia empieza al llevar este porcentaje del nivel resuelto (bolas bien colocadas)
 
@@ -86,8 +87,7 @@ export class GameScene extends Phaser.Scene {
   private gotaEnEspera = false;
 
   private historial: Instantanea[] = [];
-  private deshacerRestantes = MAX_DESHACER;
-  private usosTuboEmergencia = 0;
+  private tuboUsado = false; // el tubo de emergencia se puede poner una vez por nivel
 
   private textoNivel!: Phaser.GameObjects.Text;
   private textoPuntos!: Phaser.GameObjects.Text;
@@ -127,8 +127,7 @@ export class GameScene extends Phaser.Scene {
     this.temporizadorLluvia = null;
     this.gotaEnEspera = false;
     this.historial = [];
-    this.deshacerRestantes = MAX_DESHACER;
-    this.usosTuboEmergencia = 0;
+    this.tuboUsado = false;
     this.sonidoAlarma = null;
   }
 
@@ -138,15 +137,12 @@ export class GameScene extends Phaser.Scene {
 
     // La configuración inicial del nivel se guarda al generarlo; reiniciar la vuelve a cargar igual
     const guardado = this.modo === 'nuevo' ? null : cargarNivel(this.numeroNivel);
-    let ventajas = guardado?.ventajas;
     if (guardado) {
-      this.nivel = guardado.nivel;
+      this.nivel = guardado;
     } else {
       this.nivel = generarNivel(this.numeroNivel);
-      ventajas = repartirVentajas(); // demo: el tubo de emergencia se sortea por nivel
-      guardarNivel(this.numeroNivel, this.nivel, ventajas);
+      guardarNivel(this.numeroNivel, this.nivel);
     }
-    this.usosTuboEmergencia = ventajas?.tuboEmergencia ?? 0;
     this.bienAlEmpezar = bolasBienColocadas(this.nivel.tubos, this.nivel.coloresBase);
     this.tubos = this.nivel.tubos;
     for (const color of this.nivel.coloresLluvia) {
@@ -167,8 +163,12 @@ export class GameScene extends Phaser.Scene {
     // El diálogo de derrota puede pedir deshacer
     const alPedirDeshacer = () => this.deshacer();
     this.events.on('deshacer', alPedirDeshacer);
+    // Al volver de la tienda (directa o desde la pausa) puede haber cambiado el inventario
+    const alReanudar = () => this.actualizarInventario();
+    this.events.on(Phaser.Scenes.Events.RESUME, alReanudar);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.events.off('deshacer', alPedirDeshacer);
+      this.events.off(Phaser.Scenes.Events.RESUME, alReanudar);
       this.pararLluvia(); // también corta la alarma si estaba sonando
     });
   }
@@ -183,9 +183,7 @@ export class GameScene extends Phaser.Scene {
     this.textoNivel = this.add.text(0, 0, t('nivel', { n: this.numeroNivel }), { ...estilo, fontSize: '40px', fontStyle: 'bold' }).setOrigin(0.5);
     this.textoPuntos = this.add.text(0, 0, t('puntos', { n: 0 }), { ...estilo, fontSize: '28px', color: '#aaaacc' }).setOrigin(0.5);
 
-    this.iconoMoneda = this.add.graphics();
-    this.iconoMoneda.fillStyle(0xfdd835).fillCircle(0, 0, 18);
-    this.iconoMoneda.lineStyle(4, 0xf9a825).strokeCircle(0, 0, 11);
+    this.iconoMoneda = crearIconoMoneda(this);
     this.textoMonedas = this.add.text(0, 0, String(getGuardado().monedas), { ...estilo, fontSize: '32px' }).setOrigin(1, 0.5);
 
     this.textoLluvia = this.add.text(0, 0, '', { ...estilo, fontSize: '26px', color: '#81d4fa' }).setOrigin(1, 0.5).setVisible(false);
@@ -199,11 +197,11 @@ export class GameScene extends Phaser.Scene {
 
     this.barra = crearBarraHabilidad(this, t('gravedad'), () => this.usarGravedad());
 
-    this.botonDeshacer = crearBotonRedondo(this, 0, 0, 44, iconoDeshacer, () => this.deshacer());
+    this.botonDeshacer = crearBotonRedondo(this, 0, 0, 44, iconoDeshacer, () => this.pulsarDeshacer());
     this.insigniaDeshacer = crearInsignia(this);
     this.actualizarDeshacer();
 
-    this.botonTubo = crearBotonRedondo(this, 0, 0, 44, iconoTuboExtra, () => this.usarTuboEmergencia());
+    this.botonTubo = crearBotonRedondo(this, 0, 0, 44, iconoTuboExtra, () => this.pulsarTubo());
     this.insigniaTubo = crearInsignia(this);
     this.actualizarTuboEmergencia();
   }
@@ -568,7 +566,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Sin jugadas posibles y sin ayudas que puedan desbloquear la partida (Gravedad o tubo de emergencia): se pierde
-    if (!hayMovimientos(this.tubos) && this.carga < PUNTOS_CARGA && this.usosTuboEmergencia === 0) {
+    if (!hayMovimientos(this.tubos) && this.carga < PUNTOS_CARGA && !this.tuboDisponible()) {
       this.derrota('sinMovimientos');
     }
   }
@@ -756,6 +754,7 @@ export class GameScene extends Phaser.Scene {
         { texto: t('continuar'), accion: 'continuar' },
         { texto: t('reiniciarNivel'), accion: 'reiniciar' },
         { texto: t('nivelNuevo'), accion: 'nuevo' },
+        { texto: t('tienda'), accion: 'tienda' },
         { texto: t('ajustes'), accion: 'ajustes' },
         { texto: t('menu'), accion: 'menu' },
       ],
@@ -802,19 +801,35 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.shake(250, 0.01);
     reproducirEfecto(this, 'derrota');
 
-    this.time.delayedCall(500, () =>
-      this.abrirDialogo({
-        titulo: motivo === 'lluvia' ? t('derrota') : t('sinSalida'),
-        texto: motivo === 'lluvia' ? t('derrotaTexto') : t('sinMovimientos'),
-        botones: [
-          // Si quedan deshacer, se puede volver atrás en vez de perder
-          ...(this.puedeDeshacer() ? [{ texto: t('deshacer', { n: this.deshacerRestantes }), accion: 'deshacer' as const }] : []),
-          { texto: t('reiniciarNivel'), accion: 'reiniciar' },
-          { texto: t('nivelNuevo'), accion: 'nuevo' },
-          { texto: t('menu'), accion: 'menu' },
-        ],
-      }),
-    );
+    const dialogo = (): DatosDialogo => ({
+      titulo: motivo === 'lluvia' ? t('derrota') : t('sinSalida'),
+      texto: motivo === 'lluvia' ? t('derrotaTexto') : t('sinMovimientos'),
+      botones: [
+        // Con deshacer comprados se puede volver atrás en vez de perder
+        ...(this.puedeDeshacer() ? [{ texto: t('deshacer', { n: cantidadDe('deshacer') }), accion: 'deshacer' as const }] : []),
+        { texto: t('reiniciarNivel'), accion: 'reiniciar' },
+        { texto: t('nivelNuevo'), accion: 'nuevo' },
+        { texto: t('tienda'), accion: 'tienda' },
+        { texto: t('menu'), accion: 'menu' },
+      ],
+      // Al volver de la tienda el diálogo se rehace (puede que ahora haya deshacer)
+      recalcular: dialogo,
+    });
+    this.time.delayedCall(500, () => this.abrirDialogo(dialogo()));
+  }
+
+  // Abre la tienda encima de la partida (al tocar una ayuda sin usos)
+  private abrirTienda() {
+    if (this.bloqueado()) return;
+    this.scene.pause();
+    this.scene.launch('Tienda', { origen: this.scene.key });
+  }
+
+  private actualizarInventario() {
+    this.textoMonedas.setText(String(getGuardado().monedas));
+    this.colocarIconoMoneda();
+    this.actualizarDeshacer();
+    this.actualizarTuboEmergencia();
   }
 
   // ───────────────────────── Deshacer ─────────────────────────
@@ -828,25 +843,31 @@ export class GameScene extends Phaser.Scene {
       lluviaPendiente: [...this.lluviaPendiente],
       lluviaIniciada: this.lluviaIniciada,
     });
-    // Solo hacen falta tantas como deshacer quedan
-    while (this.historial.length > this.deshacerRestantes) this.historial.shift();
+    while (this.historial.length > MAX_HISTORIAL) this.historial.shift();
     this.actualizarDeshacer();
   }
 
   private puedeDeshacer() {
-    return this.deshacerRestantes > 0 && this.historial.length > 0;
+    return cantidadDe('deshacer') > 0 && this.historial.length > 0;
   }
 
+  // Sin usos, la insignia muestra «+» y el botón lleva a la tienda
   private actualizarDeshacer() {
-    this.insigniaDeshacer.setValor(this.deshacerRestantes);
-    this.botonDeshacer.setHabilitado(this.puedeDeshacer() && !this.terminado);
+    const quedan = cantidadDe('deshacer');
+    this.insigniaDeshacer.setValor(quedan > 0 ? quedan : '+');
+    this.botonDeshacer.setHabilitado(!this.terminado && (quedan === 0 || this.historial.length > 0));
   }
 
-  // Vuelve al estado anterior a la última jugada (movimiento o giro de gravedad)
+  private pulsarDeshacer() {
+    if (cantidadDe('deshacer') === 0) this.abrirTienda();
+    else this.deshacer();
+  }
+
+  // Vuelve al estado anterior a la última jugada (movimiento o giro de gravedad). Gasta un deshacer.
   private deshacer() {
     if (!this.puedeDeshacer() || this.time.now < this.bloqueadoHasta) return;
+    if (!gastar('deshacer')) return;
     const previo = this.historial.pop()!;
-    this.deshacerRestantes--;
 
     // Tubo de cada bola antes de deshacer, para animar el camino de vuelta
     const dondeEstaban = new Map<number, number>();
@@ -941,17 +962,29 @@ export class GameScene extends Phaser.Scene {
 
   // ───────────────────────── Tubo de emergencia ─────────────────────────
 
-  private actualizarTuboEmergencia() {
-    this.insigniaTubo.setValor(this.usosTuboEmergencia);
-    this.botonTubo.setHabilitado(this.usosTuboEmergencia > 0 && !this.terminado);
+  // Se puede poner si aún no se usó en este nivel y queda alguno comprado
+  private tuboDisponible() {
+    return !this.tuboUsado && cantidadDe('tuboExtra') > 0;
   }
 
-  // Añade un tubo con un solo hueco (una vez por nivel)
+  private actualizarTuboEmergencia() {
+    const quedan = cantidadDe('tuboExtra');
+    this.insigniaTubo.setValor(quedan > 0 ? quedan : '+');
+    this.botonTubo.setHabilitado(!this.terminado && !this.tuboUsado);
+  }
+
+  private pulsarTubo() {
+    if (cantidadDe('tuboExtra') === 0) this.abrirTienda();
+    else this.usarTuboEmergencia();
+  }
+
+  // Añade un tubo con un solo hueco (máximo uno por nivel). Gasta un tubo extra.
   private usarTuboEmergencia() {
-    if (this.usosTuboEmergencia <= 0 || this.bloqueado()) return;
+    if (!this.tuboDisponible() || this.bloqueado()) return;
+    if (!gastar('tuboExtra')) return;
     if (this.seleccionado !== null) this.bajar(this.seleccionado);
 
-    this.usosTuboEmergencia--;
+    this.tuboUsado = true;
     const nuevo: Tubo = { bolas: [], sellado: false, capacidad: 1 };
     this.tubos.push(nuevo);
     // En las jugadas guardadas para deshacer el tubo ya existía (vacío): deshacer no lo quita

@@ -3,10 +3,10 @@ import { Colores } from '../constantes';
 
 export interface Insignia {
   colocar(x: number, y: number): void;
-  setValor(n: number): void;
+  setValor(valor: number | string): void;
 }
 
-// Círculo pequeño con un número (usos que quedan), para la esquina de un botón
+// Círculo pequeño con un número (usos que quedan) o un «+» (comprar), para la esquina de un botón
 export function crearInsignia(escena: Phaser.Scene): Insignia {
   const fondo = escena.add.graphics().setDepth(3);
   fondo.fillStyle(Colores.fondo).fillCircle(0, 0, 19);
@@ -21,8 +21,8 @@ export function crearInsignia(escena: Phaser.Scene): Insignia {
       fondo.setPosition(x, y);
       texto.setPosition(x, y);
     },
-    setValor(n) {
-      texto.setText(String(n));
+    setValor(valor) {
+      texto.setText(String(valor));
     },
   };
 }

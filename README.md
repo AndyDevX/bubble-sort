@@ -12,7 +12,7 @@ tubo vacío o sobre su mismo color. Junta 4 iguales para **sellar** el tubo. Gan
 los colores del nivel… mientras la **lluvia** intenta llenarte los huecos.
 
 Mecánicas: lluvia, alquimia (fusionar ingredientes), niebla (bolas ocultas), giro de gravedad,
-deshacer (5 por nivel) y tubo de emergencia. Todo el detalle en
+deshacer y tubo extra (se compran con monedas en la **tienda**). Todo el detalle en
 [docs/diseno-juego.md](docs/diseno-juego.md).
 
 ## Empezar a desarrollar

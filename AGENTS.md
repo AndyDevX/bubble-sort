@@ -69,7 +69,8 @@ documentación de [`docs/`](docs/).
 - Si cambias las reglas de movimiento, **actualiza también `src/juego/solucionador.ts`**: es el
   que garantiza que los niveles tienen solución.
 - Todo texto visible sale de `t('clave')` (`src/i18n/es.ts`).
-- Ayudas nuevas compradas o por anuncios: pasan por `src/sistemas/ventajas.ts`.
+- Ayudas compradas (o futuras por anuncios): inventario en `src/sistemas/guardado.ts` y
+  catálogo/compra/gasto en `src/sistemas/tienda.ts`.
 - Datos guardados (`localStorage`): valida al leer y ten valores por defecto (ver
   `docs/tecnico.md`). Si cambias el formato, sigue aceptando el anterior.
 
@@ -123,7 +124,7 @@ Genera cientos de niveles y comprueba `tieneSolucion`, tiempos y casos límite.
   móvil (`devices['Pixel 7']` o `{ viewport, hasTouch: true, isMobile: true }`) y
   `page.touchscreen.tap`.
 - En desarrollo el juego está en `window.juego`: `juego.scene.getScene('Game')` da acceso al
-  estado (`tubos`, `puntos`, `deshacerRestantes`…).
+  estado (`tubos`, `puntos`, `historial`, `tuboUsado`…).
 - Coordenadas del juego → pantalla:
   `x = rect.x + gx * rect.width / juego.scale.width` (igual para `y`), con `rect` el
   `getBoundingClientRect()` del `<canvas>`.
