@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { COLORES, PALETA, type ColorId } from './colores';
+import { INTERIORES, type Interior } from './interiores';
 import type { Bola } from './modelo';
 
 const TAMANO = 128; // se dibujan grandes y se escalan: nítidas en cualquier pantalla
@@ -28,9 +29,8 @@ function rgba(hex: number, alfa: number): string {
 // Canica de vidrio. Luz desde arriba a la izquierda (igual que tubos e iconos): reflejo nítido
 // arriba-izquierda, la luz atraviesa el vidrio y se concentra abajo-derecha (cáustica), borde más
 // oscuro por el grosor (Fresnel) y un filo claro.
-// Interior propio de algunos colores (p. ej. Azul divino); el vidrio de encima es el mismo para todos
-type Interior = (ctx: CanvasRenderingContext2D, c: number, r: number) => void;
-
+// Los colores especiales (Azul divino, Plata, Jade…) tienen interior propio (interiores.ts); el
+// vidrio de encima es el mismo para todos.
 function dibujarEsfera(ctx: CanvasRenderingContext2D, color: number, interior?: Interior) {
   const r = TAMANO / 2 - 4;
   const c = TAMANO / 2;
@@ -97,78 +97,6 @@ function dibujarEsfera(ctx: CanvasRenderingContext2D, color: number, interior?: 
   ctx.fill();
 }
 
-// Azul divino: azul noche con capas de seda translúcida, como la imagen de referencia del usuario.
-// Paleta medida en la referencia (sin blanco): fondo ≈ rgb(0,7,49), capas hasta ≈ rgb(1,33,144),
-// filos ≈ rgb(2,52,175) y solo el pico de la onda principal ≈ rgb(37,107,228). Los filos son
-// resplandores suaves (trazos superpuestos), no líneas. Dibujo fijo: todas las bolas iguales.
-const ondasAzulDivino: Interior = (ctx, c, r) => {
-  const L = TAMANO;
-  const fondo = ctx.createRadialGradient(c - r * 0.15, c - r * 0.1, r * 0.1, c, c, r);
-  fondo.addColorStop(0, 'rgb(1,10,60)');
-  fondo.addColorStop(0.6, 'rgb(0,7,49)');
-  fondo.addColorStop(1, 'rgb(1,3,24)');
-  ctx.fillStyle = fondo;
-  ctx.fillRect(0, 0, L, L);
-
-  ctx.globalCompositeOperation = 'lighter';
-  // Capas en forma de valle: bajan desde la izquierda, tocan fondo hacia el centro y suben.
-  // [y izquierda, y del valle, y derecha, grosor de la capa, intensidad]
-  const capas: [number, number, number, number, number][] = [
-    [-0.05, 0.55, 0.35, 0.3, 0.45],
-    [0.2, 0.78, 0.5, 0.28, 1],
-    [0.42, 1.0, 0.72, 0.24, 0.55],
-    [0.62, 1.18, 0.92, 0.2, 0.3],
-  ];
-  for (const [yi, yv, yd, grosor, fuerza] of capas) {
-    const filo = () => {
-      ctx.beginPath();
-      ctx.moveTo(-6, yi * L);
-      ctx.bezierCurveTo(L * 0.3, yv * L, L * 0.55, yv * L, L + 6, yd * L);
-    };
-    // Capa de seda: azul saturado que se desvanece hacia abajo
-    const capa = ctx.createLinearGradient(0, yv * L * 0.75, 0, (yv + grosor) * L);
-    capa.addColorStop(0, `rgba(1,30,140,${0.3 * fuerza})`);
-    capa.addColorStop(1, 'rgba(0,10,70,0)');
-    ctx.fillStyle = capa;
-    filo();
-    ctx.lineTo(L + 6, (yd + grosor) * L);
-    ctx.bezierCurveTo(L * 0.55, (yv + grosor) * L, L * 0.3, (yv + grosor) * L, -6, (yi + grosor) * L);
-    ctx.closePath();
-    ctx.fill();
-    // Filo: resplandor por capas (ancho y tenue → estrecho y algo más intenso), sin blanco
-    for (const [ancho, alfa] of [
-      [14, 0.05],
-      [8, 0.08],
-      [4, 0.14],
-      [1.4, 0.42],
-    ]) {
-      const brillo = ctx.createLinearGradient(0, 0, L, 0);
-      brillo.addColorStop(0, `rgba(2,52,175,${alfa * fuerza * 1.6})`);
-      brillo.addColorStop(0.4, `rgba(2,52,175,${alfa * fuerza})`);
-      brillo.addColorStop(1, `rgba(2,40,150,${alfa * fuerza * 0.3})`);
-      ctx.strokeStyle = brillo;
-      ctx.lineWidth = ancho;
-      filo();
-      ctx.stroke();
-    }
-  }
-  // Pico de luz solo en la onda principal, a la izquierda (lo más claro de la referencia)
-  const pico = ctx.createRadialGradient(L * 0.18, L * 0.42, 0, L * 0.18, L * 0.42, L * 0.2);
-  pico.addColorStop(0, 'rgba(37,107,228,0.35)');
-  pico.addColorStop(1, 'rgba(37,107,228,0)');
-  ctx.fillStyle = pico;
-  ctx.fillRect(0, 0, L, L);
-  ctx.globalCompositeOperation = 'source-over';
-
-  // Borde profundo (grosor del vidrio)
-  const borde = ctx.createRadialGradient(c, c, r * 0.7, c, c, r);
-  borde.addColorStop(0, 'rgba(0,0,10,0)');
-  borde.addColorStop(1, 'rgba(0,0,10,0.6)');
-  ctx.fillStyle = borde;
-  ctx.fillRect(0, 0, L, L);
-};
-
-const INTERIORES: Partial<Record<ColorId, Interior>> = { azulDivino: ondasAzulDivino };
 
 // Bola congelada (lluvia): conserva su color, mezclado con azul hielo, con escarcha, grietas
 // y un borde helado

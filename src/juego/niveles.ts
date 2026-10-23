@@ -1,4 +1,4 @@
-import { RECETAS, type ColorId } from './colores';
+import { FAMILIA, RECETAS, type ColorId } from './colores';
 import { CAPACIDAD, nuevaBola, type Bola, type Tubo } from './modelo';
 import { tieneSolucion } from './solucionador';
 
@@ -12,9 +12,14 @@ export interface ConfigNivel {
   intervaloLluviaMs: number;
 }
 
-// Orden en que aparecen los colores: 5 de salida y el resto se desbloquean (Azul divino es el 6.º).
-// Las recetas de alquimia solo salen cuando sus 3 colores están desbloqueados.
-export const ORDEN_COLORES: ColorId[] = ['rojo', 'azul', 'amarillo', 'verde', 'naranja', 'azulDivino', 'morado', 'rosa', 'cian', 'lima', 'marron', 'blanco'];
+// Orden en que aparecen los colores: 5 de salida y el resto se desbloquean alternando básicos y
+// especiales (Azul divino es el 6.º). Las recetas de alquimia solo salen cuando sus 3 colores
+// están desbloqueados.
+export const ORDEN_COLORES: ColorId[] = [
+  'rojo', 'azul', 'amarillo', 'verde', 'naranja',
+  'azulDivino', 'morado', 'plata', 'rosa', 'jade', 'cian',
+  'amatista', 'lima', 'esmeralda', 'marron', 'oro', 'blanco', 'carmesi',
+];
 
 // Colores a ordenar: muy pocos al principio y uno más cada vez más niveles
 function coloresPorNivel(nivel: number): number {
@@ -79,10 +84,26 @@ export function generarNivel(nivel: number, rnd: Aleatorio = Math.random): Nivel
     const receta = config.fusiones > 0 && recetas.length > 0 ? recetas[Math.floor(rnd() * recetas.length)] : null;
     const reservados = new Set<ColorId>(receta ? [receta.a, receta.b, receta.resultado] : []);
 
-    // El color nuevo del nivel (si lo hay) siempre aparece entre los que hay que ordenar
+    // El color nuevo del nivel (si lo hay) siempre aparece entre los que hay que ordenar.
+    // Después van primero los de familias que aún no salen (para no juntar, p. ej., Oro y Amarillo)
+    // y al final los que repiten familia, por si hacen falta.
     const nuevo = colorNuevo(nivel);
-    const libres = barajar(disponibles.filter((c) => !reservados.has(c) && c !== nuevo), rnd);
-    if (nuevo && !reservados.has(nuevo)) libres.unshift(nuevo);
+    const familias = new Set([...reservados].map((c) => FAMILIA[c]));
+    const libres: ColorId[] = [];
+    if (nuevo && !reservados.has(nuevo)) {
+      libres.push(nuevo);
+      familias.add(FAMILIA[nuevo]);
+    }
+    const repetidos: ColorId[] = [];
+    for (const c of barajar(disponibles.filter((c) => !reservados.has(c) && c !== nuevo), rnd)) {
+      if (familias.has(FAMILIA[c])) {
+        repetidos.push(c);
+      } else {
+        libres.push(c);
+        familias.add(FAMILIA[c]);
+      }
+    }
+    libres.push(...repetidos);
     const coloresBase = receta ? [receta.resultado, ...libres.slice(0, config.colores - 1)] : libres.slice(0, config.colores);
     const coloresLluvia = libres.slice(config.colores - (receta ? 1 : 0)).slice(0, config.lotesLluvia);
 

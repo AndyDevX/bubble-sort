@@ -141,6 +141,8 @@ el usuario exige que **todos los niveles se puedan resolver sin habilidades**.
 - Si una prueba falla, **comprueba primero el script**: ya pasó que un helper no pasaba sus
   argumentos a `page.evaluate`, que tras recargar la página se perdían variables de `window`, o
   que un planificador de prueba reasignaba los colores en cada paso.
+- En Canvas 2D, **`putImageData` ignora `clip()`**: para pintar píxeles dentro de la bola, píntalos
+  en un lienzo aparte y cópialo con `drawImage` (ver `pintarPixeles` en `src/juego/interiores.ts`).
 - **No mates procesos con `pkill -f '<patrón>'`** si el patrón aparece en tu propio comando: matas
   tu terminal (salida 144). Usa `kill $(lsof -t -i:PUERTO)`.
 - Desde la nube no se puede abrir `*.github.io` ni cambiar la configuración de Pages por API:

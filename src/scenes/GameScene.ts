@@ -51,6 +51,12 @@ const NOMBRES_COLOR: Record<ColorId, ClaveTexto> = {
   lima: 'colorLima',
   marron: 'colorMarron',
   blanco: 'colorBlanco',
+  plata: 'colorPlata',
+  jade: 'colorJade',
+  amatista: 'colorAmatista',
+  esmeralda: 'colorEsmeralda',
+  oro: 'colorOro',
+  carmesi: 'colorCarmesi',
 };
 
 const PUNTOS_SELLAR = 100;
