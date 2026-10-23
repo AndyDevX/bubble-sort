@@ -7,7 +7,8 @@ export interface Bola {
   color: ColorId;
   oculta: boolean;      // niebla: se ve como "?" hasta que queda arriba
   ingrediente: boolean; // alquimia: solo sirve para fusionarse
-  lluvia?: boolean;     // cayó con la lluvia: se dibuja congelada
+  lluvia?: boolean;     // gota de lluvia: bola de hielo que bloquea su tubo hasta derretirse
+  deshielo?: number;    // hielo: jugadas que faltan para que se derrita
 }
 
 export interface Tubo {
@@ -55,11 +56,17 @@ export function grupoSuperior(tubo: Tubo): number {
   return n;
 }
 
+// Una bola de hielo arriba bloquea el tubo: no se puede sacar nada de él ni poner nada encima
+export function congelado(tubo: Tubo): boolean {
+  return arriba(tubo)?.lluvia === true;
+}
+
 export function evaluarMovimiento(tubos: Tubo[], origen: number, destino: number): Movimiento | null {
   if (origen === destino) return null;
   const desde = tubos[origen];
   const hacia = tubos[destino];
   if (desde.sellado || hacia.sellado) return null;
+  if (congelado(desde) || congelado(hacia)) return null;
 
   const bola = arriba(desde);
   if (!bola) return null;
@@ -141,8 +148,8 @@ export function invertirTubos(tubos: Tubo[]): Bola[] {
   return revelarTopes(tubos);
 }
 
-// El nivel se gana cuando cada color inicial tiene su tubo sellado. Las bolas de lluvia
-// son solo un obstáculo: da igual dónde queden.
+// El nivel se gana cuando cada color inicial tiene su tubo sellado. Las bolas de hielo son
+// solo un obstáculo temporal: da igual dónde estén.
 export function nivelCompleto(tubos: Tubo[], coloresIniciales: readonly ColorId[]): boolean {
   return coloresIniciales.every((color) => tubos.some((t) => t.sellado && t.bolas[0]?.color === color));
 }
@@ -155,6 +162,11 @@ export function hayMovimientos(tubos: Tubo[]): boolean {
     }
   }
   return false;
+}
+
+// El tablero sin las bolas de hielo (se derriten tarde o temprano): para saber si aún hay solución
+export function sinHielo(tubos: Tubo[]): Tubo[] {
+  return tubos.map((t) => ({ ...t, bolas: t.bolas.filter((b) => !b.lluvia) }));
 }
 
 export function hayHueco(tubos: Tubo[]): boolean {

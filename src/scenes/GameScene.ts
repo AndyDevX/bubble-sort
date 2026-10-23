@@ -9,20 +9,21 @@ import {
   bolasBienColocadas,
   capacidadDe,
   clonarTubos,
+  congelado,
   evaluarMovimiento,
   grupoSuperior,
   hayMovimientos,
-  intentarSellar,
   invertirTubos,
   nivelCompleto,
   nuevaBola,
+  sinHielo,
   type Bola,
   type Movimiento,
   type Tubo,
 } from '../juego/modelo';
 import { planificarLluvia, type Gota, type PlanLluvia } from '../juego/lluvia';
 import { colorNuevo, generarNivel, type Nivel } from '../juego/niveles';
-import { tieneSolucion } from '../juego/solucionador';
+import { estadoSolucion } from '../juego/solucionador';
 import { claveTextura, colorHex } from '../juego/texturas';
 import { ORIGEN_TUBO, TUBO_ANCHO } from '../juego/texturasTubo';
 import { iniciarEfecto, iniciarMusicaPartida, reproducirEfecto } from '../sistemas/audio';
@@ -49,10 +50,9 @@ const PUNTOS_ACIERTO = 10; // por bola colocada sobre una de su mismo color
 const PUNTOS_CARGA = 150; // puntos para llenar la barra de Gravedad (una sola carga)
 const MAX_HISTORIAL = 50; // jugadas que se recuerdan para deshacer (los usos salen de la tienda)
 const DURACION_ALERTA_LLUVIA = 2600; // ms de aviso (sonido + pantalla parpadeando) antes de la primera gota
-const NODOS_LLUVIA_JUSTA = 8000; // límite del solucionador por tubo candidato (rápido en móvil)
-const LLUVIA_ESPERA_MS = 700; // si ningún tubo es seguro, la gota lo reintenta tras este tiempo
-const PRESUPUESTO_LLUVIA_MS = 40; // tiempo máximo de comprobación por intento (evita tirones)
-const MAX_ESPERAS_GOTA = 4; // veces seguidas sin tiempo de cálculo antes de dejar caer la gota al azar
+const LLUVIA_ESPERA_MS = 700; // sin tubo libre (todos llenos o helados): la gota lo reintenta tras este tiempo
+const NODOS_COMPROBACION = 30000; // límite del solucionador al comprobar si la partida aún tiene solución
+const MS_COMPROBACION = 12; // y de tiempo por búsqueda: si no acaba, «desconocido» (no da derrota) y sin tirones
 
 // Estado completo antes de una jugada, para poder deshacerla
 interface Instantanea {
@@ -105,13 +105,11 @@ export class GameScene extends Phaser.Scene {
 
   private lluviaPendiente: Gota[] = [];
   private planLluvia!: PlanLluvia; // aleatorio en cada partida: umbral, orden y ritmo de las gotas
-  private tubosLluviaPuestos = false; // los tubos que trae la lluvia (deshacer no los quita)
   private generacion = 0; // sube al deshacer: las animaciones de jugadas anteriores ya no aplican
   private lluviaIniciada = false;
   private bienAlEmpezar = 0; // bolas bien colocadas por azar al empezar el nivel
   private temporizadorLluvia: Phaser.Time.TimerEvent | null = null;
-  private esperasGota = 0;
-  private decisionGota: Record<string, unknown> = {}; // cómo se eligió el tubo de la última gota (registro)
+  private etiquetasHielo = new Map<number, Phaser.GameObjects.Text>(); // jugadas que faltan, encima de cada bola de hielo
 
   private historial: Instantanea[] = [];
   private tuboUsado = false; // el tubo de emergencia se puede poner una vez por nivel
@@ -157,11 +155,10 @@ export class GameScene extends Phaser.Scene {
     this.carga = 0;
     this.bolasPuntuadas = new Set();
     this.lluviaPendiente = [];
-    this.tubosLluviaPuestos = false;
     this.generacion = 0;
     this.lluviaIniciada = false;
     this.temporizadorLluvia = null;
-    this.esperasGota = 0;
+    this.etiquetasHielo = new Map();
     this.historial = [];
     this.tuboUsado = false;
     this.derrotaContada = false;
@@ -187,7 +184,6 @@ export class GameScene extends Phaser.Scene {
     this.bienAlEmpezar = bolasBienColocadas(this.nivel.tubos, this.nivel.coloresBase);
     this.tubos = this.nivel.tubos;
     this.planLluvia = planificarLluvia(this.nivel.config, this.nivel.coloresLluvia);
-    if (this.planLluvia.tubosExtra === undefined) this.planLluvia.tubosExtra = 0; // nivel guardado por una versión anterior
     this.lluviaPendiente = [...this.planLluvia.gotas];
 
     // Tubos: gráfico + zona táctil más grande que el tubo
@@ -490,6 +486,7 @@ export class GameScene extends Phaser.Scene {
         this.sprites.delete(id);
       }
     }
+    this.sincronizarEtiquetasHielo();
   }
 
   private revelar(bolas: Bola[]) {
@@ -527,6 +524,11 @@ export class GameScene extends Phaser.Scene {
         registrar('toqueIgnorado', { tubo: i, motivo: tubo.sellado ? 'sellado' : 'vacío' });
         return;
       }
+      if (congelado(tubo)) {
+        registrar('toqueIgnorado', { tubo: i, motivo: 'helado' });
+        this.sacudir(i);
+        return;
+      }
       this.levantar(i);
       return;
     }
@@ -552,11 +554,11 @@ export class GameScene extends Phaser.Scene {
       de: origen,
       a: i,
       bola: arribaOrigen ? corto(arribaOrigen.color) : null,
-      destino: tubo.sellado ? 'sellado' : arribaDestino ? corto(arribaDestino.color) : 'vacío',
+      destino: tubo.sellado ? 'sellado' : congelado(tubo) ? 'helado' : arribaDestino ? corto(arribaDestino.color) : 'vacío',
       libres: capacidadDe(tubo) - tubo.bolas.length,
     });
     this.bajar(origen);
-    if (!tubo.sellado && tubo.bolas.length > 0) {
+    if (!tubo.sellado && tubo.bolas.length > 0 && !congelado(tubo)) {
       this.levantar(i);
     } else {
       this.sacudir(i);
@@ -686,6 +688,7 @@ export class GameScene extends Phaser.Scene {
       }
       this.revelar(res.reveladas);
       if (res.sellado) this.animarSellado(destino);
+      this.avanzarDeshielo();
       this.trasJugada();
     });
   }
@@ -880,10 +883,15 @@ export class GameScene extends Phaser.Scene {
       this.iniciarLluvia();
     }
 
-    // Sin jugadas posibles y sin ayudas que puedan desbloquear la partida (Gravedad o tubo de emergencia): se pierde
-    if (!hayMovimientos(this.tubos) && this.carga < PUNTOS_CARGA && !this.tuboDisponible()) {
+    // Sin jugadas posibles: si es por el hielo, se derrite el más próximo; si no, y sin ayudas que
+    // puedan desbloquear la partida (Gravedad o tubo de emergencia), se pierde
+    if (!hayMovimientos(this.tubos) && !this.derretirMasProximo() && this.carga < PUNTOS_CARGA && !this.tuboDisponible()) {
       this.derrota('sinMovimientos');
+      return;
     }
+
+    // Si la partida ya no tiene solución (comprobado del todo, no por falta de tiempo), se pierde
+    this.comprobarSolucion();
   }
 
   // ───────────────────────── Gravedad ─────────────────────────
@@ -947,6 +955,7 @@ export class GameScene extends Phaser.Scene {
 
     this.time.delayedCall(giro + caida, () => {
       this.revelar(reveladas);
+      this.avanzarDeshielo();
       this.trasJugada();
     });
   }
@@ -958,17 +967,12 @@ export class GameScene extends Phaser.Scene {
       progreso: Math.round(this.progresoNivel() * 100) + ' %',
       umbral: Math.round(this.planLluvia.umbral * 100) + ' %',
       gotas: this.lluviaPendiente.length,
-      orden: this.lluviaPendiente.map((g) => corto(g.color)).join(' '),
+      orden: this.lluviaPendiente.map((g) => (g.tipo === 'niebla' ? 'niebla' : corto(g.color))).join(' '),
       esperasMs: this.lluviaPendiente.map((g) => g.esperaMs).join(' '),
-      tubosNuevos: this.tubosLluviaPuestos ? 0 : this.planLluvia.tubosExtra,
+      deshielo: this.planLluvia.deshielo,
     });
     this.pararLluvia();
     this.lluviaIniciada = true;
-    // La lluvia trae sus propios tubos vacíos (antes no estaban: el nivel empieza más justo)
-    if (!this.tubosLluviaPuestos) {
-      this.tubosLluviaPuestos = true;
-      for (let k = 0; k < this.planLluvia.tubosExtra; k++) this.agregarTubo({ bolas: [], sellado: false });
-    }
     this.actualizarTextoLluvia();
     this.textoLluvia.setVisible(true);
     this.mostrarAlertaLluvia();
@@ -976,7 +980,7 @@ export class GameScene extends Phaser.Scene {
     this.programarGota(DURACION_ALERTA_LLUVIA + (this.lluviaPendiente[0]?.esperaMs ?? 0));
   }
 
-  // Añade un tubo al tablero (lluvia o emergencia). En las jugadas guardadas para deshacer el
+  // Añade un tubo al tablero (tubo de emergencia). En las jugadas guardadas para deshacer el
   // tubo ya existía (vacío): deshacer no lo quita.
   private agregarTubo(nuevo: Tubo) {
     this.tubos.push(nuevo);
@@ -1053,49 +1057,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   // Reintenta soltar la gota más tarde (sin duplicar gotas)
-  private esperarGota(ms: number) {
-    registrar('gotaEspera', { ms, motivo: ms === LLUVIA_ESPERA_MS ? 'ningún tubo seguro' : 'animación en curso', ...(ms === LLUVIA_ESPERA_MS ? this.decisionGota : {}) });
+  private esperarGota(ms: number, motivo: string) {
+    registrar('gotaEspera', { ms, motivo });
     this.programarGota(ms);
-  }
-
-  // Lluvia justa: la gota cae en un tubo al azar entre los que dejan el nivel con solución sin
-  // habilidades. Si ninguno lo deja, devuelve null (la gota espera) salvo que el jugador ya no
-  // tenga solución por sus propias jugadas: entonces cae al azar, como siempre.
-  // Cada intento tiene un presupuesto de tiempo para no dar tirones; si se agota, se reintenta
-  // y, tras varias esperas seguidas, la gota cae al azar para que la lluvia nunca se quede parada.
-  private elegirTuboGota(candidatos: number[], color: ColorId): number | null {
-    Phaser.Utils.Array.Shuffle(candidatos);
-    if (this.esperasGota >= MAX_ESPERAS_GOTA) {
-      this.esperasGota = 0;
-      this.decisionGota = { decision: 'al azar tras varias esperas', candidatos: candidatos.length };
-      return candidatos[0];
-    }
-    const objetivo = this.nivel.coloresBase;
-    const inicio = performance.now();
-    let probados = 0;
-    for (const i of candidatos) {
-      if (performance.now() - inicio > PRESUPUESTO_LLUVIA_MS) break;
-      probados++;
-      const prueba = clonarTubos(this.tubos);
-      prueba[i].bolas.push({ ...nuevaBola(color), lluvia: true });
-      intentarSellar(prueba[i]);
-      if (tieneSolucion(prueba, NODOS_LLUVIA_JUSTA, objetivo)) {
-        this.esperasGota = 0;
-        this.decisionGota = { decision: 'segura', candidatos: candidatos.length, probados, calculoMs: Math.round(performance.now() - inicio) };
-        return i;
-      }
-    }
-    const calculoMs = Math.round(performance.now() - inicio);
-    if (calculoMs <= PRESUPUESTO_LLUVIA_MS && !tieneSolucion(this.tubos, NODOS_LLUVIA_JUSTA, objetivo)) {
-      this.decisionGota = { decision: 'al azar: el jugador ya no tiene solución', candidatos: candidatos.length, probados, calculoMs };
-      return candidatos[0]; // el jugador ya no tiene solución: lluvia normal
-    }
-    // Ningún tubo seguro: la gota espera a que el jugador haga sitio (la lluvia nunca deja el nivel
-    // imposible). Solo si el móvil se queda sin tiempo de cálculo varias veces seguidas, cae al azar.
-    if (calculoMs > PRESUPUESTO_LLUVIA_MS) this.esperasGota++;
-    else this.esperasGota = 0;
-    this.decisionGota = { decision: calculoMs > PRESUPUESTO_LLUVIA_MS ? 'sin tiempo de cálculo' : 'ningún tubo seguro', candidatos: candidatos.length, probados, calculoMs, esperas: this.esperasGota };
-    return null;
   }
 
   private soltarGota() {
@@ -1103,35 +1067,33 @@ export class GameScene extends Phaser.Scene {
 
     // Si hay una animación en curso, espera un poco
     if (this.bloqueado()) {
-      this.esperarGota(200);
+      this.esperarGota(200, 'animación en curso');
       return;
     }
+    if (this.lluviaPendiente[0].tipo === 'niebla' && this.soltarNiebla()) return;
 
-    const conHueco = this.tubos.map((tubo, i) => ({ tubo, i })).filter(({ tubo }) => !tubo.sellado && tubo.bolas.length < capacidadDe(tubo));
-    if (conHueco.length === 0) {
-      registrar('gotaSinHueco', { color: corto(this.lluviaPendiente[0].color) });
-      this.derrota('lluvia');
+    // Hielo: cae en un tubo al azar con hueco que no esté ya helado. Si no hay ninguno, espera
+    // (la lluvia ya no hace perder por falta de sitio: solo es un obstáculo temporal)
+    const libres = this.tubos.map((_, i) => i).filter((i) => {
+      const tubo = this.tubos[i];
+      return !tubo.sellado && tubo.bolas.length < capacidadDe(tubo) && !congelado(tubo);
+    });
+    if (libres.length === 0) {
+      this.esperarGota(LLUVIA_ESPERA_MS, 'sin tubo libre');
       return;
     }
-
-    const color = this.lluviaPendiente[0].color;
-    const i = this.elegirTuboGota(conHueco.map((c) => c.i), color);
-    if (i === null) {
-      // Ningún tubo es seguro ahora mismo: la gota espera un poco a que el jugador mueva
-      this.esperarGota(LLUVIA_ESPERA_MS);
-      return;
-    }
+    const i = Phaser.Utils.Array.GetRandom(libres);
     const tubo = this.tubos[i];
-    if (this.seleccionado === i) this.bajar(i);
+    if (this.seleccionado === i) this.bajar(i); // la bola levantada queda debajo del hielo
 
-    const bola: Bola = { ...nuevaBola(this.lluviaPendiente.shift()!.color), lluvia: true };
+    const bola: Bola = { ...nuevaBola(this.lluviaPendiente.shift()!.color), lluvia: true, deshielo: this.planLluvia.deshielo };
     tubo.bolas.push(bola);
-    const sellado = intentarSellar(tubo);
-    registrar('gota', { tubo: i, color: corto(bola.color), quedan: this.lluviaPendiente.length, ...this.decisionGota, tubos: describirTubos([tubo], [i]).join(' ') });
+    registrar('gota', { tubo: i, color: corto(bola.color), deshielo: bola.deshielo, quedan: this.lluviaPendiente.length, libres: libres.length, tubos: describirTubos([tubo], [i]).join(' ') });
     this.actualizarTextoLluvia();
 
     const destino = this.posicionHueco(i, tubo.bolas.length - 1);
     const sprite = this.crearSprite(bola, destino.x, -this.col.d);
+    this.sincronizarEtiquetasHielo();
     const duracion = 450; // la caída es solo animación: no bloquea los toques
     this.tweens.add({
       targets: sprite,
@@ -1144,18 +1106,155 @@ export class GameScene extends Phaser.Scene {
       },
     });
     reproducirEfecto(this, 'gota', true);
-    if (this.lluviaPendiente.length > 0) this.programarGota(this.lluviaPendiente[0].esperaMs);
+    this.trasGota(duracion);
+  }
 
+  // Gota de niebla: vuelve a tapar con «?» hasta 2 bolas ya descubiertas (no la de arriba) de un
+  // tubo al azar. Si no hay ninguna que tapar, la gota cae como hielo (devuelve false).
+  private soltarNiebla(): boolean {
+    const tapables = (tubo: Tubo) => tubo.bolas.slice(0, -1).filter((b) => !b.oculta && !b.lluvia);
+    const candidatos = this.tubos.map((_, i) => i).filter((i) => !this.tubos[i].sellado && tapables(this.tubos[i]).length > 0);
+    if (candidatos.length === 0) return false;
+    const i = Phaser.Utils.Array.GetRandom(candidatos);
+    const tapadas = Phaser.Utils.Array.Shuffle(tapables(this.tubos[i])).slice(0, 2);
+    for (const b of tapadas) b.oculta = true;
+    this.lluviaPendiente.shift();
+    registrar('niebla', { tubo: i, tapadas: tapadas.map((b) => corto(b.color)).join(' '), quedan: this.lluviaPendiente.length });
+    this.actualizarTextoLluvia();
+
+    // Una nube baja sobre el tubo y las bolas se vuelven «?»
+    const c = this.col.centros[i];
+    this.estallarChispas(c.x, c.y - this.col.altoTubo * 0.2, 0xb0bec5, 22);
+    for (const b of tapadas) {
+      const sprite = this.sprites.get(b.id);
+      if (!sprite) continue;
+      this.tweens.killTweensOf(sprite);
+      this.tamanoNormal(sprite);
+      this.tweens.add({
+        targets: sprite,
+        alpha: 0.2,
+        duration: 180,
+        yoyo: true,
+        onYoyo: () => sprite.setTexture(claveTextura(b)).setDisplaySize(this.col.d * 0.92, this.col.d * 0.92),
+        onComplete: () => this.tamanoNormal(sprite),
+      });
+    }
+    reproducirEfecto(this, 'gota', true);
+    this.trasGota(400);
+    return true;
+  }
+
+  // Programa la siguiente gota y, al terminar la animación de esta, revisa el estado de la partida
+  private trasGota(duracion: number) {
+    if (this.lluviaPendiente.length > 0) this.programarGota(this.lluviaPendiente[0].esperaMs);
     const generacion = this.generacion;
     this.time.delayedCall(duracion, () => {
       if (generacion !== this.generacion) return; // se deshizo mientras caía
-      if (sellado) this.animarSellado(i);
       if (this.lluviaPendiente.length === 0) {
         this.temporizadorLluvia?.remove();
         this.textoLluvia.setVisible(false);
       }
       this.trasJugada();
     });
+  }
+
+  // ───────────────────────── Hielo ─────────────────────────
+
+  // Tras cada jugada del jugador (mover, fusionar o girar) el hielo se derrite un poco
+  private avanzarDeshielo() {
+    this.tubos.forEach((tubo, i) => {
+      for (const bola of [...tubo.bolas]) {
+        if (!bola.lluvia) continue;
+        bola.deshielo = (bola.deshielo ?? 1) - 1;
+        if (bola.deshielo <= 0) this.derretir(i, bola);
+      }
+    });
+    this.sincronizarEtiquetasHielo();
+  }
+
+  // Sin ninguna jugada posible, el hielo que menos le falta se derrite ya (la partida nunca se atasca)
+  private derretirMasProximo(): boolean {
+    let elegido: { i: number; bola: Bola } | null = null;
+    for (let i = 0; i < this.tubos.length; i++) {
+      for (const bola of this.tubos[i].bolas) {
+        if (bola.lluvia && (!elegido || (bola.deshielo ?? 0) < (elegido.bola.deshielo ?? 0))) elegido = { i, bola };
+      }
+    }
+    if (!elegido) return false;
+    const { i, bola } = elegido;
+    registrar('deshieloForzado', { tubo: i, faltaban: bola.deshielo });
+    this.derretir(i, bola);
+    this.sincronizarEtiquetasHielo();
+    return true;
+  }
+
+  // Quita la bola de hielo del modelo y la rompe en esquirlas; las de encima (tras un giro) bajan
+  private derretir(i: number, bola: Bola) {
+    const tubo = this.tubos[i];
+    tubo.bolas.splice(tubo.bolas.indexOf(bola), 1);
+    registrar('deshielo', { tubo: i, color: corto(bola.color) });
+    const sprite = this.sprites.get(bola.id);
+    if (sprite) {
+      this.sprites.delete(bola.id);
+      this.tweens.killTweensOf(sprite);
+      this.estallarChispas(sprite.x, sprite.y, 0xe1f5fe, 14);
+      this.tweens.add({ targets: sprite, scale: sprite.scaleX * 1.3, alpha: 0, duration: 220, ease: 'Quad.easeOut', onComplete: () => sprite.destroy() });
+    }
+    tubo.bolas.forEach((b, k) => {
+      const s = this.sprites.get(b.id);
+      if (!s || this.seleccionado === i) return;
+      const pos = this.posicionHueco(i, k);
+      if (s.y !== pos.y) this.tweens.add({ targets: s, x: pos.x, y: pos.y, duration: 180, ease: 'Quad.easeIn' });
+    });
+    reproducirEfecto(this, 'gota', true);
+  }
+
+  // Un número sobre cada bola de hielo con las jugadas que le faltan (se crean y quitan según el modelo)
+  private sincronizarEtiquetasHielo() {
+    const vivas = new Set<number>();
+    const tamano = Math.round(this.col.d * 0.42);
+    for (const tubo of this.tubos) {
+      for (const bola of tubo.bolas) {
+        if (!bola.lluvia) continue;
+        vivas.add(bola.id);
+        const texto = String(bola.deshielo ?? 1);
+        let etiqueta = this.etiquetasHielo.get(bola.id);
+        if (!etiqueta) {
+          etiqueta = this.add
+            .text(0, 0, texto, { fontFamily: 'sans-serif', fontStyle: 'bold', color: '#ffffff', stroke: '#01579b', strokeThickness: 6 })
+            .setOrigin(0.5)
+            .setDepth(4);
+          this.etiquetasHielo.set(bola.id, etiqueta);
+        }
+        if (etiqueta.text !== texto) etiqueta.setText(texto);
+        etiqueta.setFontSize(tamano);
+      }
+    }
+    for (const [id, etiqueta] of this.etiquetasHielo) {
+      if (vivas.has(id)) continue;
+      etiqueta.destroy();
+      this.etiquetasHielo.delete(id);
+    }
+  }
+
+  // ¿Sigue habiendo forma de ganar? El hielo no cuenta (se derrite). Si es seguro que no la hay,
+  // ni siquiera con las ayudas que quedan (Gravedad cargada o tubo de emergencia), es derrota.
+  private comprobarSolucion() {
+    const objetivo = this.nivel.coloresBase;
+    const inicio = performance.now();
+    const tablero = sinHielo(this.tubos);
+    const estado = estadoSolucion(tablero, NODOS_COMPROBACION, objetivo, MS_COMPROBACION);
+    if (estado !== 'no') return;
+    const conGravedad = () => {
+      const girado = clonarTubos(tablero);
+      invertirTubos(girado);
+      return estadoSolucion(girado, NODOS_COMPROBACION, objetivo, MS_COMPROBACION) !== 'no';
+    };
+    const conTubo = () => estadoSolucion([...tablero, { bolas: [], sellado: false, capacidad: 1 }], NODOS_COMPROBACION, objetivo, MS_COMPROBACION) !== 'no';
+    if (this.carga >= PUNTOS_CARGA && conGravedad()) return;
+    if (this.tuboDisponible() && conTubo()) return;
+    registrar('sinSolucion', { calculoMs: Math.round(performance.now() - inicio), tubos: describirTubos(this.tubos).join(' ') });
+    this.derrota('sinSolucion');
   }
 
   // ───────────────────────── Fin y pausa ─────────────────────────
@@ -1215,7 +1314,7 @@ export class GameScene extends Phaser.Scene {
     );
   }
 
-  private derrota(motivo: 'lluvia' | 'sinMovimientos') {
+  private derrota(motivo: 'sinMovimientos' | 'sinSolucion') {
     this.terminado = true;
     cerrarRegistroNivel('derrota', { motivo, puntos: this.puntos, deshacerDisponible: this.puedeDeshacer() }, this.tubos);
     if (!this.derrotaContada) {
@@ -1229,8 +1328,8 @@ export class GameScene extends Phaser.Scene {
     reproducirEfecto(this, 'derrota');
 
     const dialogo = (): DatosDialogo => ({
-      titulo: motivo === 'lluvia' ? t('derrota') : t('sinSalida'),
-      texto: motivo === 'lluvia' ? t('derrotaTexto') : t('sinMovimientos'),
+      titulo: motivo === 'sinSolucion' ? t('sinSolucion') : t('sinSalida'),
+      texto: motivo === 'sinSolucion' ? t('sinSolucionTexto') : t('sinMovimientos'),
       botones: [
         // Con deshacer comprados se puede volver atrás en vez de perder
         ...(this.puedeDeshacer() ? [{ texto: t('deshacer', { n: cantidadDe('deshacer') }), accion: 'deshacer' as const }] : []),
@@ -1388,6 +1487,7 @@ export class GameScene extends Phaser.Scene {
       });
     }
 
+    this.sincronizarEtiquetasHielo();
     this.bloquear(subir + cruzar + bajar + 20);
   }
 
@@ -1425,6 +1525,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_time: number, _delta: number) {
-    // Todo el movimiento va con tweens: no hace falta lógica por frame
+    // Todo el movimiento va con tweens; solo los números del hielo siguen a su bola
+    for (const [id, etiqueta] of this.etiquetasHielo) {
+      const sprite = this.sprites.get(id);
+      if (sprite) etiqueta.setPosition(sprite.x, sprite.y).setAlpha(sprite.alpha);
+    }
   }
 }

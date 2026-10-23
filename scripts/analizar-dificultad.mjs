@@ -49,13 +49,18 @@ function jugadorCasual(inicio, cod, base, nivel) {
   const porHacer = CAP * base.length - inicioBien;
   let t = 0;
   for (let j = 0; j < MAX_JUGADAS_CASUAL; j++) {
-    const r = lluvia.tick(e, t);
-    if (r.desborde) return false;
-    e = r.e;
+    e = lluvia.tick(e, t).e;
     if (ganado(e, base)) return true;
     const claveAnterior = anterior && clave(anterior);
     const opciones = vecinos(e, cod).filter((v) => clave(v.e) !== claveAnterior);
-    if (!opciones.length) return false;
+    if (!opciones.length) {
+      // Sin jugadas: si es por el hielo, se derrite el más próximo (como en el juego)
+      if (lluvia.hayHielo()) {
+        e = lluvia.derretirUno(e);
+        continue;
+      }
+      return false;
+    }
     let elegida;
     if (azar() < PROB_OBVIA) {
       const mejor = Math.max(...opciones.map((o) => o.prioridad));
@@ -65,7 +70,7 @@ function jugadorCasual(inicio, cod, base, nivel) {
       elegida = opciones[Math.floor(azar() * opciones.length)];
     }
     anterior = e;
-    e = elegida.e;
+    e = lluvia.trasJugada(elegida.e).e;
     t += MS_JUGADA;
     if (!lluvia.iniciada() && lluvia.pendientes() && (progreso(e, base) - inicioBien) / porHacer >= lluvia.umbral) e = lluvia.iniciar(e, t);
   }
@@ -134,7 +139,7 @@ for (let n = 1; n <= NIVELES; n++) {
     n,
     colores: c.colores,
     paleta: c.desbloqueados,
-    tubos: `${c.colores + c.tubosVacios}+${c.tubosLluvia}`,
+    tubos: `${c.colores + c.tubosVacios}`,
     fusiones: c.fusiones,
     lluvia: c.lotesLluvia,
     intervalo: c.intervaloLluviaMs / 1000,

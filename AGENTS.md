@@ -127,15 +127,19 @@ Genera cientos de niveles y comprueba `tieneSolucion`, tiempos y casos límite.
 el usuario exige que **todos los niveles se puedan resolver sin habilidades**. Para ver cómo sube
 la dificultad, `npm run analizar` (regenera `docs/analisis-dificultad.md`).
 **Trampa**: el simulador solo vale si imita la lluvia real. `crearLluvia` (`scripts/lib/juego.mjs`)
-debe hacer lo mismo que `GameScene` (plan de `lluvia.ts`, tubo extra, qué hace la gota si ningún
-tubo es seguro). Hasta v0.1.11 no coincidían y el 100 % era optimista.
+debe hacer lo mismo que `GameScene` (plan de `lluvia.ts`, dónde cae el hielo, cuándo se derrite).
+Hasta v0.1.11 no coincidían y el 100 % era optimista.
+**Trampa**: la derrota «Sin solución» se fía del solucionador (`estadoSolucion`). Si el
+solucionador permite **menos** jugadas que `evaluarMovimiento`, el jugador pierde partidas que sí
+tenían solución. Cualquier cambio en las reglas de movimiento va en los dos sitios (y en
+`scripts/lib/juego.mjs`).
 
 ### Registro de partidas (depuración)
 
 El usuario puede pasar el texto de **Menú → Registro → Copiar resumen / Copiar todo / Descargar**.
 Cada nivel trae configuración, tablero inicial y final, y todos los eventos con tiempo real y de
 juego (formato en `docs/tecnico.md`). Úsalo para reproducir fallos: busca `toqueIgnorado`
-(respuesta táctil), `gota`/`gotaEspera` (lluvia justa), `error` (excepciones) y el resultado.
+(respuesta táctil), `gota`/`niebla`/`deshielo` (lluvia), `sinSolucion`, `error` (excepciones) y el resultado.
 
 ### Juego en el navegador
 

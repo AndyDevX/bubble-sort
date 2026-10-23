@@ -5,7 +5,6 @@ import { nodosHastaSolucion } from './solucionador';
 export interface ConfigNivel {
   colores: number;          // grupos de 4 a ordenar
   tubosVacios: number;      // tubos vacíos al empezar (2)
-  tubosLluvia: number;      // tubos vacíos que trae la lluvia al empezar a llover (no antes)
   desbloqueados: number;    // colores de ORDEN_COLORES desbloqueados (los únicos que se ordenan)
   fusiones: number;         // bolas del color resultado que llegan partidas en dos ingredientes
   niebla: number;           // 0..1: proporción de bolas (no de arriba) ocultas
@@ -41,10 +40,6 @@ const NIVELES_DESBLOQUEO = SALTOS_DESBLOQUEO.reduce<number[]>((lista, salto) => 
 function desbloqueadosEn(nivel: number): number {
   return COLORES_DE_SALIDA + NIVELES_DESBLOQUEO.filter((n) => n <= nivel).length;
 }
-
-// Tubos vacíos que trae la lluvia (aparecen al sonar la alerta): los justos para que todos los
-// niveles sigan siendo resolubles con lluvia (lo comprueba `npm run simular`)
-const TUBOS_POR_LLUVIA = (_lotes: number) => 1;
 
 // ───────────── Bloques de dificultad ─────────────
 // Un bloque va de un desbloqueo al siguiente. Cuando ya no quedan colores, sigue habiendo un bloque
@@ -111,7 +106,6 @@ export function configNivel(nivel: number): ConfigNivel {
   return {
     colores,
     tubosVacios: 2,
-    tubosLluvia: TUBOS_POR_LLUVIA(lotesLluvia),
     desbloqueados,
     fusiones,
     niebla,

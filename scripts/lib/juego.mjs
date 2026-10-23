@@ -44,13 +44,18 @@ export function crearCodigo() {
   return { letra, colorDe };
 }
 
-// Estado: array de strings. Tubo sellado: '#' + letra del color.
+// Estado: array de strings. Tubo sellado: '#' + letra del color. Bola de hielo: HIELO (bloquea
+// su tubo: no se saca nada ni se pone nada encima).
+export const HIELO = '~';
+export const quitarHielo = (e) => e.map((t) => t.replaceAll(HIELO, ''));
+
 export function vecinos(e, cod) {
   const res = [];
   for (let o = 0; o < e.length; o++) {
     const desde = e[o];
     if (desde === '' || desde[0] === '#') continue;
     const bola = desde[desde.length - 1];
+    if (bola === HIELO) continue;
     const mono = desde === bola.repeat(desde.length);
     let grupo = 0;
     while (grupo < desde.length && desde[desde.length - 1 - grupo] === bola) grupo++;
@@ -59,10 +64,11 @@ export function vecinos(e, cod) {
       const hacia = e[d];
       if (hacia[0] === '#') continue;
       const tope = hacia[hacia.length - 1];
+      if (tope === HIELO) continue;
       let nuevo = null;
       let quitar = 1;
       let prioridad = 0;
-      if (hacia === '' || tope === bola) {
+      if (hacia === '' || tope.toLowerCase() === bola.toLowerCase()) {
         if (hacia === '' && mono) continue;
         const libres = CAP - hacia.length;
         if (libres <= 0) continue;
@@ -148,45 +154,70 @@ export function codificarNivel(nivel, cod) {
   return nivel.tubos.map((t) => t.bolas.map((b) => (b.ingrediente ? cod.letra(b.color).toUpperCase() : cod.letra(b.color))).join(''));
 }
 
-// Lluvia como en el juego (GameScene): empieza al llegar al umbral del plan, trae sus tubos vacíos,
-// suena la alerta (2,6 s) y las gotas caen según el plan; cada gota va a un tubo al azar entre los
-// que dejan el nivel con solución («lluvia justa»); si no hay ninguno, espera 700 ms hasta que lo
-// haya. (En el juego, solo si el móvil no llega a calcularlo a tiempo varias veces seguidas cae al
-// azar; aquí el cálculo nunca se queda sin tiempo.)
+// Lluvia como en el juego (GameScene): empieza al llegar al umbral del plan, suena la alerta
+// (2,6 s) y las gotas caen según el plan. Una gota de hielo cae en un tubo al azar con hueco que no
+// esté ya helado (si no hay ninguno, espera 700 ms) y lo bloquea hasta derretirse tras
+// `plan.deshielo` jugadas (`trasJugada`). Las de niebla no cambian nada para estos jugadores (no
+// miran las bolas ocultas): solo cuentan como gota. Sin jugadas posibles, el hielo más próximo se
+// derrite ya (`derretirUno`).
 export const ALERTA_MS = 2600;
 export function crearLluvia(plan, cod, base, rnd = Math.random) {
-  const gotas = plan.gotas.map((g) => ({ letra: cod.letra(g.color), esperaMs: g.esperaMs }));
+  const gotas = plan.gotas.map((g) => ({ letra: cod.letra(g.color), tipo: g.tipo, esperaMs: g.esperaMs }));
+  const hielo = new Map(); // tubo -> jugadas que faltan para derretirse
   let proxima = Infinity;
   let iniciada = false;
+  const derretir = (e, i) => {
+    hielo.delete(i);
+    const s = [...e];
+    s[i] = s[i].replace(HIELO, '');
+    return s;
+  };
   return {
     umbral: plan.umbral,
     iniciada: () => iniciada,
     pendientes: () => gotas.length,
-    // Devuelve el tablero con los tubos de la lluvia añadidos
+    hayHielo: () => hielo.size > 0,
     iniciar(e, t) {
       iniciada = true;
       proxima = t + ALERTA_MS + (gotas[0]?.esperaMs ?? 0);
-      return [...e, ...Array(plan.tubosExtra).fill('')];
+      return e;
     },
     // Suelta las gotas que tocan hasta el instante t
     tick(e, t) {
       let cayo = false;
       while (gotas.length && t >= proxima) {
-        const conHueco = e.map((_, i) => i).filter((i) => e[i][0] !== '#' && e[i].length < CAP);
-        if (!conHueco.length) return { e, cayo, desborde: true };
-        conHueco.sort(() => rnd() - 0.5);
-        const letra = gotas[0].letra;
-        const segura = conHueco.find((i) => resolver(soltar(e, i, letra), cod, base, 8000));
-        if (segura === undefined && resolver(e, cod, base, 8000)) {
-          proxima += 700;
-          break;
+        if (gotas[0].tipo !== 'niebla') {
+          const libres = e.map((_, i) => i).filter((i) => e[i][0] !== '#' && e[i].length < CAP && !e[i].endsWith(HIELO));
+          if (!libres.length) {
+            proxima += 700;
+            break;
+          }
+          const i = libres[Math.floor(rnd() * libres.length)];
+          e = [...e];
+          e[i] += HIELO;
+          hielo.set(i, plan.deshielo);
+          cayo = true;
         }
-        e = soltar(e, segura ?? conHueco[0], letra);
         gotas.shift();
-        cayo = true;
         if (gotas.length) proxima += gotas[0].esperaMs;
       }
-      return { e, cayo, desborde: false };
+      return { e, cayo };
+    },
+    // Tras cada jugada el hielo se derrite un poco; devuelve el tablero y si se derritió alguno
+    trasJugada(e) {
+      let cambio = false;
+      for (const [i, n] of [...hielo]) {
+        if (n > 1) hielo.set(i, n - 1);
+        else {
+          e = derretir(e, i);
+          cambio = true;
+        }
+      }
+      return { e, cambio };
+    },
+    derretirUno(e) {
+      const [i] = [...hielo].sort((a, b) => a[1] - b[1])[0];
+      return derretir(e, i);
     },
   };
 }

@@ -118,27 +118,44 @@ BootScene ──► MenuScene ──► GameScene
   cuando cabe; `bloqueDe(n)` (bloque = desbloqueos alcanzados, y uno cada 10 niveles al final)
   hace crecer niebla, lluvia y fusiones; `esNivelDificil(n)` = último nivel del bloque
   (`config.dificil`: más niebla, lluvia más rápida, +1 tanda, +1 fusión). `GameScene` lo avisa
-  con `DialogoScene` (icono `icono-peligro`), pone el título en naranja y paga monedas ×2; `tubosVacios` = 2 y `tubosLluvia` = 1 (el vacío que
-  llega al empezar a llover). La lluvia puede usar un color
+  con `DialogoScene` (icono `icono-peligro`), pone el título en naranja y paga monedas ×2; `tubosVacios` = 2. La lluvia puede usar un color
   aún no desbloqueado (cae congelada). `colorNuevo(n)` dice qué color se desbloquea en el nivel n (siempre sale en él);
   `GameScene.avisarColorNuevo` lo anuncia con `DialogoScene` (campo `bola`: textura de la bola).
 
-### Plan de lluvia
+### Lluvia (hielo y niebla)
 
 `src/juego/lluvia.ts` → `planificarLluvia(config, colores)`: sortea en cada partida el umbral de
-inicio (25–45 %), el orden de las gotas (todas las tandas mezcladas) y la espera antes de cada una
-(intervalo ±40 %; ráfagas de 140 ms desde el bloque 2). No se guarda con el nivel: reiniciar da
-otra lluvia. `GameScene.programarGota` encadena un `delayedCall` por gota; al empezar a llover se
-añaden `tubosExtra` tubos vacíos (`agregarTubo`, compartido con el tubo de emergencia).
+inicio (25–45 %), el orden de las gotas (todas las tandas mezcladas), su tipo (`hielo` o, desde el
+bloque 5, `niebla` con `probNieblaDe`) y la espera antes de cada una (intervalo ±40 %; ráfagas de
+140 ms desde el bloque 2); `deshielo` = jugadas que tarda en derretirse el hielo (`deshieloDe`:
+4 + ⌊bloque/2⌋ hasta 8, +1 en el difícil). No se guarda con el nivel: reiniciar da otra lluvia.
 
-### Lluvia justa
+- **Modelo**: la bola de hielo es `{ lluvia: true, deshielo: n }`. `congelado(tubo)` (`modelo.ts`)
+  = la bola de arriba es de hielo; `evaluarMovimiento` no deja sacar de un tubo congelado ni poner
+  encima. `sinHielo(tubos)` quita el hielo (para comprobar solución: el hielo siempre se derrite).
+- **`GameScene`**: `programarGota` encadena un `delayedCall` por gota. `soltarGota` → hielo en un
+  tubo al azar con hueco y sin hielo arriba (si no hay, `esperarGota` 700 ms) o `soltarNiebla`
+  (tapa hasta 2 bolas descubiertas que no estén arriba; si no hay, cae hielo). `avanzarDeshielo`
+  se llama tras cada jugada del jugador (mover/fusionar y gravedad, en su `delayedCall`, antes de
+  `trasJugada`) y `derretir` quita la bola del modelo y la rompe. En `trasJugada`, si no hay
+  ninguna jugada, `derretirMasProximo` derrite ya el hielo con menos jugadas pendientes.
+  `sincronizarEtiquetasHielo` crea/quita el número de cada bola de hielo según el modelo y
+  `update()` solo los mueve con su sprite (sin crear objetos por frame).
+- **Deshacer**: la instantánea guarda las bolas con su `deshielo` y su `oculta`, así que deshacer
+  devuelve el hielo y la niebla a como estaban (y la lluvia pendiente vuelve a caer).
+- Hasta v1.0.4 la lluvia era permanente: «lluvia justa» (el solucionador elegía el tubo para no
+  dejar el nivel sin solución) y un tubo vacío extra al empezar a llover. Todo eso se quitó.
 
-`GameScene.elegirTuboGota`: baraja los tubos con hueco y, para cada uno, simula la gota y llama a
-`tieneSolucion(..., 8000 nodos, coloresBase)`; usa el primero que deja solución. Si ninguno, la
-gota espera 700 ms y lo vuelve a intentar, sin límite (salvo que el estado actual ya no tenga
-solución: entonces cae al azar). Presupuesto de 40 ms por intento para no dar tirones; solo si el
-cálculo se queda sin presupuesto 4 veces seguidas cae al azar.
-Coste medido en PC: mediana 0,6 ms, p95 5 ms, peor 30 ms por comprobación.
+### Derrota «Sin solución»
+
+`GameScene.comprobarSolucion` (al final de cada `trasJugada`): `estadoSolucion(sinHielo(tubos),
+30000 nodos y 12 ms, coloresBase)` (`solucionador.ts`) devuelve `'si'`, `'no'` (la búsqueda recorrió
+**todos** los estados sin solución: es seguro) o `'desconocido'` (se acabó el límite de nodos o de tiempo). Solo con
+`'no'` se prueba además con la Gravedad (si está cargada) y con el tubo de emergencia (si queda
+uno disponible); si tampoco, derrota `sinSolucion`. Cada búsqueda para a los 12 ms (`MS_COMPROBACION`) para no dar tirones: en el PC la mayoría tarda 2–3 ms, pero los tableros más difíciles llegan a ~130 ms sin ese tope.
+**El solucionador debe permitir exactamente las mismas jugadas que el juego** (si permite menos,
+daría «Sin solución» en partidas que sí la tienen). Por eso en v1.0.5 se corrigió: un ingrediente
+se puede poner sobre una bola normal de su color (y al revés), como en `evaluarMovimiento`.
 
 `npm run simular [niveles=50 pruebas=10]` (`scripts/simular-solubilidad.mjs`) compila
 `src/juego` a una carpeta temporal y mide la solubilidad con lluvia; termina con error si algún
@@ -210,10 +227,11 @@ nivel no llega al 100 %.
   la curva de colores no baja y los colores necesarios están desbloqueados.
 - `npm run analizar [niveles=60 muestras=20 obvia=0.6 ms=1500]` (`scripts/analizar-dificultad.mjs`):
   índice de dificultad por nivel y estadística (Spearman, pendientes, retrocesos, mesetas) →
-  `docs/analisis-dificultad.md` + `.svg`. El jugador casual juega con lluvia justa y tiempo real.
+  `docs/analisis-dificultad.md` + `.svg`. El jugador casual juega con la lluvia de hielo y tiempo real (no modela la niebla).
 - `scripts/lib/juego.mjs`: compilación de `src/juego` y motor de búsqueda compartidos por ambos
-  scripts. `crearLluvia(plan, …)` reproduce la lluvia del juego (plan, tubo extra, alerta, lluvia
-  justa que espera): si cambia la lluvia de `GameScene`, cámbiala también aquí.
+  scripts. `crearLluvia(plan, …)` reproduce la lluvia del juego (plan, alerta, hielo con `HIELO` = `~` en
+  el estado, deshielo por jugadas con `trasJugada`, `derretirUno` sin jugadas): si cambia la
+  lluvia de `GameScene`, cámbiala también aquí. `vecinos` no deja tocar tubos con hielo arriba.
 - **Registro de depuración** (`src/sistemas/registro.ts`, clave `odi-sort:registro`, últimas 40
   partidas, máx. 4000 eventos cada una): `iniciarRegistroNivel` al crear la partida (configuración,
   colores, tablero inicial), `registrar(tipo, datos)` en cada suceso y `cerrarRegistroNivel` al
@@ -222,8 +240,8 @@ nivel no llega al 100 %.
   `update`, porque en `create` el reloj de la escena aún no está al día). Eventos: `inicio`,
   `seleccionar`, `cancelar`, `mover`, `fusion` (tubos afectados después de la jugada), `invalido`,
   `toqueIgnorado` (con el motivo: animación, tubo vacío o sellado), `revelar`, `sellar`,
-  `lluviaInicio`, `gota` (decisión de la lluvia justa, candidatos probados y ms de cálculo),
-  `gotaEspera`, `gotaSinHueco`, `gravedad`, `deshacer`, `tuboExtra`, `dialogo`, `pausa`,
+  `lluviaInicio`, `gota` (tubo, color y deshielo), `niebla` (bolas tapadas), `deshielo`,
+  `deshieloForzado` (sin jugadas), `gotaEspera`, `sinSolucion` (tablero y ms de cálculo), `gravedad`, `deshacer`, `tuboExtra`, `dialogo`, `pausa`,
   `reanudar`, `tienda`, `compra`, `compraFallida`, `appOculta`/`appVisible`, `error` (errores de
   JavaScript) y `derrota` (si se deshace). Tubos en texto compacto: código de color de abajo
   arriba, `?` oculta, `*` ingrediente, `~` lluvia, `#` sellado. Exportación: `textoResumen()` y

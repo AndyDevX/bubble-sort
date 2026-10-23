@@ -41,11 +41,23 @@ export function tieneSolucion(tubos: Tubo[], limiteNodos = 40000, coloresObjetiv
 }
 
 /**
- * Estados que explora la búsqueda hasta dar con una solución (-1 si no la encuentra dentro del
- * límite). Sirve de medida del esfuerzo: un tablero en el que las jugadas obvias no llevan a nada
+ * ¿Tiene solución? 'no' solo si la búsqueda ha recorrido **todos** los estados posibles sin
+ * encontrarla (es seguro que no la hay); si se acaba el límite antes, 'desconocido'.
+ */
+export function estadoSolucion(tubos: Tubo[], limiteNodos: number, coloresObjetivo?: ColorId[], limiteMs = Infinity): 'si' | 'no' | 'desconocido' {
+  const n = nodosHastaSolucion(tubos, limiteNodos, coloresObjetivo, limiteMs);
+  return n >= 0 ? 'si' : n === AGOTADO ? 'no' : 'desconocido';
+}
+
+const AGOTADO = -2;
+
+/**
+ * Estados que explora la búsqueda hasta dar con una solución: -1 si se acaba el límite antes,
+ * -2 (`AGOTADO`) si ha recorrido todos los estados y no hay solución. Sirve de medida del esfuerzo: un tablero en el que las jugadas obvias no llevan a nada
  * obliga a explorar más.
  */
-export function nodosHastaSolucion(tubos: Tubo[], limiteNodos = 40000, coloresObjetivo?: ColorId[]): number {
+export function nodosHastaSolucion(tubos: Tubo[], limiteNodos = 40000, coloresObjetivo?: ColorId[], limiteMs = Infinity): number {
+  const inicio = performance.now();
   const { estado: inicial, cod } = codificar(tubos);
 
   // Letras que deben acabar selladas (las de lluvia no). Los ingredientes (mayúsculas) siempre.
@@ -79,6 +91,8 @@ export function nodosHastaSolucion(tubos: Tubo[], limiteNodos = 40000, coloresOb
     const e = pila.pop()!;
     if (completo(e)) return nodos;
     if (++nodos > limiteNodos) return -1;
+    // Con límite de tiempo (en partida, para no dar tirones) se mira el reloj cada 256 estados
+    if ((nodos & 255) === 0 && performance.now() - inicio > limiteMs) return -1;
 
     const hijos: { e: string[]; prioridad: number }[] = [];
     for (let o = 0; o < e.length; o++) {
@@ -98,7 +112,7 @@ export function nodosHastaSolucion(tubos: Tubo[], limiteNodos = 40000, coloresOb
         let nuevoHacia: string | null = null;
         let quitar = 1;
         let prioridad = 0;
-        if (hacia === '' || tope === bola) {
+        if (hacia === '' || tope.toLowerCase() === bola.toLowerCase()) {
           // Igual que en el juego: se mueve el grupo de iguales de arriba, tantas como quepan
           if (hacia === '' && monocolor) continue; // mover un tubo de un solo color a uno vacío no sirve
           const libres = capacidades[d] - hacia.length;
@@ -128,5 +142,5 @@ export function nodosHastaSolucion(tubos: Tubo[], limiteNodos = 40000, coloresOb
     hijos.sort((a, b) => a.prioridad - b.prioridad);
     for (const h of hijos) pila.push(h.e);
   }
-  return -1;
+  return AGOTADO;
 }

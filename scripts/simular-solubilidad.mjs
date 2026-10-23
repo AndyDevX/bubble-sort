@@ -3,10 +3,10 @@
 //
 // Compila la lógica pura (src/juego) a una carpeta temporal y juega cada nivel con un jugador
 // perfecto que tarda un tiempo real por jugada (rápido 0,8 s, normal 1,5 s, lento 2,5 s) mientras
-// cae la lluvia, con la misma regla de "lluvia justa" que el juego (GameScene.elegirTuboGota).
+// cae la lluvia de hielo como en el juego (los tubos helados no se tocan hasta que se derriten).
 // Comprueba además que cada nivel generado tiene solución sin lluvia.
 // Termina con error si algún perfil no llega al 100 %: úsalo al cambiar la dificultad.
-import { CAP, cargarJuego, codificarNivel, crearCodigo, crearLluvia, ganado, progreso, resolver } from './lib/juego.mjs';
+import { CAP, cargarJuego, codificarNivel, crearCodigo, crearLluvia, ganado, progreso, quitarHielo, resolver, vecinos } from './lib/juego.mjs';
 
 const { generarNivel, configNivel, colorNuevo, ORDEN_COLORES, COLORES_DE_SALIDA, nivelDesbloqueo, COLORES, SALTO_MINIMO, SALTO_MAXIMO, planificarLluvia } = await cargarJuego();
 
@@ -55,36 +55,50 @@ const NIVELES = Number(args.niveles ?? 50);
 const PRUEBAS = Number(args.pruebas ?? 10);
 
 
-// Una partida: jugada cada `msJugada`; lluvia 'aleatoria' (como ahora) o 'justa'
+// Una partida: jugada cada `msJugada` mientras llueve hielo. El jugador perfecto planea con el
+// hielo como si no se fuera a derretir; si así no hay plan pero sin hielo sí, hace una jugada que
+// no estropee nada (y deja que se derrita); si no tiene ninguna, el hielo se derrite ya (como en el
+// juego). Pierde si la partida queda sin solución (contando que el hielo se derrite).
 function partida(nivel, cod, base, msJugada) {
   let e = codificarNivel(nivel, cod);
   const lluvia = crearLluvia(planificarLluvia(nivel.config, nivel.coloresLluvia), cod, base);
   const inicioBien = progreso(e, base);
   const porHacer = CAP * base.length - inicioBien;
-  let plan = resolver(e, cod, base);
-  if (!plan) return 'sinSolucion';
-  let t = 0;
+  if (!resolver(e, cod, base)) return 'sinSolucion';
+  let plan = null;
   let paso = 1;
+  let t = 0;
   for (let jugadas = 0; jugadas < 400; jugadas++) {
     const r = lluvia.tick(e, t);
-    if (r.desborde) return 'desborde';
     if (r.cayo) {
       e = r.e;
+      plan = null;
+    }
+    if (ganado(e, base)) return 'gana';
+    if (!plan) {
       plan = resolver(e, cod, base);
       paso = 1;
-      if (!plan) return 'atascado';
     }
-    if (ganado(e, base)) return 'gana';
-    if (paso >= plan.length) return 'atascado';
-    e = plan[paso++];
+    if (plan && paso < plan.length) {
+      e = plan[paso++];
+    } else {
+      plan = null;
+      if (!resolver(quitarHielo(e), cod, base)) return 'sinSolucion';
+      const espera = vecinos(e, cod).find((v) => resolver(quitarHielo(v.e), cod, base, 8000));
+      if (espera) e = espera.e;
+      else if (lluvia.hayHielo()) {
+        e = lluvia.derretirUno(e);
+        continue; // derretir no es una jugada
+      } else return 'atascado';
+    }
     t += msJugada;
-    if (ganado(e, base)) return 'gana';
-    if (!lluvia.iniciada() && lluvia.pendientes() && (progreso(e, base) - inicioBien) / porHacer >= lluvia.umbral) {
-      e = lluvia.iniciar(e, t);
-      plan = resolver(e, cod, base); // con los tubos nuevos el plan puede ser otro
-      paso = 1;
-      if (!plan) return 'atascado';
+    const d = lluvia.trasJugada(e);
+    if (d.cambio) {
+      e = d.e;
+      plan = null;
     }
+    if (ganado(e, base)) return 'gana';
+    if (!lluvia.iniciada() && lluvia.pendientes() && (progreso(e, base) - inicioBien) / porHacer >= lluvia.umbral) e = lluvia.iniciar(e, t);
   }
   return 'atascado';
 }
@@ -96,7 +110,7 @@ const perfiles = [
 ];
 const totales = { sinLluvia: { gana: 0, total: 0 } };
 console.log(`Niveles 1-${NIVELES}, ${PRUEBAS} partidas por perfil`);
-console.log('nivel colores tubos lluvia       | rápido | normal | lento   (partidas ganadas con lluvia justa)');
+console.log('nivel colores tubos lluvia       | rápido | normal | lento   (partidas ganadas con lluvia de hielo)');
 for (let n = 1; n <= NIVELES; n++) {
   const c = configNivel(n);
   const fila = [];

@@ -215,7 +215,7 @@ export function resumenEntrada(e: EntradaRegistro): string {
     `  ${fin} · juego ${mmss(duracion.tj)} · real ${mmss(duracion.t)} (pausado ${mmss(pausado(e))})`,
     `  jugadas ${cuenta(e, 'mover') + cuenta(e, 'fusion')} (fusiones ${cuenta(e, 'fusion')}, inválidas ${cuenta(e, 'invalido')}, toques ignorados ${cuenta(e, 'toqueIgnorado')}) · selecciones ${cuenta(e, 'seleccionar')}`,
     `  deshacer ${cuenta(e, 'deshacer')} (derrotas deshechas ${cuenta(e, 'derrota')}) · tubo extra ${cuenta(e, 'tuboExtra')} · gravedad ${cuenta(e, 'gravedad')} · sellados ${cuenta(e, 'sellar')} · reveladas ${e.eventos.filter((x) => x.tipo === 'revelar').reduce((a, x) => a + Number(x.d?.n ?? 0), 0)}`,
-    `  lluvia ${lluvia ? `desde ${mmss(lluvia.tj)}` : 'no empezó'} · gotas ${cuenta(e, 'gota')}/${e.config.lotesLluvia * 4} · esperas ${cuenta(e, 'gotaEspera')} · errores ${cuenta(e, 'error')}`,
+    `  lluvia ${lluvia ? `desde ${mmss(lluvia.tj)}` : 'no empezó'} · gotas ${cuenta(e, 'gota') + cuenta(e, 'niebla')}/${e.config.lotesLluvia * 4} (hielo ${cuenta(e, 'gota')}, niebla ${cuenta(e, 'niebla')}) · deshielos ${cuenta(e, 'deshielo')} (forzados ${cuenta(e, 'deshieloForzado')}) · esperas ${cuenta(e, 'gotaEspera')} · errores ${cuenta(e, 'error')}`,
     `  ${r?.d?.puntos !== undefined ? `${String(r.d.puntos)} pts · ` : ''}${r?.d?.monedas !== undefined ? `+${String(r.d.monedas)} monedas · ` : ''}${configCorta(e.config)}`,
   ].join('\n');
 }

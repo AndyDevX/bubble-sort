@@ -11,7 +11,7 @@ técnica está en [tecnico.md](./tecnico.md).
 
 ## Resumen en una frase
 
-Ordena cada color en su tubo antes de que la lluvia te llene los huecos, ayudándote de fusiones,
+Ordena cada color en su tubo mientras la lluvia congela tubos y vuelve a tapar bolas, ayudándote de fusiones,
 del giro de gravedad y de las ayudas que compras en la tienda (deshacer y tubo extra).
 
 ## Decisiones de diseño
@@ -23,7 +23,7 @@ del giro de gravedad y de las ayudas que compras en la tienda (deshacer y tubo e
 | Niveles | **Aleatorios**, generados por procedimiento y comprobados con un solucionador: **todos tienen solución sin habilidades**, también con la lluvia (ver «Solubilidad») |
 | Colores | Pocos al principio (3) y se van **desbloqueando** con los niveles; ventana «¡Nuevo color!» |
 | Ganar | Al **sellar todos los colores iniciales** del nivel |
-| Lluvia | Obstáculo: empieza entre el **25 % y el 45 %** del nivel (al azar), con gotas de colores mezclados a ritmo irregular; sus bolas no hay que ordenarlas. Es **justa**: nunca deja el nivel sin solución |
+| Lluvia | Obstáculo **temporal** (v1.0.5): empieza entre el **25 % y el 45 %** del nivel (al azar). Las gotas de **hielo** bloquean un tubo hasta derretirse tras unas jugadas; en los bloques altos, las de **niebla** vuelven a tapar bolas. No añade tubos ni cambia el tablero |
 | Giro de gravedad | **Habilidad** con barra de carga (150 pts), una sola carga por nivel |
 | Deshacer | Se **compra** en la tienda; sin límite por nivel |
 | Tubo de emergencia (tubo extra) | Un tubo de **1 hueco**; se **compra** en la tienda; **máximo uno por nivel** |
@@ -60,17 +60,21 @@ del giro de gravedad y de las ayudas que compras en la tienda (deshacer y tubo e
 ### Ganar
 
 - Se gana al **sellar todos los colores iniciales** del nivel.
-- Las bolas de lluvia **no hay que ordenarlas**: pueden quedar en cualquier tubo. Al ganar, la
-  lluvia pendiente se cancela.
-- Una gota encima de un color sin sellar sí estorba: hay que apartarla para completarlo.
+- Las bolas de hielo **no hay que ordenarlas**: se derriten solas. Al ganar, la lluvia pendiente
+  se cancela.
 
 ### Perder
 
-- **¡Se desbordó!** — cae una gota y no queda ningún tubo con hueco.
-- **Sin salida** — no queda ninguna jugada válida **y** no hay ayudas que puedan desbloquear la
-  partida (Gravedad sin cargar y sin tubo extra disponible: comprado y sin usar en este nivel).
-- En ambos casos el diálogo ofrece **Deshacer** (si tienes comprados), **Reiniciar nivel**, **Nivel
-  nuevo**, **Tienda** y **Menú**. Si compras deshacer en la tienda, al volver aparece el botón.
+- **Sin solución** (v1.0.5, lo pidió el usuario) — la partida ha quedado **imposible de
+  resolver**: el solucionador ha recorrido todas las jugadas posibles (contando que el hielo se
+  derrite) y no hay forma de sellar todos los colores, ni siquiera con las ayudas que quedan
+  (Gravedad cargada o tubo de emergencia disponible). Solo se declara si es **seguro**: si la
+  comprobación no termina a tiempo, no cuenta.
+- **Sin salida** — no queda ninguna jugada válida (y no es por el hielo) **y** no hay ayudas que
+  puedan desbloquear la partida (Gravedad sin cargar y sin tubo extra disponible).
+- La lluvia ya no hace perder: si una gota no encuentra tubo libre, espera.
+- En los dos casos el diálogo ofrece **Deshacer** (si tienes comprados), **Reiniciar nivel**,
+  **Tienda** y **Menú**. Si compras deshacer en la tienda, al volver aparece el botón.
 
 ## Mecánicas (todas activas a la vez)
 
@@ -83,23 +87,31 @@ del giro de gravedad y de las ayudas que compras en la tienda (deshacer y tubo e
   al empezar (de media un 20–26 %) no cuentan.
 - **Alerta de ~2,6 s** antes de la primera gota: sirena de evacuación (cuatro barridos ascendentes), la pantalla parpadea en rojo y
   ámbar y el aviso «¡Empieza a llover!» late. Después aparece el contador «Lluvia: N».
-- Las bolas de lluvia caen **congeladas** (escarcha, grietas y borde helado, con un toque de su
-  color) para distinguirlas del resto.
-- Caen **tandas de 4 bolas de colores nuevos**, todas **mezcladas** (los colores de distintas
-  tandas se intercalan), en un tubo al azar con hueco (también en el de emergencia).
+- La lluvia es un obstáculo **temporal**: no añade tubos, no cambia el tablero y nunca deja el
+  nivel sin solución (todo lo que hace se deshace solo). Hay dos tipos de gota:
+  - **Hielo**: una bola congelada (escarcha, grietas y borde helado, con un toque de su color)
+    cae **encima** de un tubo al azar con hueco que no esté ya helado (también el de emergencia) y
+    lo **bloquea**: no se puede sacar nada de él ni poner nada encima (tocarlo lo hace temblar).
+    Lleva un **número** con las jugadas que le faltan para derretirse; baja con cada jugada tuya
+    (mover, fusionar o girar) y al llegar a 0 se rompe en esquirlas. Tarda **4 jugadas** al
+    principio y una más cada 2 bloques, hasta **8** (+1 en el nivel difícil). Si no te queda
+    ninguna jugada por culpa del hielo, el que menos le falta se derrite al momento. Tras un giro
+    de gravedad el hielo puede quedar abajo: ya no bloquea y, al derretirse, las bolas de encima
+    bajan.
+  - **Niebla** (desde el bloque 5): vuelve a tapar con «?» hasta 2 bolas ya descubiertas de un
+    tubo (nunca la de arriba). Es un 20 % de las gotas en el bloque 5 y sube hasta el 45 %. Si no
+    hay nada que tapar, cae hielo.
+- Caen **tandas de 4 gotas**, todas **mezcladas** (los colores de distintas tandas se intercalan).
 - El ritmo es **irregular**: cada gota espera el intervalo del nivel ±40 % y, desde el bloque 2,
   a veces caen **dos casi seguidas** (ráfaga; probabilidad 14 % → 35 % con los bloques). El plan
   se sortea en cada partida (también al reiniciar), así que la lluvia no se repite
   (`src/juego/lluvia.ts`).
 - Las gotas **no bloquean los toques**: puedes seguir moviendo mientras caen.
-- **Lluvia justa**: antes de cada gota el juego comprueba (con el solucionador) en qué tubos puede
-  caer sin dejar el nivel imposible, y elige uno de esos al azar. Si ninguno es seguro en ese
-  momento, la gota **espera** (0,7 s) hasta que lo haya; nunca cae al azar por haber esperado.
-  Solo cae al azar si el cálculo no da tiempo (móvil muy lento, 4 veces seguidas) o si el
-  jugador ya se ha quedado sin solución por sus jugadas.
-- Al empezar a llover aparece **un tubo vacío más** (antes de la lluvia el nivel solo tiene 2
-  vacíos). Antes había uno por tanda desde el principio y los niveles sobraban de huecos.
-- Es solo un obstáculo: ocupa huecos y tapa colores. Se pierde si una gota no encuentra sitio.
+- Si no hay ningún tubo libre (todos llenos o helados), la gota espera 0,7 s y lo vuelve a intentar.
+- **Antes (hasta v1.0.4)** las bolas de lluvia se quedaban para siempre ocupando huecos; para que el
+  nivel siguiera teniendo solución, la lluvia elegía el tubo con el solucionador («lluvia justa»)
+  y traía un tubo vacío nuevo al empezar, que aparecía de golpe. El usuario prefería un obstáculo
+  que no cambiara el tablero.
 
 ### Alquimia (fusión)
 
@@ -160,17 +172,15 @@ ya no quedan colores, cada 10 niveles). Al principio sube con el número de nive
 
 | Nivel | Bloque | Colores a ordenar | Paleta | Tubos | Fusiones | Niebla | Tandas de lluvia | Intervalo |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 0 | 3 | 4 | 5 (+1) | 0 | 0 % | 1 | 5,85 s |
-| 6 | 1 | 3 | 5 (+naranja) | 5 (+1) | 1 | 25 % | 1 | 5,1 s |
-| 12 | 2 | 4 | 6 (+morado) | 6 (+1) | 2 | 55 % | 2 | 4,2 s |
-| 24 | 4 | 6 | 8 (+cian) | 8 (+1) | 2 | 60 % | 2 | 2,4 s |
-| 29 | 5 | 7 | 9 (+lima) | 9 (+1) | 2 | 60 % | 2 | 2,2 s |
-| 40 | 7 | 7 | 11 (+blanco) | 9 (+1) | 2 | 71 % | 3 | 2,05 s |
-| 48 | 8 | 8 | 12 (+azul divino) | 10 (+1) | 2 | 72 % | 3 | 1,98 s |
-| 64 | 10 | 8 | 14 (+plata) | 10 (+1) | 3 | 75 % | 3 | 1,85 s |
-| 103+ | 14+ | 8 | 18 | 10 (+1) | 3 | 80 % | 3 | 1,6 s |
-
-«(+1)»: el tubo vacío que trae la lluvia al empezar.
+| 1 | 0 | 3 | 4 | 5 | 0 | 0 % | 1 | 5,85 s |
+| 6 | 1 | 3 | 5 (+naranja) | 5 | 1 | 25 % | 1 | 5,1 s |
+| 12 | 2 | 4 | 6 (+morado) | 6 | 2 | 55 % | 2 | 4,2 s |
+| 24 | 4 | 6 | 8 (+cian) | 8 | 2 | 60 % | 2 | 2,4 s |
+| 29 | 5 | 7 | 9 (+lima) | 9 | 2 | 60 % | 2 | 2,2 s |
+| 40 | 7 | 7 | 11 (+blanco) | 9 | 2 | 71 % | 3 | 2,05 s |
+| 48 | 8 | 8 | 12 (+azul divino) | 10 | 2 | 72 % | 3 | 1,98 s |
+| 64 | 10 | 8 | 14 (+plata) | 10 | 3 | 75 % | 3 | 1,85 s |
+| 103+ | 14+ | 8 | 18 | 10 | 3 | 80 % | 3 | 1,6 s |
 
 - **Colores a ordenar**: los marca la paleta (desbloqueados − 2, para dejar sitio a los
   ingredientes; mínimo 3): 3 hasta el nivel 11, 4 desde el 12, 5 desde el 17, 6 desde el 24, 7
@@ -218,7 +228,7 @@ ya no quedan colores, cada 10 niveles). Al principio sube con el número de nive
   nivel (no al reiniciarlo).
 - **Lluvia**: usa colores desbloqueados que no estén en el nivel; si no queda ninguno (primeros
   niveles), uno aún por descubrir, que cae **congelado** (no se ve como bola normal).
-- **Tubos** = colores + 2 vacíos, y **+1 vacío al empezar la lluvia**.
+- **Tubos** = colores + 2 vacíos (la lluvia ya no añade ninguno).
 
 ### Curva de dificultad (medida)
 
@@ -228,39 +238,45 @@ niebla y ritmo de la lluvia) y su estadística. Resultado (130 niveles × 15 mue
 
 | Niveles | Índice | Éxito del jugador casual |
 | --- | --- | --- |
-| 1–10 | 12 | 86 % |
-| 11–20 | 50 | 25 % |
-| 21–30 | 67 | 5 % |
-| 31–40 | 74 | 1 % |
-| 51–60 | 83 | 1 % |
-| 71–130 | ≈ 88 | ≈ 0 % |
+| 1–10 | 11 | 85 % |
+| 11–20 | 46 | 31 % |
+| 21–30 | 65 | 8 % |
+| 31–40 | 73 | 2 % |
+| 51–60 | 81 | 1 % |
+| 71–130 | ≈ 87 | ≈ 0 % |
 
-- La dificultad **sube con cada desbloqueo**: correlación bloque ↔ índice ρ = 0,98 (nivel ↔ índice
+Con la lluvia de hielo (v1.0.5) la curva queda casi igual que con la lluvia anterior (v1.0.4:
+11–20 → 25 %, 21–30 → 5 %): se eligió un deshielo de 4–8 jugadas para compensar el tubo que la
+lluvia ya no trae.
+
+- La dificultad **sube con cada desbloqueo**: correlación bloque ↔ índice ρ = 0,99 (nivel ↔ índice
   0,88). Se aplana a partir del nivel ~70, cuando los parámetros llegan a sus topes.
-- El **nivel difícil** supera a la media de su bloque en **16 de 16** bloques, por 10,8 puntos de
+- El **nivel difícil** supera a la media de su bloque en **16 de 16** bloques, por 11,2 puntos de
   media (picos naranjas de la gráfica).
 - El «jugador casual» del análisis no planifica (juega la jugada obvia o una al azar), así que su
   éxito es una cota baja: una persona que piensa un par de jugadas gana bastante más. Aun así, la
   idea es que a partir del nivel ~15 haga falta pensar o usar habilidades: con el diseño anterior
   (hasta 5 tubos vacíos) se llegaba muy lejos sin usar ninguna.
-- Sin lluvia los niveles son fáciles: la dificultad real la ponen la **lluvia** (tiempo, huecos) y
-  la **niebla**.
+- Sin lluvia los niveles son fáciles: la dificultad real la ponen la **lluvia** (tubos bloqueados a
+  destiempo) y la **niebla**. El análisis no modela las gotas de niebla (su jugador casual no mira
+  las bolas ocultas), así que en los bloques altos el juego real es algo más difícil.
 
 ### Solubilidad (medida)
 
 `npm run simular` juega cada nivel con un jugador perfecto a tres velocidades (0,8 s, 1,5 s y
-2,5 s por jugada) mientras llueve. Resultado con 50 niveles × 10 partidas por velocidad:
+2,5 s por jugada) mientras llueve:
 
 | Reglas | Sin lluvia | Rápido | Normal | Lento |
 | --- | --- | --- | --- | --- |
 | Lluvia al azar, sin tubos extra (v0.1.4) | 100 % | 37 % | 10 % | 5 % |
 | v0.1.12: 2 vacíos + 1 al llover, lluvia justa que espera | **100 %** | **100 %** | **100 %** | **100 %** |
+| v1.0.5: lluvia de hielo y niebla (temporal) | **100 %** | **100 %** | **100 %** | **100 %** |
 
-(130 niveles × 2 partidas × 3 velocidades = 780/780.) **Corrección**: hasta v0.1.11 el simulador
-dejaba esperar a la gota sin límite cuando ningún tubo era seguro, pero el juego la soltaba al azar
-tras 4 esperas; con eso, el 100 % medido era optimista. Ahora el juego también espera (solo cae al
-azar si el cálculo se queda sin tiempo), y simulador y juego hacen lo mismo
-(`scripts/lib/juego.mjs`, `crearLluvia`).
+(130 niveles × 2 partidas × 3 velocidades = 780/780.) Con la lluvia temporal es de esperar: el
+hielo siempre se acaba derritiendo y la niebla solo tapa, así que la lluvia no puede dejar un nivel
+sin solución; solo pueden hacerlo las jugadas del jugador (y entonces es derrota «Sin solución»).
+El jugador perfecto planea como si el hielo no fuera a derretirse y, si así no hay plan, hace
+jugadas que no estropeen nada hasta que se derrite (`scripts/lib/juego.mjs`, `crearLluvia`).
 
 - **Reiniciar nivel**: misma configuración inicial (guardada al generar el nivel, también tras
   cerrar el juego). Los deshacer y tubos gastados no se devuelven.
@@ -317,7 +333,8 @@ Inspirado en un vídeo de referencia del usuario (solo tubos y animaciones; boto
   sobre su color, saltan **chispas** de ese color.
 - **Fusión** y **sellado**: estallido de chispas; el tubo sellado da un saltito.
 - **Gravedad**: unas flechas en círculo aparecen girando sobre los tubos mientras giran.
-- **Lluvia**: la bola congelada se aplasta al caer y suelta escarcha.
+- **Lluvia**: la bola de hielo se aplasta al caer y suelta escarcha; al derretirse se agranda y se
+  rompe en esquirlas. La niebla baja como una nube gris y las bolas tapadas parpadean a «?».
 - **Victoria**: los tubos saltan en ola con chispas antes del diálogo.
 
 ## Sonido y música
