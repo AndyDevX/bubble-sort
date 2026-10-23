@@ -1,6 +1,6 @@
 import { FAMILIA, RECETAS, type ColorId } from './colores';
-import { CAPACIDAD, nuevaBola, type Bola, type Tubo } from './modelo';
-import { tieneSolucion } from './solucionador';
+import { CAPACIDAD, evaluarMovimiento, nuevaBola, type Bola, type Tubo } from './modelo';
+import { nodosHastaSolucion } from './solucionador';
 
 export interface ConfigNivel {
   colores: number;          // grupos de 4 a ordenar
@@ -155,10 +155,45 @@ function barajar<T>(lista: T[], rnd: Aleatorio): T[] {
   return lista;
 }
 
+/**
+ * Tableros resolubles que se generan por nivel para quedarse con el más difícil. Los primeros
+ * niveles usan el primero que sale; después se elige entre más cuanto más avanzado el bloque, y
+ * el nivel difícil entre más todavía.
+ */
+export function candidatosPorNivel(config: ConfigNivel, nivel: number): number {
+  if (nivel <= 3) return 1;
+  return Math.min(12, 4 + 2 * config.bloque) + (config.dificil ? 6 : 0);
+}
+
+/**
+ * Cuánto cuesta un tablero (más es más difícil): esfuerzo de la búsqueda hasta resolverlo, menos
+ * las bolas que ya empiezan juntas (pares de iguales seguidos en un tubo) y las jugadas «gratis»
+ * del principio (poner una bola sobre otra de su color o fusionar).
+ */
+export function dificultadTablero(tubos: Tubo[], nodos: number): number {
+  let pares = 0;
+  for (const t of tubos) {
+    for (let i = 1; i < t.bolas.length; i++) {
+      const [a, b] = [t.bolas[i - 1], t.bolas[i]];
+      if (a.color === b.color && a.ingrediente === b.ingrediente) pares++;
+    }
+  }
+  let gratis = 0;
+  for (let o = 0; o < tubos.length; o++) {
+    for (let d = 0; d < tubos.length; d++) {
+      if (o !== d && tubos[d].bolas.length > 0 && evaluarMovimiento(tubos, o, d)) gratis++;
+    }
+  }
+  return Math.log2(1 + nodos) - 1.5 * pares - 0.75 * gratis;
+}
+
 export function generarNivel(nivel: number, rnd: Aleatorio = Math.random): Nivel {
   const config = configNivel(nivel);
+  const buscados = candidatosPorNivel(config, nivel);
+  let mejor: { tubos: Tubo[]; coloresBase: ColorId[]; coloresLluvia: ColorId[]; dificultad: number } | null = null;
+  let encontrados = 0;
 
-  for (let intento = 0; intento < 200; intento++) {
+  for (let intento = 0; intento < 200 + buscados * 20 && encontrados < buscados; intento++) {
     const disponibles = ORDEN_COLORES.slice(0, config.desbloqueados);
     const recetas = RECETAS.filter((r) => [r.a, r.b, r.resultado].every((c) => disponibles.includes(c)));
     const receta = config.fusiones > 0 && recetas.length > 0 ? recetas[Math.floor(rnd() * recetas.length)] : null;
@@ -210,18 +245,24 @@ export function generarNivel(nivel: number, rnd: Aleatorio = Math.random): Nivel
       (t) => t.bolas.length === CAPACIDAD && t.bolas.every((b) => b.color === t.bolas[0].color && !b.ingrediente),
     );
     if (yaResuelto) continue;
-    if (!tieneSolucion(tubos)) continue;
+    const nodos = nodosHastaSolucion(tubos);
+    if (nodos < 0) continue;
 
-    barajar(tubos, rnd);
-
-    // Niebla: oculta una parte de las bolas que no están arriba
-    for (const t of tubos) {
-      for (let i = 0; i < t.bolas.length - 1; i++) {
-        if (rnd() < config.niebla) t.bolas[i].oculta = true;
-      }
-    }
-
-    return { tubos, coloresBase, coloresLluvia, config };
+    encontrados++;
+    const dificultad = dificultadTablero(tubos, nodos);
+    if (!mejor || dificultad > mejor.dificultad) mejor = { tubos, coloresBase, coloresLluvia, dificultad };
   }
-  throw new Error(`No se pudo generar el nivel ${nivel}`);
+  if (!mejor) throw new Error(`No se pudo generar el nivel ${nivel}`);
+
+  const { tubos, coloresBase, coloresLluvia } = mejor;
+  barajar(tubos, rnd);
+
+  // Niebla: oculta una parte de las bolas que no están arriba
+  for (const t of tubos) {
+    for (let i = 0; i < t.bolas.length - 1; i++) {
+      if (rnd() < config.niebla) t.bolas[i].oculta = true;
+    }
+  }
+
+  return { tubos, coloresBase, coloresLluvia, config };
 }

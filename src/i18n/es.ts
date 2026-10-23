@@ -17,7 +17,6 @@ export const es = {
   pausa: 'Pausa',
   continuar: 'Continuar',
   reiniciarNivel: 'Reiniciar nivel',
-  nivelNuevo: 'Nivel nuevo',
   deshacer: 'Deshacer ({n})',
   siguiente: 'Siguiente',
   nivelCompletado: '¡Nivel completado!',

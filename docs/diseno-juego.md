@@ -148,6 +148,12 @@ Al superar el nivel: **5 + puntos/10 monedas**. Los puntos también cargan la ba
 ## Niveles y dificultad
 
 Cada nivel se genera al azar y un solucionador comprueba que tiene solución (en milisegundos).
+**Tableros revueltos** (v1.0.4): desde el nivel 4 se generan varios tableros resolubles y se queda
+el más difícil: el que menos bolas iguales trae ya juntas, menos jugadas «gratis» ofrece al
+empezar (poner una bola sobre otra de su color o fusionar) y más le cuesta al solucionador. Se
+eligen entre 4 (bloque 0) y 12 (bloque 4 en adelante), y 6 más en el nivel difícil
+(`candidatosPorNivel`, `dificultadTablero`). Resultado: hacen falta ~10 % más movimientos y el
+jugador casual gana bastante menos (11–20: 36 % → 25 %).
 La dificultad va por **bloques**: un bloque va de un desbloqueo de color al siguiente (y, cuando
 ya no quedan colores, cada 10 niveles). Al principio sube con el número de nivel y después con
 **cada bloque**, sin estancarse hasta los topes (`configNivel` en `src/juego/niveles.ts`):
@@ -174,7 +180,7 @@ ya no quedan colores, cada 10 niveles). Al principio sube con el número de nive
 - **Nivel difícil**: el **último nivel de cada bloque** (justo antes del color nuevo) es más
   difícil que el resto del bloque: +15 % de niebla (máx. 85 %), lluvia un 20 % más rápida, una
   tanda de lluvia más y una fusión más. Al empezarlo sale una ventana de **advertencia** («¡Nivel
-  difícil!», triángulo de peligro, botón «¡Vamos!»; también con «Nivel nuevo», no al reiniciarlo),
+  difícil!», triángulo de peligro, botón «¡Vamos!»; no al reiniciarlo),
   el título de la partida se ve en naranja («Nivel N · Difícil») y al superarlo da **monedas
   dobles**. Niveles difíciles: 5, 11, 16, 23, 28, 34, 39, 47, 57, 63, 75, 82, 91, 102, 112, 122…
 - **Paleta** (18 colores): se empieza con **4 básicos** (rojo, azul, amarillo y verde); después se
@@ -209,7 +215,7 @@ ya no quedan colores, cada 10 niveles). Al principio sube con el número de nive
   distinguen por su dibujo).
 - **Aviso**: el color nuevo aparece seguro en el nivel que lo desbloquea y se anuncia en una **ventana** «¡Nuevo color!» (bola grande y su nombre, botón Continuar) cuando
   los tubos terminan de entrar; la partida queda en pausa. Solo la primera vez que se llega al
-  nivel (no al reiniciarlo ni con «Nivel nuevo»).
+  nivel (no al reiniciarlo).
 - **Lluvia**: usa colores desbloqueados que no estén en el nivel; si no queda ninguno (primeros
   niveles), uno aún por descubrir, que cae **congelado** (no se ve como bola normal).
 - **Tubos** = colores + 2 vacíos, y **+1 vacío al empezar la lluvia**.
@@ -222,16 +228,16 @@ niebla y ritmo de la lluvia) y su estadística. Resultado (130 niveles × 15 mue
 
 | Niveles | Índice | Éxito del jugador casual |
 | --- | --- | --- |
-| 1–10 | 11 | 89 % |
-| 11–20 | 46 | 36 % |
-| 21–30 | 65 | 10 % |
-| 31–40 | 73 | 4 % |
-| 51–60 | 82 | 2 % |
-| 71–130 | ≈ 87 | ≈ 1 % |
+| 1–10 | 12 | 86 % |
+| 11–20 | 50 | 25 % |
+| 21–30 | 67 | 5 % |
+| 31–40 | 74 | 1 % |
+| 51–60 | 83 | 1 % |
+| 71–130 | ≈ 88 | ≈ 0 % |
 
-- La dificultad **sube con cada desbloqueo**: correlación bloque ↔ índice ρ = 0,96 (nivel ↔ índice
-  0,86). Se aplana a partir del nivel ~70, cuando los parámetros llegan a sus topes.
-- El **nivel difícil** supera a la media de su bloque en **16 de 16** bloques, por 11,5 puntos de
+- La dificultad **sube con cada desbloqueo**: correlación bloque ↔ índice ρ = 0,98 (nivel ↔ índice
+  0,88). Se aplana a partir del nivel ~70, cuando los parámetros llegan a sus topes.
+- El **nivel difícil** supera a la media de su bloque en **16 de 16** bloques, por 10,8 puntos de
   media (picos naranjas de la gráfica).
 - El «jugador casual» del análisis no planifica (juega la jugada obvia o una al azar), así que su
   éxito es una cota baja: una persona que piensa un par de jugadas gana bastante más. Aun así, la
@@ -258,7 +264,8 @@ azar si el cálculo se queda sin tiempo), y simulador y juego hacen lo mismo
 
 - **Reiniciar nivel**: misma configuración inicial (guardada al generar el nivel, también tras
   cerrar el juego). Los deshacer y tubos gastados no se devuelven.
-- **Nivel nuevo**: otra configuración con el mismo número de nivel.
+- **No hay «Nivel nuevo»** (se quitó en v1.0.4): todos los niveles tienen solución sin habilidades,
+  así que no hace falta cambiar de tablero; solo se puede reiniciar el mismo.
 - Al ganar, «Siguiente» genera el nivel siguiente.
 
 ## Pantallas
@@ -272,9 +279,9 @@ azar si el cálculo se queda sin tiempo), y simulador y juego hacen lo mismo
    - Centro: los tubos (1 fila hasta 5 tubos, 2 filas a partir de 6).
    - Abajo: **Deshacer** y **Tubo extra** (con los usos comprados, o «+»), barra y botón de
      **Gravedad**.
-3. **Pausa**: Continuar · Reiniciar nivel · Nivel nuevo · Tienda · Ajustes · Menú.
+3. **Pausa**: Continuar · Reiniciar nivel · Tienda · Ajustes · Menú.
 4. **Victoria**: puntos y monedas ganadas (×2 en los niveles difíciles) · Siguiente · Menú.
-5. **Derrota**: motivo · Deshacer (si tienes) · Reiniciar nivel · Nivel nuevo · Tienda · Menú.
+5. **Derrota**: motivo · Deshacer (si tienes) · Reiniciar nivel · Tienda · Menú.
 6. **Colores** (catálogo): los 18 colores en orden de desbloqueo, en una cuadrícula de 4
    columnas. Los descubiertos (nivel alcanzado ≥ nivel en que aparecen) muestran su bola y su
    nombre; los demás, una **canica negra con «?»** y «Nivel N». Arriba, contador «Descubiertos: N

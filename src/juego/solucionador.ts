@@ -37,6 +37,15 @@ function sellable(tubo: string): boolean {
 }
 
 export function tieneSolucion(tubos: Tubo[], limiteNodos = 40000, coloresObjetivo?: ColorId[]): boolean {
+  return nodosHastaSolucion(tubos, limiteNodos, coloresObjetivo) >= 0;
+}
+
+/**
+ * Estados que explora la búsqueda hasta dar con una solución (-1 si no la encuentra dentro del
+ * límite). Sirve de medida del esfuerzo: un tablero en el que las jugadas obvias no llevan a nada
+ * obliga a explorar más.
+ */
+export function nodosHastaSolucion(tubos: Tubo[], limiteNodos = 40000, coloresObjetivo?: ColorId[]): number {
   const { estado: inicial, cod } = codificar(tubos);
 
   // Letras que deben acabar selladas (las de lluvia no). Los ingredientes (mayúsculas) siempre.
@@ -68,8 +77,8 @@ export function tieneSolucion(tubos: Tubo[], limiteNodos = 40000, coloresObjetiv
 
   while (pila.length > 0) {
     const e = pila.pop()!;
-    if (completo(e)) return true;
-    if (++nodos > limiteNodos) return false;
+    if (completo(e)) return nodos;
+    if (++nodos > limiteNodos) return -1;
 
     const hijos: { e: string[]; prioridad: number }[] = [];
     for (let o = 0; o < e.length; o++) {
@@ -119,5 +128,5 @@ export function tieneSolucion(tubos: Tubo[], limiteNodos = 40000, coloresObjetiv
     hijos.sort((a, b) => a.prioridad - b.prioridad);
     for (const h of hijos) pila.push(h.e);
   }
-  return false;
+  return -1;
 }

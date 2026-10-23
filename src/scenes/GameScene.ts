@@ -40,7 +40,8 @@ import { crearIconoMoneda } from '../ui/Moneda';
 import type { DatosDialogo } from './DialogoScene';
 
 // Cómo empieza la partida: seguir con el nivel guardado, reiniciarlo igual o generar uno nuevo
-export type ModoInicio = 'continuar' | 'reiniciar' | 'nuevo';
+// No hay «nivel nuevo»: todos los niveles tienen solución, así que solo se reinicia el mismo
+export type ModoInicio = 'continuar' | 'reiniciar';
 
 const PUNTOS_SELLAR = 100;
 const PUNTOS_FUSION = 25;
@@ -173,7 +174,7 @@ export class GameScene extends Phaser.Scene {
     iniciarMusicaPartida(this);
 
     // La configuración inicial del nivel se guarda al generarlo; reiniciar la vuelve a cargar igual
-    const guardado = this.modo === 'nuevo' ? null : cargarNivel(this.numeroNivel);
+    const guardado = cargarNivel(this.numeroNivel);
     // El color nuevo se anuncia solo la primera vez que se llega al nivel (no al reiniciarlo)
     const primeraVez = !guardado && this.modo === 'continuar';
     if (guardado) {
@@ -1172,7 +1173,6 @@ export class GameScene extends Phaser.Scene {
       botones: [
         { texto: t('continuar'), accion: 'continuar' },
         { texto: t('reiniciarNivel'), accion: 'reiniciar' },
-        { texto: t('nivelNuevo'), accion: 'nuevo' },
         { texto: t('tienda'), accion: 'tienda' },
         { texto: t('ajustes'), accion: 'ajustes' },
         { texto: t('menu'), accion: 'menu' },
@@ -1235,7 +1235,6 @@ export class GameScene extends Phaser.Scene {
         // Con deshacer comprados se puede volver atrás en vez de perder
         ...(this.puedeDeshacer() ? [{ texto: t('deshacer', { n: cantidadDe('deshacer') }), accion: 'deshacer' as const }] : []),
         { texto: t('reiniciarNivel'), accion: 'reiniciar' },
-        { texto: t('nivelNuevo'), accion: 'nuevo' },
         { texto: t('tienda'), accion: 'tienda' },
         { texto: t('menu'), accion: 'menu' },
       ],

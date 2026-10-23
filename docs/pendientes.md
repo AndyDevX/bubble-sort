@@ -6,21 +6,15 @@ que ya no aplique. Detalles de seguridad en [seguridad.md](./seguridad.md).
 
 ## 1. Comprobar lo que ya está publicado
 
-- [ ] **Tú** — Instalar el APK 1.0.0 desde la
-  [Release](https://github.com/AndyDevX/bubble-sort/releases/tag/v1.0.0) (permitir «orígenes
-  desconocidos»).
-- [ ] **Tú** — Comprobar que https://andydevx.github.io/bubble-sort/actualizacion/version.json
-  responde con la última versión (desde la sesión no se puede abrir `github.io`).
-- [ ] **Tú** — Probar la actualización en caliente. La 1.0.0 instalada tiene el método antiguo:
-  abrir la app, **esperar en el menú** a que salga «Versión X lista…» (unos segundos) y entonces
-  salir con el botón de inicio y volver a entrar. Desde ahí la app instala sola en el menú. Si el
-  aviso no sale nunca, pasar el registro (sus primeras líneas dicen qué falló, desde la versión
-  1.0.3).
-- [ ] **Tú** — Jugar unos niveles con la lluvia nueva (v0.1.12: menos tubos vacíos, lluvia
-  aleatoria que no bloquea) y pasar un **registro** nuevo (menú → Registro → descargar).
-- [ ] **Claude** — Con ese registro, ajustar la dificultad si hace falta. Opciones ya pensadas:
-  3 tubos vacíos en los primeros bloques, volver a un tubo extra por tanda de lluvia, o que la
-  lluvia no sea tan rápida en los niveles altos.
+- [x] **Tú** — Instalar el APK 1.0.0 desde la
+  [Release](https://github.com/AndyDevX/bubble-sort/releases/tag/v1.0.0).
+- [x] **Tú** — Probar la actualización en caliente: el registro del 23/10 ya viene de la v1.0.3.
+- [x] **Tú** — Jugar con la lluvia nueva y pasar un registro.
+- [x] **Claude** — Ajustar la dificultad con ese registro: v1.0.4 elige tableros más revueltos y
+  quita «Nivel nuevo».
+- [ ] **Tú** — Jugar la v1.0.4 y pasar otro registro: ¿la dificultad ya está bien o hace falta más?
+  Siguientes palancas si hace falta: más candidatos por nivel, lluvia más rápida o algo menos de
+  hueco libre al empezar.
 
 ## 2. Seguridad de la publicación (antes de repartir el APK o meter anuncios)
 

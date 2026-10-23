@@ -100,7 +100,12 @@ BootScene ──► MenuScene ──► GameScene
 ### Generador de niveles y solucionador
 
 - `src/juego/niveles.ts`: `configNivel(n)` (dificultad) y `generarNivel(n)` (baraja, reparte y
-  aplica niebla). Rechaza tableros con un tubo ya resuelto.
+  aplica niebla). Rechaza tableros con un tubo ya resuelto. Genera `candidatosPorNivel(config, n)`
+  tableros resolubles y se queda con el de mayor `dificultadTablero` = log2(1 + nodos del
+  solucionador) − 1,5 · pares de iguales seguidos − 0,75 · jugadas «gratis» iniciales. Coste en PC:
+  hasta ~100 ms en los niveles difíciles altos (8 colores), ~20–35 ms en los normales.
+- `nodosHastaSolucion(tubos, límite, objetivo?)`: lo mismo que `tieneSolucion` pero devuelve los
+  estados explorados (-1 si no encuentra solución); `tieneSolucion` lo usa por dentro.
 - `src/juego/solucionador.ts`: búsqueda en profundidad con tubos codificados como texto y
   estados visitados. Usa **las mismas reglas que el juego** (grupos, fusiones, sellado, capacidad
   de cada tubo). Si las reglas de movimiento cambian, **hay que actualizar también el
