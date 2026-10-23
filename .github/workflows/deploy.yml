@@ -30,6 +30,10 @@ jobs:
 
       - run: npm ci
       - run: npm run build
+        env:
+          # Cada despliegue es un build nuevo: se muestra en el menú del juego
+          VITE_NUMERO_BUILD: ${{ github.run_number }}
+          VITE_COMMIT: ${{ github.sha }}
 
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5

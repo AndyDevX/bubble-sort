@@ -8,7 +8,7 @@
 // - Todo lo demás (index.html incluido) va siempre a la red.
 //
 // Para borrar el caché de todos los jugadores, sube la versión.
-const VERSION = 'odi-sort-v1';
+const VERSION = 'odi-sort-v2'; // v2: canciones nuevas (borra las antiguas del caché)
 
 const ES_AUDIO = /\.(mp3|ogg|m4a|wav)$/i;
 const CON_HUELLA = /\/assets\/[^/]+-[A-Za-z0-9_-]{8}\.[a-z0-9]+$/i;

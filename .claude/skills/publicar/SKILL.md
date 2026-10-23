@@ -51,6 +51,7 @@ gh run view "$ID" --repo AndyDevX/bubble-sort            # resumen de jobs
 gh run view "$ID" --repo AndyDevX/bubble-sort --log-failed   # si falló
 ```
 
+- El número de build es el `run_number` de esa ejecución: `gh run view "$ID" --repo AndyDevX/bubble-sort --json number --jq .number`.
 - Si falla `npm run build` en Actions: corrige, vuelve al paso 1 y publica de nuevo.
 - Si falla `configure-pages` con «Not Found»: Pages está desactivado; el usuario debe ir a
   Settings → Pages → Source: **GitHub Actions** y luego relanzar (`gh run rerun "$ID"`).
@@ -63,5 +64,5 @@ gh run view "$ID" --repo AndyDevX/bubble-sort --log-failed   # si falló
 Breve y en español:
 - qué cambió (y cómo se usa si es algo nuevo);
 - qué se probó y con qué resultado (y qué no se pudo comprobar);
-- hash del commit y estado del despliegue con el enlace https://andydevx.github.io/bubble-sort/;
+- hash del commit, **número de build** (el `run_number` del workflow, que es el que sale en el menú) y estado del despliegue con el enlace https://andydevx.github.io/bubble-sort/;
 - cómo verlo en local: `git pull` y `npm run dev`.

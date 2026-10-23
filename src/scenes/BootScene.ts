@@ -1,16 +1,12 @@
 import Phaser from 'phaser';
 import { generarTexturasBolas } from '../juego/texturas';
-import { cargarEfectos } from '../sistemas/audio';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('Boot');
   }
 
-  preload() {
-    cargarEfectos(this);
-  }
-
+  // No se espera a ningún archivo: el audio se carga en segundo plano desde el menú
   create() {
     generarTexturasBolas(this);
     this.scene.start('Menu');

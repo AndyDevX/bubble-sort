@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
-import { NOMBRE_JUEGO } from '../constantes';
+import { COMMIT_BUILD, NOMBRE_JUEGO, NUMERO_BUILD } from '../constantes';
 import { t } from '../i18n';
-import { detenerMusica, precargarMusica } from '../sistemas/audio';
+import { cargarAudioEnSegundoPlano, detenerMusica } from '../sistemas/audio';
 import { getGuardado } from '../sistemas/guardado';
 import { crearBoton } from '../ui/Boton';
 import { crearBotonAjustes } from '../ui/BotonAjustes';
@@ -15,7 +15,7 @@ export class MenuScene extends Phaser.Scene {
   create() {
     // La música es solo de las partidas: aquí se para y se adelanta la carga
     detenerMusica();
-    precargarMusica(this);
+    cargarAudioEnSegundoPlano(this);
 
     const titulo = this.add
       .text(0, 0, NOMBRE_JUEGO, {
@@ -38,6 +38,15 @@ export class MenuScene extends Phaser.Scene {
       .text(0, 0, t('nivel', { n: getGuardado().nivel }), { fontFamily: 'sans-serif', fontSize: '32px', color: '#aaaacc' })
       .setOrigin(0.5);
 
+    // Número de build abajo a la izquierda (el engranaje ocupa la esquina derecha)
+    const build = this.add
+      .text(0, 0, [t('build', { n: NUMERO_BUILD }), COMMIT_BUILD].filter(Boolean).join(' · '), {
+        fontFamily: 'sans-serif',
+        fontSize: '24px',
+        color: '#66667a',
+      })
+      .setOrigin(0, 1);
+
     const ajustes = crearBotonAjustes(this, 0, 0, () => {
       this.scene.pause();
       this.scene.launch('Settings', { origen: this.scene.key });
@@ -50,6 +59,7 @@ export class MenuScene extends Phaser.Scene {
       nivel.setPosition(ancho / 2, alto * 0.6 + 100);
       // Esquina inferior derecha, respetando notch y barra de gestos
       ajustes.setPosition(zona.x + zona.ancho - 90, zona.y + zona.alto - 90);
+      build.setPosition(zona.x + 30, zona.y + zona.alto - 30);
     });
   }
 }

@@ -32,11 +32,22 @@ function siguientePista(escena: Phaser.Scene) {
   musicaActual.play();
 }
 
-// Carga en segundo plano las canciones que falten (no bloquea la escena)
-export function precargarMusica(escena: Phaser.Scene, alCargarUna?: () => void): void {
-  const faltan = PISTAS.filter((p) => !escena.cache.audio.exists(p.clave));
-  if (faltan.length === 0) return;
-  for (const p of faltan) escena.load.audio(p.clave, p.url);
+// Carga en segundo plano lo que falte del audio (no bloquea la escena: se puede ver y jugar
+// mientras tanto). Primero los efectos, que son pequeños, y después las canciones.
+// Si la escena se cierra a medias, la siguiente que llame a esto retoma lo que falte.
+export function cargarAudioEnSegundoPlano(escena: Phaser.Scene, alCargarUna?: () => void): void {
+  let pendientes = 0;
+  for (const efecto of EFECTOS) {
+    if (escena.cache.audio.exists(efecto)) continue;
+    escena.load.audio(efecto, [`assets/sfx/${efecto}.ogg`, `assets/sfx/${efecto}.mp3`]);
+    pendientes++;
+  }
+  for (const p of PISTAS) {
+    if (escena.cache.audio.exists(p.clave)) continue;
+    escena.load.audio(p.clave, p.url);
+    pendientes++;
+  }
+  if (pendientes === 0) return;
   if (alCargarUna) escena.load.on(Phaser.Loader.Events.FILE_COMPLETE, alCargarUna);
   escena.load.once(Phaser.Loader.Events.COMPLETE, () => {
     if (alCargarUna) escena.load.off(Phaser.Loader.Events.FILE_COMPLETE, alCargarUna);
@@ -50,7 +61,7 @@ export function iniciarMusicaPartida(escena: Phaser.Scene): void {
   if (musicaActual?.isPlaying) return;
   siguientePista(escena);
   // Si aún no había ninguna cargada, empieza en cuanto termine la primera
-  precargarMusica(escena, () => {
+  cargarAudioEnSegundoPlano(escena, () => {
     if (musicaActiva && !musicaActual?.isPlaying) siguientePista(escena);
   });
 }
@@ -77,13 +88,6 @@ export const EFECTOS = [
 ] as const;
 
 export type Efecto = (typeof EFECTOS)[number];
-
-// Se llama en BootScene.preload: son archivos pequeños (~10 KB cada uno)
-export function cargarEfectos(escena: Phaser.Scene): void {
-  for (const efecto of EFECTOS) {
-    escena.load.audio(efecto, [`assets/sfx/${efecto}.ogg`, `assets/sfx/${efecto}.mp3`]);
-  }
-}
 
 // `variar`: cambia un poco el tono al azar para que los sonidos repetidos no cansen
 export function reproducirEfecto(escena: Phaser.Scene, efecto: Efecto, variar = false): void {
