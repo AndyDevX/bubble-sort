@@ -90,8 +90,12 @@ BootScene ──► MenuScene ──► GameScene
 - Funciones clave: `evaluarMovimiento`, `aplicarMovimiento` (grupos, fusiones, sellado,
   revelado), `invertirTubos`, `hayMovimientos`, `nivelCompleto(tubos, coloresIniciales)`,
   `bolasBienColocadas`, `clonarTubos`, `capacidadDe`.
-- `GameScene` mantiene un `Map<id, Image>` de sprites y bloquea los toques mientras dura una
-  animación (`bloqueadoHasta`, en tiempo de juego).
+- `GameScene` mantiene un `Map<id, Image>` de sprites y bloquea los toques (`bloqueadoHasta`, en
+  tiempo de juego) solo durante la gravedad, el deshacer y la entrada de los tubos. Las gotas de
+  lluvia y las fusiones **no bloquean**: el modelo cambia al instante y el sprite de la bola
+  fusionada se crea ya (alfa 0) para que se pueda seguir jugando con ella. Las llamadas diferidas
+  de las animaciones comprueban `generacion` (sube al deshacer) para no tocar sprites de un
+  estado ya deshecho.
 
 ### Generador de niveles y solucionador
 
@@ -109,16 +113,26 @@ BootScene ──► MenuScene ──► GameScene
   cuando cabe; `bloqueDe(n)` (bloque = desbloqueos alcanzados, y uno cada 10 niveles al final)
   hace crecer niebla, lluvia y fusiones; `esNivelDificil(n)` = último nivel del bloque
   (`config.dificil`: más niebla, lluvia más rápida, +1 tanda, +1 fusión). `GameScene` lo avisa
-  con `DialogoScene` (icono `icono-peligro`), pone el título en naranja y paga monedas ×2; `tubosVacios` = 2 + tandas de lluvia. La lluvia puede usar un color
+  con `DialogoScene` (icono `icono-peligro`), pone el título en naranja y paga monedas ×2; `tubosVacios` = 2 y `tubosLluvia` = 1 (el vacío que
+  llega al empezar a llover). La lluvia puede usar un color
   aún no desbloqueado (cae congelada). `colorNuevo(n)` dice qué color se desbloquea en el nivel n (siempre sale en él);
   `GameScene.avisarColorNuevo` lo anuncia con `DialogoScene` (campo `bola`: textura de la bola).
+
+### Plan de lluvia
+
+`src/juego/lluvia.ts` → `planificarLluvia(config, colores)`: sortea en cada partida el umbral de
+inicio (25–45 %), el orden de las gotas (todas las tandas mezcladas) y la espera antes de cada una
+(intervalo ±40 %; ráfagas de 140 ms desde el bloque 2). No se guarda con el nivel: reiniciar da
+otra lluvia. `GameScene.programarGota` encadena un `delayedCall` por gota; al empezar a llover se
+añaden `tubosExtra` tubos vacíos (`agregarTubo`, compartido con el tubo de emergencia).
 
 ### Lluvia justa
 
 `GameScene.elegirTuboGota`: baraja los tubos con hueco y, para cada uno, simula la gota y llama a
 `tieneSolucion(..., 8000 nodos, coloresBase)`; usa el primero que deja solución. Si ninguno, la
-gota espera 700 ms (salvo que el estado actual ya no tenga solución: entonces cae al azar).
-Presupuesto de 40 ms por intento para no dar tirones; tras 4 esperas seguidas cae al azar.
+gota espera 700 ms y lo vuelve a intentar, sin límite (salvo que el estado actual ya no tenga
+solución: entonces cae al azar). Presupuesto de 40 ms por intento para no dar tirones; solo si el
+cálculo se queda sin presupuesto 4 veces seguidas cae al azar.
 Coste medido en PC: mediana 0,6 ms, p95 5 ms, peor 30 ms por comprobación.
 
 `npm run simular [niveles=50 pruebas=10]` (`scripts/simular-solubilidad.mjs`) compila
@@ -193,7 +207,8 @@ nivel no llega al 100 %.
   índice de dificultad por nivel y estadística (Spearman, pendientes, retrocesos, mesetas) →
   `docs/analisis-dificultad.md` + `.svg`. El jugador casual juega con lluvia justa y tiempo real.
 - `scripts/lib/juego.mjs`: compilación de `src/juego` y motor de búsqueda compartidos por ambos
-  scripts.
+  scripts. `crearLluvia(plan, …)` reproduce la lluvia del juego (plan, tubo extra, alerta, lluvia
+  justa que espera): si cambia la lluvia de `GameScene`, cámbiala también aquí.
 - **Registro de depuración** (`src/sistemas/registro.ts`, clave `odi-sort:registro`, últimas 40
   partidas, máx. 4000 eventos cada una): `iniciarRegistroNivel` al crear la partida (configuración,
   colores, tablero inicial), `registrar(tipo, datos)` en cada suceso y `cerrarRegistroNivel` al

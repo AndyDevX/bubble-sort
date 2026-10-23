@@ -121,6 +121,9 @@ Genera cientos de niveles y comprueba `tieneSolucion`, tiempos y casos límite.
 `npm run simular` (50 niveles × 3 velocidades de jugador con lluvia). Debe salir 100 % en todo:
 el usuario exige que **todos los niveles se puedan resolver sin habilidades**. Para ver cómo sube
 la dificultad, `npm run analizar` (regenera `docs/analisis-dificultad.md`).
+**Trampa**: el simulador solo vale si imita la lluvia real. `crearLluvia` (`scripts/lib/juego.mjs`)
+debe hacer lo mismo que `GameScene` (plan de `lluvia.ts`, tubo extra, qué hace la gota si ningún
+tubo es seguro). Hasta v0.1.11 no coincidían y el 100 % era optimista.
 
 ### Registro de partidas (depuración)
 

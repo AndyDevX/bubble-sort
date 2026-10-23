@@ -12,7 +12,7 @@ export const CAP = 4;
 
 export async function cargarJuego() {
   const salida = mkdtempSync(join(tmpdir(), 'odi-sort-sim-'));
-  const fuentes = ['modelo', 'colores', 'niveles', 'solucionador'].map((f) => join(RAIZ, 'src', 'juego', f + '.ts'));
+  const fuentes = ['modelo', 'colores', 'niveles', 'solucionador', 'lluvia'].map((f) => join(RAIZ, 'src', 'juego', f + '.ts'));
   execFileSync(join(RAIZ, 'node_modules', '.bin', 'tsc'), ['--ignoreConfig', ...fuentes, '--outDir', salida, '--module', 'esnext', '--target', 'es2022', '--moduleResolution', 'bundler', '--skipLibCheck'], { stdio: 'inherit' });
   for (const f of readdirSync(salida)) {
     const ruta = join(salida, f);
@@ -21,8 +21,9 @@ export async function cargarJuego() {
   writeFileSync(join(salida, 'package.json'), '{"type":"module"}');
   const niveles = await import(pathToFileURL(join(salida, 'niveles.js')).href);
   const colores = await import(pathToFileURL(join(salida, 'colores.js')).href);
+  const lluvia = await import(pathToFileURL(join(salida, 'lluvia.js')).href);
   buscarFusion = colores.buscarFusion;
-  return { ...niveles, ...colores };
+  return { ...niveles, ...colores, ...lluvia };
 }
 
 let buscarFusion = () => null;
@@ -145,4 +146,47 @@ export function soltar(e, i, letra) {
 // Estado inicial de un nivel generado
 export function codificarNivel(nivel, cod) {
   return nivel.tubos.map((t) => t.bolas.map((b) => (b.ingrediente ? cod.letra(b.color).toUpperCase() : cod.letra(b.color))).join(''));
+}
+
+// Lluvia como en el juego (GameScene): empieza al llegar al umbral del plan, trae sus tubos vacíos,
+// suena la alerta (2,6 s) y las gotas caen según el plan; cada gota va a un tubo al azar entre los
+// que dejan el nivel con solución («lluvia justa»); si no hay ninguno, espera 700 ms hasta que lo
+// haya. (En el juego, solo si el móvil no llega a calcularlo a tiempo varias veces seguidas cae al
+// azar; aquí el cálculo nunca se queda sin tiempo.)
+export const ALERTA_MS = 2600;
+export function crearLluvia(plan, cod, base, rnd = Math.random) {
+  const gotas = plan.gotas.map((g) => ({ letra: cod.letra(g.color), esperaMs: g.esperaMs }));
+  let proxima = Infinity;
+  let iniciada = false;
+  return {
+    umbral: plan.umbral,
+    iniciada: () => iniciada,
+    pendientes: () => gotas.length,
+    // Devuelve el tablero con los tubos de la lluvia añadidos
+    iniciar(e, t) {
+      iniciada = true;
+      proxima = t + ALERTA_MS + (gotas[0]?.esperaMs ?? 0);
+      return [...e, ...Array(plan.tubosExtra).fill('')];
+    },
+    // Suelta las gotas que tocan hasta el instante t
+    tick(e, t) {
+      let cayo = false;
+      while (gotas.length && t >= proxima) {
+        const conHueco = e.map((_, i) => i).filter((i) => e[i][0] !== '#' && e[i].length < CAP);
+        if (!conHueco.length) return { e, cayo, desborde: true };
+        conHueco.sort(() => rnd() - 0.5);
+        const letra = gotas[0].letra;
+        const segura = conHueco.find((i) => resolver(soltar(e, i, letra), cod, base, 8000));
+        if (segura === undefined && resolver(e, cod, base, 8000)) {
+          proxima += 700;
+          break;
+        }
+        e = soltar(e, segura ?? conHueco[0], letra);
+        gotas.shift();
+        cayo = true;
+        if (gotas.length) proxima += gotas[0].esperaMs;
+      }
+      return { e, cayo, desborde: false };
+    },
+  };
 }

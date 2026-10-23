@@ -6,9 +6,9 @@
 // cae la lluvia, con la misma regla de "lluvia justa" que el juego (GameScene.elegirTuboGota).
 // Comprueba además que cada nivel generado tiene solución sin lluvia.
 // Termina con error si algún perfil no llega al 100 %: úsalo al cambiar la dificultad.
-import { CAP, cargarJuego, codificarNivel, crearCodigo, ganado, progreso, resolver, soltar } from './lib/juego.mjs';
+import { CAP, cargarJuego, codificarNivel, crearCodigo, crearLluvia, ganado, progreso, resolver } from './lib/juego.mjs';
 
-const { generarNivel, configNivel, colorNuevo, ORDEN_COLORES, COLORES_DE_SALIDA, nivelDesbloqueo, COLORES, SALTO_MINIMO, SALTO_MAXIMO } = await cargarJuego();
+const { generarNivel, configNivel, colorNuevo, ORDEN_COLORES, COLORES_DE_SALIDA, nivelDesbloqueo, COLORES, SALTO_MINIMO, SALTO_MAXIMO, planificarLluvia } = await cargarJuego();
 
 // Orden de desbloqueo (lo pidió el usuario): todos los colores una vez, se empieza con 4 básicos,
 // después el resto de básicos y al final los especiales; cada desbloqueo llega entre 5 y 12 niveles
@@ -56,36 +56,20 @@ const PRUEBAS = Number(args.pruebas ?? 10);
 
 
 // Una partida: jugada cada `msJugada`; lluvia 'aleatoria' (como ahora) o 'justa'
-function partida(nivel, cod, base, msJugada, modoLluvia) {
+function partida(nivel, cod, base, msJugada) {
   let e = codificarNivel(nivel, cod);
-  const lluvia = nivel.coloresLluvia.flatMap((c) => Array(CAP).fill(cod.letra(c)));
+  const lluvia = crearLluvia(planificarLluvia(nivel.config, nivel.coloresLluvia), cod, base);
   const inicioBien = progreso(e, base);
   const porHacer = CAP * base.length - inicioBien;
   let plan = resolver(e, cod, base);
   if (!plan) return 'sinSolucion';
   let t = 0;
-  let proximaGota = Infinity;
   let paso = 1;
-  let esperas = 0;
   for (let jugadas = 0; jugadas < 400; jugadas++) {
-    // Gotas pendientes hasta este instante
-    while (lluvia.length && t >= proximaGota) {
-      const conHueco = e.map((x, i) => i).filter((i) => e[i][0] !== '#' && e[i].length < CAP);
-      if (!conHueco.length) return 'desborde';
-      conHueco.sort(() => Math.random() - 0.5);
-      let elegido = conHueco[0];
-      if (modoLluvia === 'justa') {
-        const bueno = conHueco.find((i) => resolver(soltar(e, i, lluvia[0]), cod, base, 8000));
-        if (bueno !== undefined) elegido = bueno;
-        else if (resolver(e, cod, base, 8000)) {
-          // Como el juego: ningún tubo seguro y aún hay solución → la gota espera 700 ms
-          proximaGota = t + 700;
-          esperas++;
-          break;
-        }
-      }
-      e = soltar(e, elegido, lluvia.shift());
-      proximaGota += nivel.config.intervaloLluviaMs;
+    const r = lluvia.tick(e, t);
+    if (r.desborde) return 'desborde';
+    if (r.cayo) {
+      e = r.e;
       plan = resolver(e, cod, base);
       paso = 1;
       if (!plan) return 'atascado';
@@ -95,8 +79,11 @@ function partida(nivel, cod, base, msJugada, modoLluvia) {
     e = plan[paso++];
     t += msJugada;
     if (ganado(e, base)) return 'gana';
-    if (proximaGota === Infinity && lluvia.length && (progreso(e, base) - inicioBien) / porHacer >= 0.35) {
-      proximaGota = t + 2600;
+    if (!lluvia.iniciada() && lluvia.pendientes() && (progreso(e, base) - inicioBien) / porHacer >= lluvia.umbral) {
+      e = lluvia.iniciar(e, t);
+      plan = resolver(e, cod, base); // con los tubos nuevos el plan puede ser otro
+      paso = 1;
+      if (!plan) return 'atascado';
     }
   }
   return 'atascado';
@@ -124,7 +111,7 @@ for (let n = 1; n <= NIVELES; n++) {
         totales.sinLluvia.total++;
         if (resolver(e0, cod, base, 200000)) totales.sinLluvia.gana++;
       }
-      if (partida(nivel, cod, base, ms, 'justa') === 'gana') gana++;
+      if (partida(nivel, cod, base, ms) === 'gana') gana++;
     }
     totales[nombre] ??= { gana: 0, total: 0 };
     totales[nombre].gana += gana;

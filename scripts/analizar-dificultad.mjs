@@ -13,9 +13,9 @@
 // Escribe docs/analisis-dificultad.md y docs/analisis-dificultad.svg.
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { CAP, RAIZ, cargarJuego, codificarNivel, crearCodigo, ganado, progreso, resolver, soltar, vecinos } from './lib/juego.mjs';
+import { CAP, RAIZ, cargarJuego, codificarNivel, crearCodigo, crearLluvia, ganado, progreso, resolver, vecinos } from './lib/juego.mjs';
 
-const { generarNivel, configNivel, ORDEN_COLORES, colorNuevo } = await cargarJuego();
+const { generarNivel, configNivel, ORDEN_COLORES, colorNuevo, planificarLluvia } = await cargarJuego();
 
 const args = Object.fromEntries(process.argv.slice(2).map((a) => a.split('=')));
 const NIVELES = Number(args.niveles ?? 60);
@@ -44,24 +44,14 @@ const clave = (e) => [...e].sort().join('|');
 function jugadorCasual(inicio, cod, base, nivel) {
   let e = inicio;
   let anterior = null;
-  const lluvia = nivel.coloresLluvia.flatMap((c) => Array(CAP).fill(cod.letra(c)));
+  const lluvia = crearLluvia(planificarLluvia(nivel.config, nivel.coloresLluvia, azar), cod, base, azar);
   const inicioBien = progreso(e, base);
   const porHacer = CAP * base.length - inicioBien;
   let t = 0;
-  let gota = Infinity;
   for (let j = 0; j < MAX_JUGADAS_CASUAL; j++) {
-    while (lluvia.length && t >= gota) {
-      const conHueco = e.map((_, i) => i).filter((i) => e[i][0] !== '#' && e[i].length < CAP);
-      if (!conHueco.length) return false;
-      conHueco.sort(() => azar() - 0.5);
-      const segura = conHueco.find((i) => resolver(soltar(e, i, lluvia[0]), cod, base, 8000));
-      if (segura === undefined && resolver(e, cod, base, 8000)) {
-        gota = t + 700; // ninguna segura y aún hay solución: la gota espera
-        break;
-      }
-      e = soltar(e, segura ?? conHueco[0], lluvia.shift());
-      gota += nivel.config.intervaloLluviaMs;
-    }
+    const r = lluvia.tick(e, t);
+    if (r.desborde) return false;
+    e = r.e;
     if (ganado(e, base)) return true;
     const claveAnterior = anterior && clave(anterior);
     const opciones = vecinos(e, cod).filter((v) => clave(v.e) !== claveAnterior);
@@ -77,7 +67,7 @@ function jugadorCasual(inicio, cod, base, nivel) {
     anterior = e;
     e = elegida.e;
     t += MS_JUGADA;
-    if (gota === Infinity && lluvia.length && (progreso(e, base) - inicioBien) / porHacer >= 0.35) gota = t + 2600;
+    if (!lluvia.iniciada() && lluvia.pendientes() && (progreso(e, base) - inicioBien) / porHacer >= lluvia.umbral) e = lluvia.iniciar(e, t);
   }
   return ganado(e, base);
 }
@@ -144,7 +134,7 @@ for (let n = 1; n <= NIVELES; n++) {
     n,
     colores: c.colores,
     paleta: c.desbloqueados,
-    tubos: c.colores + c.tubosVacios,
+    tubos: `${c.colores + c.tubosVacios}+${c.tubosLluvia}`,
     fusiones: c.fusiones,
     lluvia: c.lotesLluvia,
     intervalo: c.intervaloLluviaMs / 1000,
