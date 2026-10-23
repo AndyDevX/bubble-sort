@@ -30,6 +30,7 @@ export const es = {
   nuevoColor: '¡Nuevo color!',
   colorRojo: 'Rojo',
   colorAzul: 'Azul',
+  colorMedianoche: 'Medianoche',
   colorAmarillo: 'Amarillo',
   colorVerde: 'Verde',
   colorNaranja: 'Naranja',

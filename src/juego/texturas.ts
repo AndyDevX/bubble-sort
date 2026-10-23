@@ -28,7 +28,10 @@ function rgba(hex: number, alfa: number): string {
 // Canica de vidrio. Luz desde arriba a la izquierda (igual que tubos e iconos): reflejo nítido
 // arriba-izquierda, la luz atraviesa el vidrio y se concentra abajo-derecha (cáustica), borde más
 // oscuro por el grosor (Fresnel) y un filo claro.
-function dibujarEsfera(ctx: CanvasRenderingContext2D, color: number) {
+// Interior propio de algunos colores (p. ej. Medianoche); el vidrio de encima es el mismo para todos
+type Interior = (ctx: CanvasRenderingContext2D, c: number, r: number) => void;
+
+function dibujarEsfera(ctx: CanvasRenderingContext2D, color: number, interior?: Interior) {
   const r = TAMANO / 2 - 4;
   const c = TAMANO / 2;
   const circulo = () => {
@@ -36,15 +39,23 @@ function dibujarEsfera(ctx: CanvasRenderingContext2D, color: number) {
     ctx.arc(c, c, r, 0, Math.PI * 2);
   };
 
-  // Cuerpo: núcleo claro desplazado hacia la cáustica, borde profundo
-  const cuerpo = ctx.createRadialGradient(c + r * 0.18, c + r * 0.25, r * 0.05, c, c, r);
-  cuerpo.addColorStop(0, mezclar(color, 0xffffff, 0.45));
-  cuerpo.addColorStop(0.55, mezclar(color, 0xffffff, 0.05));
-  cuerpo.addColorStop(0.85, mezclar(color, 0x000000, 0.3));
-  cuerpo.addColorStop(1, mezclar(color, 0x000000, 0.55));
-  ctx.fillStyle = cuerpo;
-  circulo();
-  ctx.fill();
+  if (interior) {
+    ctx.save();
+    circulo();
+    ctx.clip();
+    interior(ctx, c, r);
+    ctx.restore();
+  } else {
+    // Cuerpo: núcleo claro desplazado hacia la cáustica, borde profundo
+    const cuerpo = ctx.createRadialGradient(c + r * 0.18, c + r * 0.25, r * 0.05, c, c, r);
+    cuerpo.addColorStop(0, mezclar(color, 0xffffff, 0.45));
+    cuerpo.addColorStop(0.55, mezclar(color, 0xffffff, 0.05));
+    cuerpo.addColorStop(0.85, mezclar(color, 0x000000, 0.3));
+    cuerpo.addColorStop(1, mezclar(color, 0x000000, 0.55));
+    ctx.fillStyle = cuerpo;
+    circulo();
+    ctx.fill();
+  }
 
   ctx.save();
   circulo();
@@ -85,6 +96,69 @@ function dibujarEsfera(ctx: CanvasRenderingContext2D, color: number) {
   ctx.arc(c + r * 0.52, c + r * 0.5, r * 0.06, 0, Math.PI * 2);
   ctx.fill();
 }
+
+// Medianoche: azul noche profundo con ondas de seda luminosas (azul eléctrico) que cruzan la bola
+// en diagonal, con filos brillantes. Dibujo fijo (sin azar) para que todas las bolas sean iguales.
+const ondasMedianoche: Interior = (ctx, c, r) => {
+  const fondo = ctx.createRadialGradient(c - r * 0.2, c - r * 0.1, r * 0.1, c, c, r);
+  fondo.addColorStop(0, '#0a1478');
+  fondo.addColorStop(0.6, '#040938');
+  fondo.addColorStop(1, '#01020f');
+  ctx.fillStyle = fondo;
+  ctx.fillRect(0, 0, TAMANO, TAMANO);
+
+  ctx.globalCompositeOperation = 'lighter';
+  const L = TAMANO;
+  // Cada onda es un valle: baja desde la izquierda, toca fondo hacia el centro y sube a la derecha.
+  // [y izquierda, y del valle, y derecha, grosor de la banda, intensidad]
+  const ondas: [number, number, number, number, number][] = [
+    [0.12, 0.42, 0.2, 0.2, 0.7],
+    [0.3, 0.6, 0.36, 0.18, 1],
+    [0.5, 0.76, 0.52, 0.16, 0.6],
+    [0.68, 0.92, 0.72, 0.14, 0.4],
+  ];
+  for (const [yi, yv, yd, grosor, fuerza] of ondas) {
+    const valle = (d: number) => {
+      ctx.moveTo(-4, (yi + d) * L);
+      ctx.bezierCurveTo(L * 0.3, (yv + d) * L, L * 0.55, (yv + d) * L, L + 4, (yd + d) * L);
+    };
+    // Banda de seda translúcida bajo el filo
+    const banda = ctx.createLinearGradient(0, yv * L * 0.8, 0, (yv + grosor) * L);
+    banda.addColorStop(0, `rgba(40,80,255,${0.38 * fuerza})`);
+    banda.addColorStop(1, 'rgba(10,25,160,0)');
+    ctx.fillStyle = banda;
+    ctx.beginPath();
+    valle(0);
+    ctx.lineTo(L + 4, (yd + grosor) * L);
+    ctx.bezierCurveTo(L * 0.55, (yv + grosor) * L, L * 0.3, (yv + grosor) * L, -4, (yi + grosor) * L);
+    ctx.closePath();
+    ctx.fill();
+    // Filo luminoso: más brillante a la izquierda, como en la referencia
+    const filo = ctx.createLinearGradient(0, 0, L, 0);
+    filo.addColorStop(0, `rgba(170,205,255,${0.95 * fuerza})`);
+    filo.addColorStop(0.45, `rgba(110,150,255,${0.75 * fuerza})`);
+    filo.addColorStop(1, `rgba(60,90,255,${0.25 * fuerza})`);
+    ctx.save();
+    ctx.shadowColor = '#3d6bff';
+    ctx.shadowBlur = 12;
+    ctx.strokeStyle = filo;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    valle(0);
+    ctx.stroke();
+    ctx.restore();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+
+  // Borde profundo (grosor del vidrio)
+  const borde = ctx.createRadialGradient(c, c, r * 0.7, c, c, r);
+  borde.addColorStop(0, 'rgba(0,0,10,0)');
+  borde.addColorStop(1, 'rgba(0,0,10,0.6)');
+  ctx.fillStyle = borde;
+  ctx.fillRect(0, 0, TAMANO, TAMANO);
+};
+
+const INTERIORES: Partial<Record<ColorId, Interior>> = { medianoche: ondasMedianoche };
 
 // Bola congelada (lluvia): conserva su color, mezclado con azul hielo, con escarcha, grietas
 // y un borde helado
@@ -171,13 +245,13 @@ function crear(escena: Phaser.Scene, clave: string, dibujar: (ctx: CanvasRenderi
 // Se llama una vez al arrancar (BootScene)
 export function generarTexturasBolas(escena: Phaser.Scene): void {
   for (const color of COLORES) {
-    crear(escena, `bola-${color}`, (ctx) => dibujarEsfera(ctx, PALETA[color]));
+    crear(escena, `bola-${color}`, (ctx) => dibujarEsfera(ctx, PALETA[color], INTERIORES[color]));
 
     crear(escena, `hielo-${color}`, (ctx) => dibujarHielo(ctx, PALETA[color]));
 
     // Ingrediente: misma esfera con un anillo discontinuo blanco
     crear(escena, `ing-${color}`, (ctx) => {
-      dibujarEsfera(ctx, PALETA[color]);
+      dibujarEsfera(ctx, PALETA[color], INTERIORES[color]);
       ctx.strokeStyle = 'rgba(255,255,255,0.95)';
       ctx.lineWidth = 9;
       ctx.setLineDash([14, 10]);

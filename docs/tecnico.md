@@ -167,7 +167,9 @@ nivel no llega al 100 %.
 - `chispa`: estrella blanca con halo para las partículas. `GameScene` crea **un solo emisor**
   (`crearEfectos`, `emitting: false`) y lo reutiliza con `estallarChispas(x, y, color, n)`
   (`setParticleTint` + `explode`); el tamaño se escala con el diámetro de bola.
-- Bolas: `dibujarEsfera` (canica de vidrio) la comparten bola, ingrediente y oculta.
+- Bolas: `dibujarEsfera` (canica de vidrio) la comparten bola, ingrediente y oculta. Un color
+  puede tener interior propio (`INTERIORES`, p. ej. `ondasMedianoche`); el vidrio de encima es
+  común. El valor de `PALETA` es el tono para tintes (tubo sellado, chispas).
 - Tubos (`src/juego/texturasTubo.ts`): texturas `tubo-atras`, `tubo-delante`, `tubo-liquido`,
   `tubo-tapon` y `tubo-corto-*` (emergencia), dibujadas una vez con degradados de Canvas y
   escaladas a `anchoTubo / TUBO_ANCHO` con origen `ORIGEN_TUBO`. Cada tubo en pantalla
