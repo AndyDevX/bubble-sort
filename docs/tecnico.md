@@ -119,6 +119,9 @@ BootScene ──► MenuScene ──► GameScene
     arranca el cargador **sin bloquear**. Si la escena se cierra a medias, la siguiente retoma.
   - `iniciarMusicaPartida` / `detenerMusica`: playlist aleatoria sin fin (no repite la anterior).
   - `reproducirEfecto(escena, efecto, variar?)`: efectos con volumen de Ajustes y tono variable.
+  - `iniciarEfecto(escena, efecto)`: efecto largo que devuelve la instancia para poder cortarlo
+    (la alarma de la lluvia). El gestor de sonido es **global**: lo que no se pare sigue sonando
+    al cambiar de escena.
 - **Efectos** en `public/assets/sfx/` (ogg + mp3), generados con `scripts/generar-sonidos.py`.
 - **Canciones** en `src/assets/musica/`: MP3 32 kbps a 16 kHz, **máximo 1,5 MB** cada una. No
   usar MP3 a 8 kHz (MPEG-2.5): Safari no lo reproduce bien.
@@ -126,7 +129,8 @@ BootScene ──► MenuScene ──► GameScene
 ### Texturas
 
 - Bolas dibujadas una vez al arrancar en `CanvasTexture` de 128 px (esfera con degradado,
-  ingrediente con anillo discontinuo, oculta con «?») — `src/juego/texturas.ts`.
+  ingrediente con anillo discontinuo, oculta con «?», **congelada** para la lluvia: `hielo-<color>`,
+  según `bola.lluvia`) — `src/juego/texturas.ts`. Todo es procedural (sin imágenes de terceros).
 
 ### Guardado (`localStorage`)
 

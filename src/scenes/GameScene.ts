@@ -20,7 +20,7 @@ import {
 } from '../juego/modelo';
 import { generarNivel, type Nivel } from '../juego/niveles';
 import { claveTextura, colorHex } from '../juego/texturas';
-import { iniciarMusicaPartida, reproducirEfecto } from '../sistemas/audio';
+import { iniciarEfecto, iniciarMusicaPartida, reproducirEfecto } from '../sistemas/audio';
 import { actualizarGuardado, getGuardado } from '../sistemas/guardado';
 import { cargarNivel, guardarNivel } from '../sistemas/nivelGuardado';
 import { repartirVentajas } from '../sistemas/ventajas';
@@ -38,6 +38,7 @@ const PUNTOS_FUSION = 25;
 const PUNTOS_ACIERTO = 10; // por bola colocada sobre una de su mismo color
 const PUNTOS_CARGA = 150; // puntos para llenar la barra de Gravedad (una sola carga)
 const MAX_DESHACER = 5; // deshacer disponibles por nivel
+const DURACION_ALERTA_LLUVIA = 2600; // ms de aviso (sonido + pantalla parpadeando) antes de la primera gota
 const UMBRAL_LLUVIA = 0.35; // la lluvia empieza al llevar este porcentaje del nivel resuelto (bolas bien colocadas)
 
 // Estado completo antes de una jugada, para poder deshacerla
@@ -94,6 +95,8 @@ export class GameScene extends Phaser.Scene {
   private iconoMoneda!: Phaser.GameObjects.Graphics;
   private textoLluvia!: Phaser.GameObjects.Text;
   private avisoLluvia!: Phaser.GameObjects.Text;
+  private veloAlerta!: Phaser.GameObjects.Rectangle;
+  private sonidoAlarma: ReturnType<typeof iniciarEfecto> = null;
   private barra!: BarraHabilidad;
   private botonPausa!: BotonRedondo;
   private botonDeshacer!: BotonRedondo;
@@ -126,6 +129,7 @@ export class GameScene extends Phaser.Scene {
     this.historial = [];
     this.deshacerRestantes = MAX_DESHACER;
     this.usosTuboEmergencia = 0;
+    this.sonidoAlarma = null;
   }
 
   create() {
@@ -163,7 +167,10 @@ export class GameScene extends Phaser.Scene {
     // El diálogo de derrota puede pedir deshacer
     const alPedirDeshacer = () => this.deshacer();
     this.events.on('deshacer', alPedirDeshacer);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.events.off('deshacer', alPedirDeshacer));
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.events.off('deshacer', alPedirDeshacer);
+      this.pararLluvia(); // también corta la alarma si estaba sonando
+    });
   }
 
   // ───────────────────────── Interfaz ─────────────────────────
@@ -183,10 +190,12 @@ export class GameScene extends Phaser.Scene {
 
     this.textoLluvia = this.add.text(0, 0, '', { ...estilo, fontSize: '26px', color: '#81d4fa' }).setOrigin(1, 0.5).setVisible(false);
     this.avisoLluvia = this.add
-      .text(0, 0, t('empiezaLluvia'), { ...estilo, fontSize: '48px', fontStyle: 'bold', color: '#81d4fa' })
+      .text(0, 0, t('empiezaLluvia'), { ...estilo, fontSize: '52px', fontStyle: 'bold', color: '#ffd54f', stroke: '#7f1d1d', strokeThickness: 8 })
       .setOrigin(0.5)
       .setAlpha(0)
       .setDepth(10);
+    // Velo de color que parpadea sobre toda la pantalla durante la alerta (no bloquea los toques)
+    this.veloAlerta = this.add.rectangle(0, 0, 1, 1, 0xff3b30).setOrigin(0).setAlpha(0).setDepth(9);
 
     this.barra = crearBarraHabilidad(this, t('gravedad'), () => this.usarGravedad());
 
@@ -225,6 +234,7 @@ export class GameScene extends Phaser.Scene {
     const abajoTubos = zona.y + zona.alto - 200;
     this.col = this.calcularColocacion(zona.x + 20, arribaTubos, zona.ancho - 40, abajoTubos - arribaTubos);
     this.avisoLluvia.setPosition(ancho / 2, arribaTubos + 10);
+    this.veloAlerta.setSize(ancho, this.scale.height);
 
     this.tubos.forEach((_, i) => {
       const c = this.col.centros[i];
@@ -614,18 +624,56 @@ export class GameScene extends Phaser.Scene {
   // ───────────────────────── Lluvia ─────────────────────────
 
   private iniciarLluvia() {
+    this.pararLluvia();
     this.lluviaIniciada = true;
     this.actualizarTextoLluvia();
     this.textoLluvia.setVisible(true);
-    reproducirEfecto(this, 'lluvia');
+    this.mostrarAlertaLluvia();
+    // La primera gota cae al terminar la alerta; después, una cada intervalo
+    this.temporizadorLluvia = this.time.delayedCall(DURACION_ALERTA_LLUVIA, () => {
+      this.arrancarLluvia();
+      this.soltarGota();
+    });
+  }
+
+  // Alerta de peligro (~2,6 s): sonido de alarma, pantalla parpadeando en rojo y ámbar y el
+  // aviso latiendo
+  private mostrarAlertaLluvia() {
+    this.sonidoAlarma?.destroy();
+    this.sonidoAlarma = iniciarEfecto(this, 'alarma');
+    const pulso = DURACION_ALERTA_LLUVIA / 8;
+    let rojo = true;
+    this.veloAlerta.setFillStyle(0xff3b30).setAlpha(0);
+    this.tweens.add({
+      targets: this.veloAlerta,
+      alpha: 0.26,
+      duration: pulso,
+      yoyo: true,
+      repeat: 3,
+      ease: 'Sine.easeInOut',
+      onRepeat: () => {
+        rojo = !rojo;
+        this.veloAlerta.setFillStyle(rojo ? 0xff3b30 : 0xffb300);
+      },
+      onComplete: () => this.veloAlerta.setAlpha(0),
+    });
     this.tweens.chain({
       targets: this.avisoLluvia,
       tweens: [
         { alpha: 1, scale: { from: 0.7, to: 1 }, duration: 250, ease: 'Back.easeOut' },
-        { alpha: 0, duration: 400, delay: 1200 },
+        { scale: 1.1, duration: 250, yoyo: true, repeat: 3, ease: 'Sine.easeInOut' },
+        { alpha: 0, duration: 300 },
       ],
     });
-    this.arrancarLluvia();
+  }
+
+  private ocultarAlertaLluvia() {
+    // La alarma se corta si la alerta termina antes (victoria, derrota, deshacer, salir)
+    if (this.sonidoAlarma?.isPlaying) this.sonidoAlarma.destroy();
+    this.sonidoAlarma = null;
+    this.tweens.killTweensOf([this.veloAlerta, this.avisoLluvia]);
+    this.veloAlerta.setAlpha(0);
+    this.avisoLluvia.setAlpha(0).setScale(1);
   }
 
   private arrancarLluvia() {
@@ -640,6 +688,7 @@ export class GameScene extends Phaser.Scene {
   private pararLluvia() {
     this.temporizadorLluvia?.remove();
     this.temporizadorLluvia = null;
+    this.ocultarAlertaLluvia();
   }
 
   private actualizarTextoLluvia() {
@@ -670,7 +719,7 @@ export class GameScene extends Phaser.Scene {
     const { tubo, i } = conHueco[Math.floor(Math.random() * conHueco.length)];
     if (this.seleccionado === i) this.bajar(i);
 
-    const bola = nuevaBola(this.lluviaPendiente.shift()!);
+    const bola: Bola = { ...nuevaBola(this.lluviaPendiente.shift()!), lluvia: true };
     tubo.bolas.push(bola);
     const sellado = intentarSellar(tubo);
     this.actualizarTextoLluvia();
@@ -876,7 +925,7 @@ export class GameScene extends Phaser.Scene {
       if (vivos.has(id)) continue;
       this.sprites.delete(id);
       this.tweens.killTweensOf(sprite);
-      const deLluvia = this.nivel.coloresLluvia.some((c) => sprite.texture.key.endsWith(`-${c}`));
+      const deLluvia = sprite.texture.key.startsWith('hielo-');
       this.tweens.add({
         targets: sprite,
         ...(deLluvia ? { y: -this.col.d } : { scale: 0 }),

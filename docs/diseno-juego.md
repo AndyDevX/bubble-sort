@@ -75,7 +75,10 @@ del giro de gravedad, de deshacer y, con suerte, de un tubo de emergencia.
   de cada color apiladas desde el fondo de un tubo (si varios tubos empiezan por el mismo color,
   cuenta el mejor). Se mide el **avance desde el inicio**: las bolas que ya estaban bien por azar
   al empezar (de media un 20–26 %) no cuentan.
-- Aviso «¡Empieza a llover!» y contador «Lluvia: N» arriba a la derecha.
+- **Alerta de ~2,6 s** antes de la primera gota: sonido de alarma, la pantalla parpadea en rojo y
+  ámbar y el aviso «¡Empieza a llover!» late. Después aparece el contador «Lluvia: N».
+- Las bolas de lluvia caen **congeladas** (escarcha, grietas y borde helado, con un toque de su
+  color) para distinguirlas del resto.
 - Caen **tandas de 4 bolas de un color nuevo**, una cada pocos segundos, en un tubo al azar con
   hueco (también en el de emergencia).
 - Es solo un obstáculo: ocupa huecos y tapa colores. Se pierde si una gota no encuentra sitio.

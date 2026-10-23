@@ -85,9 +85,22 @@ export const EFECTOS = [
   'victoria',
   'derrota',
   'boton',
+  'alarma',
 ] as const;
 
 export type Efecto = (typeof EFECTOS)[number];
+
+// Efecto largo que hay que poder cortar (p. ej. la alarma de la lluvia): devuelve la instancia.
+// El gestor de sonido es global, así que quien lo inicia debe pararlo si la escena se cierra.
+export function iniciarEfecto(escena: Phaser.Scene, efecto: Efecto): Sonido | null {
+  if (!escena.cache.audio.exists(efecto)) return null;
+  const volumen = getAjustes().volumenEfectos;
+  if (volumen <= 0) return null;
+  const sonido = escena.sound.add(efecto, { volume: volumen });
+  sonido.once(Phaser.Sound.Events.COMPLETE, () => sonido.destroy());
+  sonido.play();
+  return sonido;
+}
 
 // `variar`: cambia un poco el tono al azar para que los sonidos repetidos no cansen
 export function reproducirEfecto(escena: Phaser.Scene, efecto: Efecto, variar = false): void {

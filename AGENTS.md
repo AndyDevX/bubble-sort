@@ -80,7 +80,9 @@ documentación de [`docs/`](docs/).
 - Canciones en `src/assets/musica/`, **máximo 1,5 MB cada una**:
   `ffmpeg -i entrada -map_metadata -1 -ar 16000 -c:a libmp3lame -b:a 32k salida.mp3`.
   No uses MP3 a 8 kHz (Safari).
-- Efectos: edita `scripts/generar-sonidos.py` y ejecútalo; no los edites a mano.
+- Efectos: edita `scripts/generar-sonidos.py` y ejecútalo; no los edites a mano. Al regenerar,
+  **todos** los `.ogg` cambian de bytes (cabecera aleatoria) aunque suenen igual: sube solo los
+  que hayas cambiado (`git checkout --` el resto).
 - Si reemplazas un audio con el mismo nombre, sube `VERSION` en `public/sw.js`.
 
 ### Android

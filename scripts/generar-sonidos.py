@@ -181,6 +181,30 @@ def derrota():
     return s
 
 
+def tono_alarma(f, duracion):
+    """Tono de alarma: fundamental + armónicos impares (zumbido de sirena) con envolvente suave."""
+    n = int(FS * duracion)
+    ataque, suelta = int(0.012 * FS), int(0.04 * FS)
+    muestras = []
+    for i in range(n):
+        t = i / FS
+        v = math.sin(math.tau * f * t) + 0.33 * math.sin(math.tau * 3 * f * t) + 0.15 * math.sin(math.tau * 5 * f * t)
+        env = min(1.0, i / ataque, (n - i) / suelta)
+        muestras.append(v * env)
+    return muestras
+
+
+def alarma():
+    """Aviso de peligro de la lluvia (~2,5 s): sirena de dos tonos con un golpe de vidrio en cada tono."""
+    s = silencio(2.6)
+    for i in range(8):
+        f = 740 if i % 2 == 0 else 988
+        t = i * 0.3
+        mezclar(s, paso_bajo(tono_alarma(f, 0.27), 3500), t, 0.5)
+        mezclar(s, vidrio(f * 2, caida=0.06, golpe=0.15), t, 0.25)
+    return s
+
+
 def boton():
     s = silencio(0.2)
     mezclar(s, vidrio(1900, caida=0.035, golpe=0.25, brillo=0.6), 0)
@@ -199,6 +223,7 @@ SONIDOS = {
     'victoria': victoria,
     'derrota': derrota,
     'boton': boton,
+    'alarma': alarma,
 }
 
 
@@ -231,7 +256,8 @@ def guardar(nombre, muestras):
 
 if __name__ == '__main__':
     for nombre, generar in SONIDOS.items():
-        muestras = normalizar(generar())
+        # La alarma es un tono continuo: más baja para que suene parecida a los demás efectos
+        muestras = normalizar(generar(), pico=0.4 if nombre == 'alarma' else 0.8)
         guardar(nombre, muestras)
         print(f'{nombre:12s} {len(muestras) / FS:.2f} s')
     print(f'Listo: {SALIDA}')

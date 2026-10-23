@@ -7,6 +7,7 @@ export interface Bola {
   color: ColorId;
   oculta: boolean;      // niebla: se ve como "?" hasta que queda arriba
   ingrediente: boolean; // alquimia: solo sirve para fusionarse
+  lluvia?: boolean;     // cayó con la lluvia: se dibuja congelada
 }
 
 export interface Tubo {

@@ -8,7 +8,8 @@ Al publicar, añade la nueva versión arriba del todo (lo indica la skill `publi
 
 | Versión | Build | Commit | Fecha | Cambios |
 | --- | --- | --- | --- | --- |
-| 0.0.10 | 10 | (este) | 2026-10-23 | Documentación completa (README, diseño, técnica, historial) e instrucciones para agentes (`AGENTS.md`) |
+| 0.0.11 | 11 | (este) | 2026-10-23 | Bolas de lluvia congeladas. Alerta de lluvia de ~2,6 s con alarma y pantalla parpadeando en rojo y ámbar |
+| 0.0.10 | 10 | ab91c37 | 2026-10-23 | Documentación completa (README, diseño, técnica, historial) e instrucciones para agentes (`AGENTS.md`) |
 | 0.0.9 | 9 | 2f20f9d | 2026-10-23 | Proyecto Android (Capacitor 8.5.3, vertical) y workflow que genera el APK en cada versión MAJOR |
 | 0.0.8 | 8 | d0982dd | 2026-10-23 | Se gana al sellar los colores iniciales (la lluvia es solo obstáculo). Versionado semántico en el menú |
 | 0.0.7 | 7 | bf8cffa | 2026-10-23 | Número de build en el menú. 9 canciones nuevas comprimidas (2,4 MB). Audio cargado en segundo plano |
