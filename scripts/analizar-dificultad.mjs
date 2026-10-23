@@ -149,6 +149,8 @@ for (let n = 1; n <= NIVELES; n++) {
     lluvia: c.lotesLluvia,
     intervalo: c.intervaloLluviaMs / 1000,
     nuevo: colorNuevo(n),
+    bloque: c.bloque,
+    dificil: c.dificil,
     movs: media(movs),
     movsDe: desviacion(movs),
     nodos: media(nodos),
@@ -179,7 +181,9 @@ const ns = filas.map((f) => f.n);
 const indices = filas.map((f) => f.indice);
 const rho = spearman(ns, indices);
 const rhoCasual = spearman(ns, filas.map((f) => f.casual));
-const retrocesos = filas.filter((f, i) => i > 0 && f.indice < filas[i - 1].indice - 5);
+// Retroceso: el índice baja >5 puntos respecto al nivel anterior (salvo justo tras un nivel difícil,
+// que es más difícil a propósito)
+const retrocesos = filas.filter((f, i) => i > 0 && !filas[i - 1].dificil && f.indice < filas[i - 1].indice - 5);
 const tramos = [];
 for (let a = 1; a <= NIVELES; a += 10) {
   const t = filas.filter((f) => f.n >= a && f.n < a + 10);
@@ -194,6 +198,27 @@ for (let a = 1; a <= NIVELES; a += 10) {
   });
 }
 const meseta = tramos.filter((t) => Math.abs(t.pend) < 0.3).map((t) => t.nombre);
+
+// Por bloque (de un desbloqueo al siguiente): índice medio de los niveles normales y del difícil
+const bloques = [];
+for (const b of [...new Set(filas.map((f) => f.bloque))]) {
+  const f = filas.filter((x) => x.bloque === b);
+  const normales = f.filter((x) => !x.dificil);
+  const dificil = f.find((x) => x.dificil);
+  bloques.push({
+    bloque: b,
+    niveles: `${f[0].n}–${f[f.length - 1].n}`,
+    normal: media(normales.map((x) => x.indice)),
+    casualNormal: media(normales.map((x) => x.casual)),
+    dificil: dificil ? dificil.indice : null,
+    casualDificil: dificil ? dificil.casual : null,
+    nivelDificil: dificil?.n ?? null,
+  });
+}
+const completos = bloques.filter((b) => b.dificil !== null && b.normal > 0);
+const rhoBloques = spearman(bloques.map((b) => b.bloque), bloques.map((b) => b.normal));
+const dificilesMayores = completos.filter((b) => b.dificil > b.normal).length;
+const ventajaDificil = media(completos.map((b) => b.dificil - b.normal));
 const segundos = ((Date.now() - inicio) / 1000).toFixed(0);
 
 // ───────────── Informe ─────────────
@@ -211,12 +236,21 @@ de jugador casual por nivel; semilla fija). No editar a mano: vuelve a ejecutar 
   nivel ↔ éxito del jugador casual ρ = ${fmt(rhoCasual, 2)} (negativa = cada vez gana menos).
 - **Retrocesos** (el índice baja más de 5 puntos respecto al nivel anterior): ${retrocesos.length ? retrocesos.map((f) => f.n).join(', ') : 'ninguno'}.
 - **Mesetas** (tramos de 10 niveles con pendiente casi nula): ${meseta.length ? meseta.join(', ') : 'ninguna'}.
+- **Por bloque** (de un desbloqueo al siguiente): bloque ↔ índice medio de sus niveles normales
+  ρ = ${fmt(rhoBloques, 2)}. El **nivel difícil** supera a la media de su bloque en
+  ${dificilesMayores}/${completos.length} bloques, de media por **${fmt(ventajaDificil)} puntos**.
 
 Índice = 25 % movimientos de la solución + 15 % esfuerzo de búsqueda + 30 % fracaso del jugador
 casual + 15 % niebla + 15 % ritmo de la lluvia (cada medida normalizada entre el mínimo y el máximo
 de los niveles analizados).
 
 ![Índice de dificultad por nivel](analisis-dificultad.svg)
+
+## Por bloques
+
+| Bloque | Niveles | Índice niveles normales | Éxito casual normales | Nivel difícil | Índice difícil | Éxito casual difícil |
+| --- | --- | --- | --- | --- | --- | --- |
+${bloques.map((b) => `| ${b.bloque} | ${b.niveles} | ${fmt(b.normal)} | ${pct(b.casualNormal)} | ${b.nivelDificil ?? '—'} | ${b.dificil === null ? '—' : fmt(b.dificil)} | ${b.casualDificil === null ? '—' : pct(b.casualDificil)} |`).join('\n')}
 
 ## Por tramos
 
@@ -226,12 +260,12 @@ ${tramos.map((t) => `| ${t.nombre} | ${fmt(t.indice)} ± ${fmt(t.indiceDe)} | ${
 
 ## Por nivel
 
-| Nivel | Colores | Paleta | Tubos | Fusiones | Lluvia | Intervalo | Movimientos | log₁₀ nodos | Ramificación | Éxito casual | Niebla | Índice |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Nivel | Bloque | Colores | Paleta | Tubos | Fusiones | Lluvia | Intervalo | Movimientos | log₁₀ nodos | Ramificación | Éxito casual | Niebla | Índice |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 ${filas
   .map(
     (f) =>
-      `| ${f.n} | ${f.colores} | ${f.paleta}${f.nuevo ? ` (+${f.nuevo})` : ''} | ${f.tubos} | ${f.fusiones} | ${f.lluvia} | ${fmt(f.intervalo, 2)} s | ${fmt(f.movs)} ± ${fmt(f.movsDe)} | ${fmt(f.nodos, 2)} | ${fmt(f.rama)} | ${pct(f.casual)} | ${pct(f.niebla)} | ${fmt(f.indice)} |`,
+      `| ${f.dificil ? `**${f.n}** ⚠` : f.n} | ${f.bloque} | ${f.colores} | ${f.paleta}${f.nuevo ? ` (+${f.nuevo})` : ''} | ${f.tubos} | ${f.fusiones} | ${f.lluvia} | ${fmt(f.intervalo, 2)} s | ${fmt(f.movs)} ± ${fmt(f.movsDe)} | ${fmt(f.nodos, 2)} | ${fmt(f.rama)} | ${pct(f.casual)} | ${pct(f.niebla)} | ${fmt(f.indice)} |`,
   )
   .join('\n')}
 `;
@@ -247,6 +281,10 @@ const barras = filas
   .map((f) => `<rect x="${x(f.n) - 4}" y="${y(f.casual * 100)}" width="8" height="${H - m.b - y(f.casual * 100)}" fill="#81d4fa" opacity="0.35"/>`)
   .join('');
 const linea = filas.map((f) => `${x(f.n).toFixed(1)},${y(f.indice).toFixed(1)}`).join(' ');
+const puntosDificiles = filas
+  .filter((f) => f.dificil)
+  .map((f) => `<circle cx="${x(f.n).toFixed(1)}" cy="${y(f.indice).toFixed(1)}" r="4.5" fill="#ff7043" stroke="#1d1d2b" stroke-width="1.5"/>`)
+  .join('');
 const ejes = [0, 25, 50, 75, 100]
   .map((v) => `<line x1="${m.i}" x2="${W - m.d}" y1="${y(v)}" y2="${y(v)}" stroke="#44445e"/><text x="${m.i - 8}" y="${y(v) + 4}" text-anchor="end">${v}</text>`)
   .join('');
@@ -260,8 +298,8 @@ const desbloqueos = filas
   .join('');
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" font-family="sans-serif" font-size="12" fill="#aaaacc">
 <rect width="${W}" height="${H}" fill="#1d1d2b"/>${ejes}${desbloqueos}${barras}
-<polyline points="${linea}" fill="none" stroke="#4fc3f7" stroke-width="3"/>${marcas}
-<text x="${W / 2}" y="18" text-anchor="middle" fill="#ffffff" font-size="14">Índice de dificultad (línea) · éxito del jugador casual en % (barras) · desbloqueos (líneas amarillas)</text>
+<polyline points="${linea}" fill="none" stroke="#4fc3f7" stroke-width="3"/>${puntosDificiles}${marcas}
+<text x="${W / 2}" y="18" text-anchor="middle" fill="#ffffff" font-size="14">Índice (línea) · niveles difíciles (puntos naranjas) · éxito casual % (barras) · desbloqueos (amarillo)</text>
 <text x="${W / 2}" y="${H - 6}" text-anchor="middle">Nivel</text>
 </svg>
 `;
@@ -270,6 +308,7 @@ writeFileSync(join(RAIZ, 'docs', 'analisis-dificultad.svg'), svg);
 console.log(`Analizados ${total} niveles en ${segundos} s`);
 console.log(`Resolubles sin habilidades: ${resolubles}/${total}`);
 console.log(`Spearman nivel↔índice ρ = ${rho.toFixed(3)} · nivel↔éxito casual ρ = ${rhoCasual.toFixed(3)}`);
+console.log(`Bloques: ρ bloque↔índice normal = ${rhoBloques.toFixed(3)} · difícil > media del bloque en ${dificilesMayores}/${completos.length} (+${ventajaDificil.toFixed(1)} puntos de media)`);
 console.log(`Retrocesos (>5 puntos): ${retrocesos.map((f) => f.n).join(', ') || 'ninguno'} · Mesetas: ${meseta.join(', ') || 'ninguna'}`);
 console.log('Tramo     índice          pendiente  éxito casual  movimientos');
 for (const t of tramos) {

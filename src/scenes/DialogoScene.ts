@@ -33,7 +33,8 @@ export class DialogoScene extends Phaser.Scene {
 
     const separacion = 140;
     const altoBola = bola ? 170 : 0; // hueco para la bola, entre el título y el texto
-    const primerBoton = (texto ? 270 : 200) + altoBola; // distancia del borde superior al primer botón
+    const lineasExtra = texto ? texto.split('\n').length - 1 : 0; // el texto puede tener varias líneas
+    const primerBoton = (texto ? 270 + lineasExtra * 40 : 200) + altoBola; // distancia del borde superior al primer botón
     const altoPanel = primerBoton + (botones.length - 1) * separacion + 115;
     const anchoPanel = Math.min(620, width - 60);
     const arriba = (height - altoPanel) / 2;
@@ -62,7 +63,7 @@ export class DialogoScene extends Phaser.Scene {
 
     if (texto) {
       this.add
-        .text(width / 2, arriba + 165 + altoBola, texto, { fontFamily: 'sans-serif', fontSize: '32px', color: '#aaaacc' })
+        .text(width / 2, arriba + 165 + altoBola + lineasExtra * 20, texto, { fontFamily: 'sans-serif', fontSize: '32px', color: '#aaaacc', align: 'center' })
         .setOrigin(0.5);
     }
 

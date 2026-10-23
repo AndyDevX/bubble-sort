@@ -139,22 +139,33 @@ Al superar el nivel: **5 + puntos/10 monedas**. Los puntos también cargan la ba
 ## Niveles y dificultad
 
 Cada nivel se genera al azar y un solucionador comprueba que tiene solución (en milisegundos).
-La dificultad sube con el número de nivel (`configNivel` en `src/juego/niveles.ts`):
+La dificultad va por **bloques**: un bloque va de un desbloqueo de color al siguiente (y, cuando
+ya no quedan colores, cada 10 niveles). Al principio sube con el número de nivel y después con
+**cada bloque**, sin estancarse hasta los topes (`configNivel` en `src/juego/niveles.ts`):
 
-| Nivel | Colores a ordenar | Paleta desbloqueada | Tubos | Fusiones | Niebla | Tandas de lluvia | Intervalo |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 3 | 4 | 6 | 0 | 0 % | 1 | 5,85 s |
-| 6 | 3 | 5 (+naranja) | 6 | 1 | 25 % | 1 | 5,1 s |
-| 9 | 3 | 5 | 7 | 2 | 40 % | 2 | 4,65 s |
-| 12 | 4 | 6 (+morado) | 8 | 2 | 55 % | 2 | 4,2 s |
-| 17 | 5 | 7 (+rosa) | 9 | 2 | 60 % | 2 | 3,45 s |
-| 24 | 6 | 8 (+cian) | 10 | 2 | 60 % | 2 | 2,5 s |
-| 29 | 7 | 9 (+lima) | 11 | 2 | 60 % | 2 | 2,5 s |
-| 35 → 103 | 7 | 10 → 18 | 11 | 2 | 60 % | 2 | 2,5 s |
+| Nivel | Bloque | Colores a ordenar | Paleta | Tubos | Fusiones | Niebla | Tandas de lluvia | Intervalo |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 0 | 3 | 4 | 6 | 0 | 0 % | 1 | 5,85 s |
+| 6 | 1 | 3 | 5 (+naranja) | 6 | 1 | 25 % | 1 | 5,1 s |
+| 12 | 2 | 4 | 6 (+morado) | 8 | 2 | 55 % | 2 | 4,2 s |
+| 24 | 4 | 6 | 8 (+cian) | 10 | 2 | 60 % | 2 | 2,5 s |
+| 29 | 5 | 7 | 9 (+lima) | 11 | 2 | 60 % | 2 | 2,5 s |
+| 40 | 7 | 7 | 11 (+blanco) | 12 | 2 | 71 % | 3 | 2,05 s |
+| 48 | 8 | 8 | 12 (+azul divino) | 13 | 2 | 72 % | 3 | 1,98 s |
+| 64 | 10 | 8 | 14 (+plata) | 13 | 3 | 75 % | 3 | 1,85 s |
+| 103+ | 14+ | 8 | 18 | 13 | 3 | 80 % | 3 | 1,6 s |
 
 - **Colores a ordenar**: los marca la paleta (desbloqueados − 2, para dejar sitio a los
-  ingredientes; mínimo 3, máximo 7): 3 hasta el nivel 11, 4 desde el 12, 5 desde el 17, 6 desde
-  el 24 y 7 desde el 29. Nunca bajan. La primera fusión llega en el nivel 6 (antes no cabe).
+  ingredientes; mínimo 3): 3 hasta el nivel 11, 4 desde el 12, 5 desde el 17, 6 desde el 24, 7
+  desde el 29 y **8 desde el bloque 8** (nivel 48). Nunca bajan. La primera fusión, en el nivel 6.
+- **Con cada bloque**: la niebla sube del 60 % al 80 %, la lluvia acelera de 2,5 s a 1,6 s, llega
+  una **tercera tanda** de lluvia (bloque 7) y una **tercera fusión** (bloque 10).
+- **Nivel difícil**: el **último nivel de cada bloque** (justo antes del color nuevo) es más
+  difícil que el resto del bloque: +15 % de niebla (máx. 85 %), lluvia un 20 % más rápida, una
+  tanda de lluvia más y una fusión más. Al empezarlo sale una ventana de **advertencia** («¡Nivel
+  difícil!», triángulo de peligro, botón «¡Vamos!»; también con «Nivel nuevo», no al reiniciarlo),
+  el título de la partida se ve en naranja («Nivel N · Difícil») y al superarlo da **monedas
+  dobles**. Niveles difíciles: 5, 11, 16, 23, 28, 34, 39, 47, 57, 63, 75, 82, 91, 102, 112, 122…
 - **Paleta** (18 colores): se empieza con **4 básicos** (rojo, azul, amarillo y verde); después se
   desbloquean los otros 7 básicos y al final los 7 especiales. **Cada desbloqueo llega entre 5 y
   12 niveles después del anterior, nunca antes** (lo pidió el usuario; `SALTOS_DESBLOQUEO`): los
@@ -196,19 +207,24 @@ La dificultad sube con el número de nivel (`configNivel` en `src/juego/niveles.
 
 `npm run analizar` genera [analisis-dificultad.md](./analisis-dificultad.md) con un índice 0–100 por
 nivel (movimientos, esfuerzo de búsqueda, éxito de un jugador casual **con lluvia y tiempo real**,
-niebla y ritmo de la lluvia) y su estadística. Resultado (110 niveles × 15 muestras):
+niebla y ritmo de la lluvia) y su estadística. Resultado (130 niveles × 15 muestras):
 
 | Niveles | Índice | Éxito del jugador casual |
 | --- | --- | --- |
-| 1–10 | 11 | 100 % |
-| 11–20 | 41 | 98 % |
-| 21–30 | 62 | 85 % |
-| 31–110 | ≈ 73 (meseta) | ≈ 72 % |
+| 1–10 | 7 | 100 % |
+| 11–20 | 29 | 98 % |
+| 21–30 | 46 | 78 % |
+| 31–40 | 58 | 62 % |
+| 51–60 | 70 | 48 % |
+| 71–80 | 79 | 31 % |
+| 91–130 | ≈ 82 | ≈ 25 % |
 
-- La dificultad **sube de forma continua hasta el nivel ~31–35** y luego **se estanca**: todos los
-  parámetros llegan a su máximo entre los niveles 13 y 29 (niebla 60 % en el 13, lluvia cada
-  2,5 s en el 24, 7 colores en el 29). Los colores que se desbloquean después no hacen el nivel
-  más difícil.
+- La dificultad **sube con cada desbloqueo**: correlación bloque ↔ índice ρ = 0,99 (nivel ↔ índice
+  0,90). Solo se aplana a partir del nivel ~100, cuando ya están todos los colores y los parámetros
+  llegan a sus topes.
+- El **nivel difícil** supera a la media de su bloque en **16 de 16** bloques, por 14,8 puntos de
+  media (picos naranjas de la gráfica).
+- Antes de este cambio la dificultad se estancaba en el nivel ~25–35 (índice ≈ 73).
 - Sin lluvia los niveles son fáciles (un jugador al azar que no repite posiciones gana casi
   siempre con 2–3 tubos vacíos): la dificultad real la ponen la **lluvia** (tiempo) y la **niebla**.
 
@@ -242,7 +258,7 @@ el nivel tenía solución sin lluvia, la lluvia al azar lo hacía imposible much
    - Abajo: **Deshacer** y **Tubo extra** (con los usos comprados, o «+»), barra y botón de
      **Gravedad**.
 3. **Pausa**: Continuar · Reiniciar nivel · Nivel nuevo · Tienda · Ajustes · Menú.
-4. **Victoria**: puntos y monedas ganadas · Siguiente · Menú.
+4. **Victoria**: puntos y monedas ganadas (×2 en los niveles difíciles) · Siguiente · Menú.
 5. **Derrota**: motivo · Deshacer (si tienes) · Reiniciar nivel · Nivel nuevo · Tienda · Menú.
 6. **Colores** (catálogo): los 18 colores en orden de desbloqueo, en una cuadrícula de 4
    columnas. Los descubiertos (nivel alcanzado ≥ nivel en que aparecen) muestran su bola y su

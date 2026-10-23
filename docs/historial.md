@@ -8,7 +8,8 @@ Al publicar, añade la nueva versión arriba del todo (lo indica la skill `publi
 
 | Versión | Build | Commit | Fecha | Cambios |
 | --- | --- | --- | --- | --- |
-| 0.1.9 | 24 | (este) | 2026-10-23 | Cada color se desbloquea entre 5 y 12 niveles después del anterior (naranja 6 … oro 103); los colores por nivel siguen a la paleta sin bajar nunca. Análisis de dificultad actualizado |
+| 0.1.10 | 25 | (este) | 2026-10-23 | La dificultad crece con cada desbloqueo (bloques): más niebla, lluvia más rápida, 3.ª tanda, 3.ª fusión y 8 colores. El último nivel de cada bloque es **difícil**: aviso al empezar y monedas dobles. Análisis: ρ bloque↔dificultad 0,99; el difícil supera a su bloque 16/16 |
+| 0.1.9 | 24 | eea684e | 2026-10-23 | Cada color se desbloquea entre 5 y 12 niveles después del anterior (naranja 6 … oro 103); los colores por nivel siguen a la paleta sin bajar nunca. Análisis de dificultad actualizado |
 | 0.1.8 | 23 | 7fbdeb6 | 2026-10-23 | Se empieza con 4 colores (el resto de básicos y luego los especiales se desbloquean, uno cada 3,8 niveles de media). Pantalla de **Estadísticas**. Análisis estadístico de la dificultad (`npm run analizar`): sube hasta el nivel ~25 y luego se estanca |
 | 0.1.7 | 22 | 4a8ee86 | 2026-10-23 | Los 11 colores básicos, disponibles desde el inicio; los 7 especiales se desbloquean de media cada 4,6 niveles (azul divino 5, jade 10, plata 13, amatista 19, esmeralda 23, carmesí 28, oro 33). Se recuperan en `diseno-juego.md` las secciones de colores especiales borradas por error en 0.1.6 |
 | 0.1.6 | 21 | f053ebe | 2026-10-23 | Colores desbloqueados cada 8–12 niveles (salto distinto por color; Azul divino en el 9, Carmesí en el 132). La paleta marca cuántos colores tiene cada nivel |

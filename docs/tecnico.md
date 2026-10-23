@@ -105,7 +105,11 @@ BootScene ──► MenuScene ──► GameScene
   generar); con `coloresObjetivo` basta con sellar esos colores (partida con lluvia).
 - `configNivel(n)`: `desbloqueados` = 4 de salida (`COLORES_DE_SALIDA`) + los que marca
   `SALTOS_DESBLOQUEO` (cada salto entre `SALTO_MINIMO` = 5 y `SALTO_MAXIMO` = 12 niveles); colores
-  por nivel = desbloqueados − 2 (mín. 3, máx. 7, nunca bajan) y la fusión cuando cabe; `tubosVacios` = 2 + tandas de lluvia. La lluvia puede usar un color
+  por nivel = desbloqueados − 2 (mín. 3; máx. 7, u 8 desde el bloque 8; nunca bajan) y la fusión
+  cuando cabe; `bloqueDe(n)` (bloque = desbloqueos alcanzados, y uno cada 10 niveles al final)
+  hace crecer niebla, lluvia y fusiones; `esNivelDificil(n)` = último nivel del bloque
+  (`config.dificil`: más niebla, lluvia más rápida, +1 tanda, +1 fusión). `GameScene` lo avisa
+  con `DialogoScene` (icono `icono-peligro`), pone el título en naranja y paga monedas ×2; `tubosVacios` = 2 + tandas de lluvia. La lluvia puede usar un color
   aún no desbloqueado (cae congelada). `colorNuevo(n)` dice qué color se desbloquea en el nivel n (siempre sale en él);
   `GameScene.avisarColorNuevo` lo anuncia con `DialogoScene` (campo `bola`: textura de la bola).
 

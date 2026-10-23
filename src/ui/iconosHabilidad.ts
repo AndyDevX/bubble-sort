@@ -12,6 +12,7 @@ const GROSOR = 13;
 export const ICONO_DESHACER = 'icono-deshacer';
 export const ICONO_TUBO = 'icono-tubo';
 export const ICONO_GRAVEDAD = 'icono-gravedad';
+export const ICONO_PELIGRO = 'icono-peligro';
 
 function sombra(ctx: CanvasRenderingContext2D) {
   ctx.shadowColor = 'rgba(0,0,0,0.25)';
@@ -165,6 +166,37 @@ function dibujarGravedad(ctx: CanvasRenderingContext2D) {
   sinSombra(ctx);
 }
 
+// Triángulo de advertencia ámbar con borde rojo y «!»: aviso de nivel difícil
+function dibujarPeligro(ctx: CanvasRenderingContext2D) {
+  const triangulo = () => {
+    ctx.beginPath();
+    ctx.moveTo(64, 14);
+    ctx.lineTo(116, 108);
+    ctx.lineTo(12, 108);
+    ctx.closePath();
+  };
+  sombra(ctx);
+  const relleno = ctx.createLinearGradient(0, 14, 0, 108);
+  relleno.addColorStop(0, '#ffe082');
+  relleno.addColorStop(1, '#ff9800');
+  ctx.fillStyle = relleno;
+  ctx.lineJoin = 'round';
+  triangulo();
+  ctx.fill();
+  sinSombra(ctx);
+  ctx.strokeStyle = '#d32f2f';
+  ctx.lineWidth = 8;
+  triangulo();
+  ctx.stroke();
+  ctx.fillStyle = TINTA;
+  ctx.beginPath();
+  ctx.roundRect(58, 42, 12, 38, 6);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(64, 92, 7, 0, Math.PI * 2);
+  ctx.fill();
+}
+
 function crear(escena: Phaser.Scene, clave: string, dibujar: (ctx: CanvasRenderingContext2D) => void) {
   if (escena.textures.exists(clave)) return;
   const textura = escena.textures.createCanvas(clave, TAMANO, TAMANO);
@@ -178,4 +210,5 @@ export function generarIconosHabilidad(escena: Phaser.Scene): void {
   crear(escena, ICONO_DESHACER, dibujarDeshacer);
   crear(escena, ICONO_TUBO, dibujarTubo);
   crear(escena, ICONO_GRAVEDAD, dibujarGravedad);
+  crear(escena, ICONO_PELIGRO, dibujarPeligro);
 }

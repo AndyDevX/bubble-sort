@@ -30,7 +30,7 @@ import { sumarColor, sumarHabilidad, sumarNivel } from '../sistemas/estadisticas
 import { cantidadDe, gastar } from '../sistemas/tienda';
 import { crearBarraHabilidad, type BarraHabilidad } from '../ui/BarraHabilidad';
 import { crearBotonRedondo, iconoPausa, type BotonRedondo } from '../ui/BotonRedondo';
-import { ICONO_DESHACER, ICONO_TUBO } from '../ui/iconosHabilidad';
+import { ICONO_DESHACER, ICONO_PELIGRO, ICONO_TUBO } from '../ui/iconosHabilidad';
 import { crearInsignia, type Insignia } from '../ui/Insignia';
 import { alRedimensionar, zonaSegura } from '../ui/layout';
 import { crearIconoMoneda } from '../ui/Moneda';
@@ -196,7 +196,9 @@ export class GameScene extends Phaser.Scene {
     this.crearEfectos();
     alRedimensionar(this, (ancho) => this.colocarTodo(ancho));
     this.animarEntrada();
-    if (primeraVez) this.avisarColorNuevo();
+    // Aviso de nivel difícil (también al pedir «Nivel nuevo»; no al reiniciarlo) o de color nuevo
+    if (this.esDificil() && this.modo !== 'reiniciar') this.avisarNivelDificil();
+    else if (primeraVez) this.avisarColorNuevo();
 
     // El diálogo de derrota puede pedir deshacer
     const alPedirDeshacer = () => this.deshacer();
@@ -218,7 +220,14 @@ export class GameScene extends Phaser.Scene {
 
     this.botonPausa = crearBotonRedondo(this, 0, 0, 44, iconoPausa, () => this.pausar());
 
-    this.textoNivel = this.add.text(0, 0, t('nivel', { n: this.numeroNivel }), { ...estilo, fontSize: '40px', fontStyle: 'bold' }).setOrigin(0.5);
+    this.textoNivel = this.add
+      .text(0, 0, this.esDificil() ? t('nivelTituloDificil', { n: this.numeroNivel }) : t('nivel', { n: this.numeroNivel }), {
+        ...estilo,
+        fontSize: '40px',
+        fontStyle: 'bold',
+        color: this.esDificil() ? '#ff8a65' : '#ffffff',
+      })
+      .setOrigin(0.5);
     this.textoPuntos = this.add.text(0, 0, t('puntos', { n: 0 }), { ...estilo, fontSize: '28px', color: '#aaaacc' }).setOrigin(0.5);
 
     this.iconoMoneda = crearIconoMoneda(this);
@@ -664,6 +673,26 @@ export class GameScene extends Phaser.Scene {
 
   // Al llegar a un nivel que desbloquea un color: ventana con la bola nueva (la partida queda en
   // pausa y no se tapa nada). Se abre cuando los tubos ya han entrado.
+  // El nivel guardado conserva su configuración (los de versiones anteriores no traen `dificil`)
+  private esDificil() {
+    return this.nivel.config.dificil === true;
+  }
+
+  // Antes de un nivel difícil: ventana de advertencia (la partida queda en pausa)
+  private avisarNivelDificil() {
+    this.time.delayedCall(this.bloqueadoHasta - this.time.now + 100, () => {
+      if (this.terminado) return;
+      reproducirEfecto(this, 'error');
+      this.cameras.main.shake(200, 0.006);
+      this.abrirDialogo({
+        titulo: t('nivelDificil'),
+        bola: ICONO_PELIGRO,
+        texto: t('nivelDificilTexto'),
+        botones: [{ texto: t('aceptarReto'), accion: 'continuar' }],
+      });
+    });
+  }
+
   private avisarColorNuevo() {
     const color = colorNuevo(this.numeroNivel);
     if (!color) return;
@@ -1060,7 +1089,7 @@ export class GameScene extends Phaser.Scene {
     this.textoLluvia.setVisible(false);
 
     sumarNivel('nivelesSuperados');
-    const monedas = 5 + Math.floor(this.puntos / 10);
+    const monedas = (5 + Math.floor(this.puntos / 10)) * (this.esDificil() ? 2 : 1);
     const guardado = getGuardado();
     const siguiente = this.numeroNivel + 1;
     actualizarGuardado({
@@ -1076,7 +1105,7 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(950, () =>
       this.abrirDialogo({
         titulo: t('nivelCompletado'),
-        texto: t('recompensa', { puntos: this.puntos, monedas }),
+        texto: t(this.esDificil() ? 'recompensaDoble' : 'recompensa', { puntos: this.puntos, monedas }),
         botones: [
           { texto: t('siguiente'), accion: 'siguiente' },
           { texto: t('menu'), accion: 'menu' },

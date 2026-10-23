@@ -10,6 +10,8 @@ export interface ConfigNivel {
   niebla: number;           // 0..1: proporción de bolas (no de arriba) ocultas
   lotesLluvia: number;      // tandas de 4 bolas que caen a partir del 35 %
   intervaloLluviaMs: number;
+  bloque: number;           // tramo de dificultad: sube con cada desbloqueo (y cada 10 niveles al final)
+  dificil: boolean;         // último nivel del bloque: más difícil que el resto, con aviso y monedas dobles
 }
 
 // Orden de los colores: se empieza con 4 básicos, después se desbloquean los demás básicos y al
@@ -39,8 +41,32 @@ function desbloqueadosEn(nivel: number): number {
   return COLORES_DE_SALIDA + NIVELES_DESBLOQUEO.filter((n) => n <= nivel).length;
 }
 
-// Colores a ordenar: muy pocos al principio y uno más cada vez más niveles
-function coloresPorNivel(nivel: number): number {
+// ───────────── Bloques de dificultad ─────────────
+// Un bloque va de un desbloqueo al siguiente. Cuando ya no quedan colores, sigue habiendo un bloque
+// nuevo cada BLOQUE_FINAL niveles, así la dificultad no deja de crecer.
+const BLOQUE_FINAL = 10;
+const ULTIMO_DESBLOQUEO = NIVELES_DESBLOQUEO[NIVELES_DESBLOQUEO.length - 1];
+
+// Nivel en que empieza cada bloque (0 = nivel 1)
+function inicioBloque(bloque: number): number {
+  if (bloque === 0) return 1;
+  if (bloque <= NIVELES_DESBLOQUEO.length) return NIVELES_DESBLOQUEO[bloque - 1];
+  return ULTIMO_DESBLOQUEO + (bloque - NIVELES_DESBLOQUEO.length) * BLOQUE_FINAL;
+}
+
+export function bloqueDe(nivel: number): number {
+  if (nivel < ULTIMO_DESBLOQUEO) return NIVELES_DESBLOQUEO.filter((n) => n <= nivel).length;
+  return NIVELES_DESBLOQUEO.length + Math.floor((nivel - ULTIMO_DESBLOQUEO) / BLOQUE_FINAL);
+}
+
+// El nivel difícil de cada bloque es el último, justo antes del siguiente desbloqueo
+export function esNivelDificil(nivel: number): boolean {
+  return nivel > 1 && inicioBloque(bloqueDe(nivel) + 1) === nivel + 1;
+}
+
+// Colores a ordenar: muy pocos al principio y uno más cada vez más niveles; 8 desde el bloque 8
+function coloresPorNivel(nivel: number, bloque: number): number {
+  if (bloque >= 8) return 8;
   if (nivel <= 3) return 3;
   if (nivel <= 7) return 4;
   if (nivel <= 12) return 5;
@@ -48,26 +74,45 @@ function coloresPorNivel(nivel: number): number {
   return 7;
 }
 
-// Dificultad por nivel: todas las mecánicas activas, con intensidad creciente. Los colores a
-// ordenar (y los 2 ingredientes de una fusión) tienen que estar desbloqueados: si la paleta no da,
-// el nivel lleva menos colores o ninguna fusión. La lluvia puede usar un color por descubrir
-// (cae congelada).
+// Dificultad por nivel: todas las mecánicas activas, con intensidad que crece con el número de
+// nivel al principio y, después, con cada bloque (desbloqueo): más niebla, lluvia más rápida, una
+// tercera tanda de lluvia, tres fusiones y 8 colores. Los colores a ordenar (y los 2 ingredientes de
+// una fusión) tienen que estar desbloqueados. La lluvia puede usar un color por descubrir (cae
+// congelada). El último nivel de cada bloque es «difícil»: más niebla, lluvia más rápida, una tanda
+// más y una fusión más.
 export function configNivel(nivel: number): ConfigNivel {
   const desbloqueados = desbloqueadosEn(nivel);
-  const lotesLluvia = nivel < 9 ? 1 : 2;
+  const bloque = bloqueDe(nivel);
+  const dificil = esNivelDificil(nivel);
+
   // Los colores se calculan dejando sitio a los 2 ingredientes (mínimo 3), así no bajan cuando
   // llega la primera fusión; la fusión se activa en cuanto cabe en la paleta.
-  const colores = nivel < 3 ? 3 : Math.max(3, Math.min(coloresPorNivel(nivel), desbloqueados - 2));
-  let fusiones = nivel < 3 ? 0 : nivel < 9 ? 1 : 2;
+  const colores = nivel < 3 ? 3 : Math.max(3, Math.min(coloresPorNivel(nivel, bloque), desbloqueados - 2));
+  let fusiones = nivel < 3 ? 0 : nivel < 9 ? 1 : bloque >= 10 ? 3 : 2;
+  let lotesLluvia = nivel < 9 ? 1 : bloque >= 7 ? 3 : 2;
+  // La niebla crece con el nivel hasta el 60 % y después con el bloque, hasta el 80 %
+  let niebla = Math.min((nivel - 1) * 0.05, Math.min(0.8, 0.6 + 0.015 * bloque));
+  // La lluvia acelera con el nivel hasta 2,5 s y después con el bloque, hasta 1,6 s
+  let intervaloLluviaMs = Math.max(6000 - nivel * 150, Math.max(1600, 2500 - 65 * bloque));
+
+  if (dificil) {
+    niebla = Math.min(0.85, niebla + 0.15);
+    intervaloLluviaMs = Math.max(1300, Math.round(intervaloLluviaMs * 0.8));
+    lotesLluvia += 1;
+    fusiones = Math.min(4, fusiones + 1);
+  }
   if (colores + 2 > desbloqueados) fusiones = 0; // aún no caben los ingredientes
+
   return {
     colores,
     tubosVacios: 2 + lotesLluvia,
     desbloqueados,
     fusiones,
-    niebla: Math.min(0.6, (nivel - 1) * 0.05),
+    niebla,
     lotesLluvia,
-    intervaloLluviaMs: Math.max(2500, 6000 - nivel * 150),
+    intervaloLluviaMs,
+    bloque,
+    dificil,
   };
 }
 
