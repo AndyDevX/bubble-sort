@@ -1,0 +1,91 @@
+# Genera el APK de Android en cada versión MAJOR (1.0.0, 2.0.0…) y lo publica como Release.
+#
+# - Automático: en cada push a main que cambie package.json, si el MAJOR de la versión sube
+#   respecto al commit anterior.
+# - Manual: pestaña Actions → «APK por versión MAJOR» → Run workflow (sirve para probar el
+#   proceso; deja el APK como artefacto de la ejecución, sin crear Release).
+#
+# El APK es de depuración (firmado con la clave debug): se instala directamente en un móvil
+# Android. Para la Play Store hará falta firmar en modo release con un keystore guardado en los
+# secretos del repositorio (ver docs/tecnico.md).
+name: APK por versión MAJOR
+
+on:
+  push:
+    branches: [main]
+    paths: [package.json]
+  workflow_dispatch:
+
+permissions:
+  contents: write # para crear la Release con el APK
+
+concurrency:
+  group: apk
+  cancel-in-progress: false
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2 # para comparar con la versión del commit anterior
+
+      - name: ¿Ha subido el MAJOR?
+        id: version
+        run: |
+          actual=$(node -p "require('./package.json').version")
+          anterior=$(git show HEAD~1:package.json 2>/dev/null | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version" 2>/dev/null || echo "0.0.0")
+          echo "version=$actual" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "generar=true" >> "$GITHUB_OUTPUT"; echo "release=false" >> "$GITHUB_OUTPUT"
+          elif [ "${actual%%.*}" -gt "${anterior%%.*}" ]; then
+            echo "generar=true" >> "$GITHUB_OUTPUT"; echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "generar=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Versión $anterior → $actual"
+
+      - if: steps.version.outputs.generar == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - if: steps.version.outputs.generar == 'true'
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21 # Capacitor 8 necesita JDK 21
+
+      - name: Compilar el juego y sincronizar Android
+        if: steps.version.outputs.generar == 'true'
+        run: |
+          npm ci
+          npm run build
+          npx cap sync android
+        env:
+          VITE_NUMERO_BUILD: ${{ github.run_number }}
+          VITE_COMMIT: ${{ github.sha }}
+
+      - name: Compilar el APK
+        if: steps.version.outputs.generar == 'true'
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk "../odi-sort-v${{ steps.version.outputs.version }}.apk"
+
+      - if: steps.version.outputs.generar == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: odi-sort-v${{ steps.version.outputs.version }}
+          path: odi-sort-v${{ steps.version.outputs.version }}.apk
+
+      - name: Publicar la Release con el APK
+        if: steps.version.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="v${{ steps.version.outputs.version }}"
+          gh release create "$v" "odi-sort-$v.apk" --title "Odi Sort $v" --notes "APK de Odi Sort $v (build ${{ github.run_number }}). Instálalo en Android permitiendo «orígenes desconocidos»."
