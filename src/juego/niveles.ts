@@ -21,12 +21,14 @@ export const ORDEN_COLORES: ColorId[] = [
 ];
 export const COLORES_DE_SALIDA = 4;
 
-// Niveles entre un desbloqueo y el siguiente, distinto según el color (el primero cuenta desde el
-// nivel 1). Los básicos llegan rápido (2–4) porque la curva de colores por nivel los necesita;
-// los especiales, más espaciados (3–6). Media ≈ 3,8: más de un color nuevo cada 5 niveles.
+// Niveles entre un desbloqueo y el siguiente: entre 5 y 12, distinto según el color (el primero
+// cuenta desde el nivel 1). Los básicos van más seguidos (5–7) para que la curva de colores por
+// nivel no se frene; los especiales, más espaciados (6–12).
+export const SALTO_MINIMO = 5;
+export const SALTO_MAXIMO = 12;
 const SALTOS_DESBLOQUEO = [
-  2, 3, 2, 4, 3, 4, 3, // naranja, morado, rosa, cian, lima, marrón, blanco
-  4, 5, 3, 6, 4, 5, 5, // azul divino, jade, plata, amatista, esmeralda, carmesí, oro
+  5, 6, 5, 7, 5, 6, 5, // naranja, morado, rosa, cian, lima, marrón, blanco
+  8, 10, 6, 12, 7, 9, 11, // azul divino, jade, plata, amatista, esmeralda, carmesí, oro
 ];
 
 // Nivel en que se desbloquea cada color (acumulado desde el nivel 1)
@@ -53,10 +55,11 @@ function coloresPorNivel(nivel: number): number {
 export function configNivel(nivel: number): ConfigNivel {
   const desbloqueados = desbloqueadosEn(nivel);
   const lotesLluvia = nivel < 9 ? 1 : 2;
-  const deseado = coloresPorNivel(nivel);
+  // Los colores se calculan dejando sitio a los 2 ingredientes (mínimo 3), así no bajan cuando
+  // llega la primera fusión; la fusión se activa en cuanto cabe en la paleta.
+  const colores = nivel < 3 ? 3 : Math.max(3, Math.min(coloresPorNivel(nivel), desbloqueados - 2));
   let fusiones = nivel < 3 ? 0 : nivel < 9 ? 1 : 2;
-  if (fusiones > 0 && desbloqueados - 2 < 3) fusiones = 0; // no caben los ingredientes
-  const colores = Math.min(deseado, desbloqueados - (fusiones > 0 ? 2 : 0));
+  if (colores + 2 > desbloqueados) fusiones = 0; // aún no caben los ingredientes
   return {
     colores,
     tubosVacios: 2 + lotesLluvia,

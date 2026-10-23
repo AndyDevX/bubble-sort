@@ -8,11 +8,11 @@
 // Termina con error si algún perfil no llega al 100 %: úsalo al cambiar la dificultad.
 import { CAP, cargarJuego, codificarNivel, crearCodigo, ganado, progreso, resolver, soltar } from './lib/juego.mjs';
 
-const { generarNivel, configNivel, colorNuevo, ORDEN_COLORES, COLORES_DE_SALIDA, nivelDesbloqueo, COLORES } = await cargarJuego();
+const { generarNivel, configNivel, colorNuevo, ORDEN_COLORES, COLORES_DE_SALIDA, nivelDesbloqueo, COLORES, SALTO_MINIMO, SALTO_MAXIMO } = await cargarJuego();
 
 // Orden de desbloqueo (lo pidió el usuario): todos los colores una vez, se empieza con 4 básicos,
-// después el resto de básicos y al final los especiales; de media, al menos un color nuevo cada 5
-// niveles; los desbloqueos siguen ORDEN_COLORES y el color nuevo sale siempre en su nivel. Además,
+// después el resto de básicos y al final los especiales; cada desbloqueo llega entre 5 y 12 niveles
+// después del anterior (nunca menos); los desbloqueos siguen ORDEN_COLORES y el color nuevo sale siempre en su nivel. Además,
 // los colores a ordenar siempre están desbloqueados y la curva de colores no baja nunca.
 {
   const errores = [];
@@ -30,7 +30,11 @@ const { generarNivel, configNivel, colorNuevo, ORDEN_COLORES, COLORES_DE_SALIDA,
   }
   const niveles = ORDEN_COLORES.slice(COLORES_DE_SALIDA).map(nivelDesbloqueo);
   const media = (niveles.at(-1) - 1) / niveles.length;
-  if (media > 5) errores.push(`de media se desbloquea un color cada ${media.toFixed(1)} niveles (máx. 5)`);
+  if (SALTO_MINIMO !== 5 || SALTO_MAXIMO !== 12) errores.push('los límites de salto no son 5–12');
+  niveles.forEach((n, i) => {
+    const salto = n - (i ? niveles[i - 1] : 1);
+    if (salto < SALTO_MINIMO || salto > SALTO_MAXIMO) errores.push(`${ORDEN_COLORES[COLORES_DE_SALIDA + i]} llega ${salto} niveles después del anterior (debe ser 5–12)`);
+  });
   const secuencia = [];
   for (let n = 2; n <= 200; n++) {
     const c = colorNuevo(n);
