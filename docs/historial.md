@@ -8,7 +8,8 @@ Al publicar, añade la nueva versión arriba del todo (lo indica la skill `publi
 
 | Versión | Build | Commit | Fecha | Cambios |
 | --- | --- | --- | --- | --- |
-| 0.1.2 | 17 | (este) | 2026-10-23 | Color nuevo **Medianoche** (azul noche con ondas de seda luminosas), 6.º en desbloquearse; paleta de 12 colores |
+| 0.1.3 | 18 | (este) | 2026-10-23 | El color nuevo se llama **Azul divino** y se parece más a la referencia: sin líneas blancas, paleta medida de la imagen, barridos diagonales y resplandor azul |
+| 0.1.2 | 17 | 606394d | 2026-10-23 | Color nuevo **Medianoche** (azul noche con ondas de seda luminosas), 6.º en desbloquearse; paleta de 12 colores |
 | 0.1.1 | 16 | 6d3d5fd | 2026-10-23 | El color nuevo se anuncia en una ventana (bola y nombre) en vez de sobre los tubos |
 | 0.1.0 | 15 | b67cc47 | 2026-10-23 | **MINOR**: todos los niveles resolubles sin habilidades (lluvia justa + tubo extra por tanda, medido con `npm run simular`: 100 %). Colores que se desbloquean poco a poco. Alarma de sirena real. Respuesta táctil inmediata. Borrar progreso (botón oculto) |
 | 0.0.14 | 14 | cec8c77 | 2026-10-23 | Tubos de ensayo de vidrio realistas (dos capas, reflejos sobre las bolas, tapón que cae), bolas de vidrio e iconos de habilidad nuevos |

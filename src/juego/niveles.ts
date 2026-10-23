@@ -12,9 +12,9 @@ export interface ConfigNivel {
   intervaloLluviaMs: number;
 }
 
-// Orden en que aparecen los colores: 5 de salida y el resto se desbloquean (Medianoche es el 6.º).
+// Orden en que aparecen los colores: 5 de salida y el resto se desbloquean (Azul divino es el 6.º).
 // Las recetas de alquimia solo salen cuando sus 3 colores están desbloqueados.
-export const ORDEN_COLORES: ColorId[] = ['rojo', 'azul', 'amarillo', 'verde', 'naranja', 'medianoche', 'morado', 'rosa', 'cian', 'lima', 'marron', 'blanco'];
+export const ORDEN_COLORES: ColorId[] = ['rojo', 'azul', 'amarillo', 'verde', 'naranja', 'azulDivino', 'morado', 'rosa', 'cian', 'lima', 'marron', 'blanco'];
 
 // Colores a ordenar: muy pocos al principio y uno más cada vez más niveles
 function coloresPorNivel(nivel: number): number {

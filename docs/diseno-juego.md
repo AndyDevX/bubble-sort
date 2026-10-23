@@ -144,7 +144,7 @@ La dificultad sube con el número de nivel (`configNivel` en `src/juego/niveles.
 | Nivel | Colores a ordenar | Paleta desbloqueada | Tubos | Fusiones | Niebla | Tandas de lluvia | Intervalo |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | 3 | 5 | 6 | 0 | 0 % | 1 | 5,85 s |
-| 3 | 3 | 6 (+medianoche) | 6 | 1 | 10 % | 1 | 5,55 s |
+| 3 | 3 | 6 (+azul divino) | 6 | 1 | 10 % | 1 | 5,55 s |
 | 4 | 4 | 7 (+morado) | 7 | 1 | 15 % | 1 | 5,4 s |
 | 8 | 5 | 8 (+rosa) | 8 | 1 | 35 % | 1 | 4,8 s |
 | 9 | 5 | 9 (+cian) | 9 | 2 | 40 % | 2 | 4,65 s |
@@ -155,10 +155,14 @@ La dificultad sube con el número de nivel (`configNivel` en `src/juego/niveles.
 
 - **Colores**: 3 hasta el nivel 3, 4 hasta el 7, 5 hasta el 12, 6 hasta el 19 y 7 a partir del 20.
 - **Paleta** (12 colores): empieza con rojo, azul, amarillo, verde y naranja; se desbloquea uno
-  nuevo cada pocos niveles: **medianoche** (6.º, nivel 3), morado, rosa, cian, lima, marrón y blanco.
-- **Medianoche**: azul noche profundo con ondas de seda luminosas de azul eléctrico (inspirado en
-  una imagen de referencia del usuario), con el mismo acabado de vidrio que el resto. El color nuevo aparece seguro en ese nivel y
-  se anuncia en una **ventana** «¡Nuevo color!» (bola grande y su nombre, botón Continuar) cuando
+  nuevo cada pocos niveles: **azul divino** (6.º, nivel 3), morado, rosa, cian, lima, marrón y blanco.
+- **Azul divino** (id `azulDivino`): imita una imagen de referencia del usuario (ondas de seda
+  azul sobre azul noche). Paleta medida en la referencia, **sin blanco**: fondo ≈ `rgb(0,7,49)`,
+  capas hasta ≈ `rgb(1,33,144)`, filos ≈ `rgb(2,52,175)` y solo el pico de la onda principal
+  ≈ `rgb(37,107,228)`. Capas translúcidas en barridos diagonales con filos de resplandor azul
+  suave (no líneas blancas); encima, el vidrio común de todas las canicas (reflejo de ventana más
+  sutil por ser tan oscura).
+- **Aviso**: el color nuevo aparece seguro en el nivel que lo desbloquea y se anuncia en una **ventana** «¡Nuevo color!» (bola grande y su nombre, botón Continuar) cuando
   los tubos terminan de entrar; la partida queda en pausa. Solo la primera vez que se llega al
   nivel (no al reiniciarlo ni con «Nivel nuevo»).
 - **Tubos** = colores + 2 vacíos + 1 por tanda de lluvia.

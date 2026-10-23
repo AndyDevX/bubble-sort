@@ -1,9 +1,9 @@
 // Paleta del juego: 12 colores fácilmente distinguibles. El valor es el tono para tintes (tubo
-// sellado, chispas); algunos colores tienen además un dibujo propio en texturas.ts (Medianoche).
+// sellado, chispas); algunos colores tienen además un dibujo propio en texturas.ts (Azul divino).
 export const PALETA = {
   rojo: 0xe53935,
   azul: 0x1e88e5,
-  medianoche: 0x2a3cff, // azul eléctrico sobre azul noche, con ondas de seda (ver texturas.ts)
+  azulDivino: 0x1a3cd0, // azul de las capas de seda sobre azul noche (dibujo propio en texturas.ts)
   amarillo: 0xfdd835,
   verde: 0x43a047,
   naranja: 0xfb8c00,

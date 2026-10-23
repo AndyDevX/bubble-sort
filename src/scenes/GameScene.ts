@@ -41,7 +41,7 @@ export type ModoInicio = 'continuar' | 'reiniciar' | 'nuevo';
 const NOMBRES_COLOR: Record<ColorId, ClaveTexto> = {
   rojo: 'colorRojo',
   azul: 'colorAzul',
-  medianoche: 'colorMedianoche',
+  azulDivino: 'colorAzulDivino',
   amarillo: 'colorAmarillo',
   verde: 'colorVerde',
   naranja: 'colorNaranja',
