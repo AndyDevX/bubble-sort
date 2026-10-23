@@ -79,6 +79,17 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0, 1);
 
+    // Registro de depuración: texto discreto encima de la versión
+    const registro = this.add
+      .text(0, 0, t('registro'), { fontFamily: 'sans-serif', fontSize: '26px', color: '#8888a8' })
+      .setOrigin(0, 1)
+      .setPadding(10, 10)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => {
+        this.scene.pause();
+        this.scene.launch('Registro', { origen: this.scene.key });
+      });
+
     const ajustes = crearBotonAjustes(this, 0, 0, () => {
       this.scene.pause();
       this.scene.launch('Settings', { origen: this.scene.key });
@@ -114,6 +125,7 @@ export class MenuScene extends Phaser.Scene {
       // Esquina inferior derecha, respetando notch y barra de gestos
       ajustes.setPosition(zona.x + zona.ancho - 90, zona.y + zona.alto - 90);
       build.setPosition(zona.x + 30, zona.y + zona.alto - 30);
+      registro.setPosition(zona.x + 20, zona.y + zona.alto - 62);
       borrar.colocar(zona.x + 46, zona.y + 60);
     });
   }

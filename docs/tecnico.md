@@ -194,6 +194,21 @@ nivel no llega al 100 %.
   `docs/analisis-dificultad.md` + `.svg`. El jugador casual juega con lluvia justa y tiempo real.
 - `scripts/lib/juego.mjs`: compilación de `src/juego` y motor de búsqueda compartidos por ambos
   scripts.
+- **Registro de depuración** (`src/sistemas/registro.ts`, clave `odi-sort:registro`, últimas 40
+  partidas, máx. 4000 eventos cada una): `iniciarRegistroNivel` al crear la partida (configuración,
+  colores, tablero inicial), `registrar(tipo, datos)` en cada suceso y `cerrarRegistroNivel` al
+  ganar, perder o salir (tablero final). Cada evento lleva tiempo **real** (`performance.now`,
+  incluye pausas) y **de juego** (`this.time.now`, se para en pausa; se ajusta en el primer
+  `update`, porque en `create` el reloj de la escena aún no está al día). Eventos: `inicio`,
+  `seleccionar`, `cancelar`, `mover`, `fusion` (tubos afectados después de la jugada), `invalido`,
+  `toqueIgnorado` (con el motivo: animación, tubo vacío o sellado), `revelar`, `sellar`,
+  `lluviaInicio`, `gota` (decisión de la lluvia justa, candidatos probados y ms de cálculo),
+  `gotaEspera`, `gotaSinHueco`, `gravedad`, `deshacer`, `tuboExtra`, `dialogo`, `pausa`,
+  `reanudar`, `tienda`, `compra`, `compraFallida`, `appOculta`/`appVisible`, `error` (errores de
+  JavaScript) y `derrota` (si se deshace). Tubos en texto compacto: código de color de abajo
+  arriba, `?` oculta, `*` ingrediente, `~` lluvia, `#` sellado. Exportación: `textoResumen()` y
+  `textoCompleto()`; pantalla `RegistroScene` (portapapeles con respaldo `execCommand`, descarga
+  con `Blob`).
 - Estadísticas (`src/sistemas/estadisticas.ts`, clave `odi-sort:estadisticas`): contadores que
   `GameScene` suma (niveles generados/superados/fallidos, habilidades, tubos llenos y canicas
   movidas por color); se guardan con 800 ms de retraso y al ocultar la página. Pantalla:

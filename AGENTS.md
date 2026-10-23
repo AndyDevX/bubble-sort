@@ -122,6 +122,13 @@ Genera cientos de niveles y comprueba `tieneSolucion`, tiempos y casos límite.
 el usuario exige que **todos los niveles se puedan resolver sin habilidades**. Para ver cómo sube
 la dificultad, `npm run analizar` (regenera `docs/analisis-dificultad.md`).
 
+### Registro de partidas (depuración)
+
+El usuario puede pasar el texto de **Menú → Registro → Copiar resumen / Copiar todo / Descargar**.
+Cada nivel trae configuración, tablero inicial y final, y todos los eventos con tiempo real y de
+juego (formato en `docs/tecnico.md`). Úsalo para reproducir fallos: busca `toqueIgnorado`
+(respuesta táctil), `gota`/`gotaEspera` (lluvia justa), `error` (excepciones) y el resultado.
+
 ### Juego en el navegador
 
 - Arranca un servidor de prueba en **otro puerto**: `npx vite --port 4190 --strictPort`.

@@ -270,7 +270,10 @@ el nivel tenía solución sin lluvia, la lluvia al azar lo hacía imposible much
    (cuadrícula de bolas con su cifra; al tocar una se ve el nombre del color). Una derrota cuenta
    una vez por partida y cada color sellado una vez por partida (deshacer no duplica).
 8. **Tienda**: saldo, una tarjeta por oferta (icono, nombre, «Tienes: N», precio) y Volver.
-9. **Ajustes**: volumen de música y de efectos (sliders) e idioma (de momento solo español).
+9. **Registro** (depuración; texto «Registro» discreto abajo a la izquierda del menú): lista de las
+   últimas partidas y botones **Copiar resumen**, **Copiar todo**, **Descargar .txt** y **Borrar
+   registro**. Sirve para pasar a quien desarrolla lo que pasó en cada nivel.
+10. **Ajustes**: volumen de música y de efectos (sliders) e idioma (de momento solo español).
 
 ## Aspecto y animaciones
 

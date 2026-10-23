@@ -10,6 +10,7 @@ import {
   capacidadDe,
   clonarTubos,
   evaluarMovimiento,
+  grupoSuperior,
   hayMovimientos,
   intentarSellar,
   invertirTubos,
@@ -27,6 +28,7 @@ import { iniciarEfecto, iniciarMusicaPartida, reproducirEfecto } from '../sistem
 import { actualizarGuardado, getGuardado } from '../sistemas/guardado';
 import { cargarNivel, guardarNivel } from '../sistemas/nivelGuardado';
 import { sumarColor, sumarHabilidad, sumarNivel } from '../sistemas/estadisticas';
+import { ajustarRelojJuego, cerrarRegistroNivel, corto, describirTubos, iniciarRegistroNivel, reabrirRegistroNivel, registrar } from '../sistemas/registro';
 import { cantidadDe, gastar } from '../sistemas/tienda';
 import { crearBarraHabilidad, type BarraHabilidad } from '../ui/BarraHabilidad';
 import { crearBotonRedondo, iconoPausa, type BotonRedondo } from '../ui/BotonRedondo';
@@ -106,6 +108,7 @@ export class GameScene extends Phaser.Scene {
   private temporizadorLluvia: Phaser.Time.TimerEvent | null = null;
   private gotaEnEspera = false;
   private esperasGota = 0;
+  private decisionGota: Record<string, unknown> = {}; // cómo se eligió el tubo de la última gota (registro)
 
   private historial: Instantanea[] = [];
   private tuboUsado = false; // el tubo de emergencia se puede poner una vez por nivel
@@ -192,6 +195,17 @@ export class GameScene extends Phaser.Scene {
       this.zonasTubo.push(zona);
     });
 
+    iniciarRegistroNivel({
+      nivel: this.numeroNivel,
+      modo: `${this.modo}${guardado ? ' (nivel guardado)' : ' (generado)'}`,
+      config: this.nivel.config,
+      coloresBase: this.nivel.coloresBase,
+      coloresLluvia: this.nivel.coloresLluvia,
+      tubos: this.tubos,
+      reloj: () => this.time.now,
+    });
+    this.events.once(Phaser.Scenes.Events.UPDATE, () => ajustarRelojJuego());
+
     this.crearInterfaz();
     this.crearEfectos();
     alRedimensionar(this, (ancho) => this.colocarTodo(ancho));
@@ -204,11 +218,19 @@ export class GameScene extends Phaser.Scene {
     const alPedirDeshacer = () => this.deshacer();
     this.events.on('deshacer', alPedirDeshacer);
     // Al volver de la tienda (directa o desde la pausa) puede haber cambiado el inventario
-    const alReanudar = () => this.actualizarInventario();
+    const alReanudar = () => {
+      registrar('reanudar');
+      this.actualizarInventario();
+    };
+    const alPausar = () => registrar('pausa');
     this.events.on(Phaser.Scenes.Events.RESUME, alReanudar);
+    this.events.on(Phaser.Scenes.Events.PAUSE, alPausar);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      // Si se sale sin ganar ni perder (menú, reiniciar, nivel nuevo), el nivel queda como «salida»
+      cerrarRegistroNivel('salida', { puntos: this.puntos }, this.tubos);
       this.events.off('deshacer', alPedirDeshacer);
       this.events.off(Phaser.Scenes.Events.RESUME, alReanudar);
+      this.events.off(Phaser.Scenes.Events.PAUSE, alPausar);
       this.pararLluvia(); // también corta la alarma si estaba sonando
     });
   }
@@ -467,6 +489,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private revelar(bolas: Bola[]) {
+    if (bolas.length) registrar('revelar', { n: bolas.length, colores: bolas.map((b) => corto(b.color)).join(' ') });
     for (const bola of bolas) {
       const sprite = this.sprites.get(bola.id);
       if (!sprite) continue;
@@ -489,16 +512,23 @@ export class GameScene extends Phaser.Scene {
   // ───────────────────────── Jugadas ─────────────────────────
 
   private tocarTubo(i: number) {
-    if (this.bloqueado()) return;
+    if (this.bloqueado()) {
+      registrar('toqueIgnorado', { tubo: i, motivo: this.terminado ? 'terminado' : 'animación', faltanMs: Math.round(this.bloqueadoHasta - this.time.now) });
+      return;
+    }
     const tubo = this.tubos[i];
 
     if (this.seleccionado === null) {
-      if (tubo.sellado || tubo.bolas.length === 0) return;
+      if (tubo.sellado || tubo.bolas.length === 0) {
+        registrar('toqueIgnorado', { tubo: i, motivo: tubo.sellado ? 'sellado' : 'vacío' });
+        return;
+      }
       this.levantar(i);
       return;
     }
 
     if (this.seleccionado === i) {
+      registrar('cancelar', { tubo: i });
       this.bajar(i);
       return;
     }
@@ -512,6 +542,15 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Movimiento no válido: si el tubo tocado tiene bolas, se cambia la selección
+    const arribaOrigen = arriba(this.tubos[origen]);
+    const arribaDestino = arriba(tubo);
+    registrar('invalido', {
+      de: origen,
+      a: i,
+      bola: arribaOrigen ? corto(arribaOrigen.color) : null,
+      destino: tubo.sellado ? 'sellado' : arribaDestino ? corto(arribaDestino.color) : 'vacío',
+      libres: capacidadDe(tubo) - tubo.bolas.length,
+    });
     this.bajar(origen);
     if (!tubo.sellado && tubo.bolas.length > 0) {
       this.levantar(i);
@@ -522,7 +561,9 @@ export class GameScene extends Phaser.Scene {
 
   private levantar(i: number) {
     this.seleccionado = i;
-    const sprite = this.sprites.get(arriba(this.tubos[i])!.id);
+    const tope = arriba(this.tubos[i])!;
+    registrar('seleccionar', { tubo: i, bola: corto(tope.color), oculta: tope.oculta, ingrediente: tope.ingrediente, grupo: grupoSuperior(this.tubos[i]) });
+    const sprite = this.sprites.get(tope.id);
     if (!sprite) return;
     const pos = this.posicionLevantada(i);
     this.tweens.killTweensOf(sprite);
@@ -580,6 +621,18 @@ export class GameScene extends Phaser.Scene {
         aciertos++;
       }
     }
+
+    registrar(res.movimiento.tipo === 'fusionar' ? 'fusion' : 'mover', {
+      de: origen,
+      a: destino,
+      n: res.bolas.length,
+      bola: corto(res.bolas[0].color),
+      ...(res.creada ? { resultado: corto(res.creada.color) } : {}),
+      aciertos,
+      reveladas: res.reveladas.length,
+      sellado: res.sellado,
+      tubos: describirTubos([this.tubos[origen], this.tubos[destino]], [origen, destino]).join(' '),
+    });
 
     // El grupo sale empezando por la de arriba; cada bola cae a su hueco con un pequeño desfase
     const encima = this.posicionLevantada(destino);
@@ -760,6 +813,7 @@ export class GameScene extends Phaser.Scene {
   private animarSellado(i: number) {
     this.dibujarTubo(i);
     const colorSellado = this.tubos[i].bolas[0].color;
+    registrar('sellar', { tubo: i, color: corto(colorSellado), lluvia: this.tubos[i].bolas[0].lluvia === true, puntos: this.puntos + PUNTOS_SELLAR });
     if (!this.sellosContados.has(colorSellado)) {
       this.sellosContados.add(colorSellado);
       sumarColor('tubosLlenos', colorSellado);
@@ -832,6 +886,7 @@ export class GameScene extends Phaser.Scene {
 
     this.guardarInstantanea();
     sumarHabilidad('gravedad');
+    registrar('gravedad', { puntos: this.puntos });
     this.carga = 0;
     this.barra.setProgreso(0);
 
@@ -891,6 +946,7 @@ export class GameScene extends Phaser.Scene {
   // ───────────────────────── Lluvia ─────────────────────────
 
   private iniciarLluvia() {
+    registrar('lluviaInicio', { progreso: Math.round(this.progresoNivel() * 100) + ' %', gotas: this.lluviaPendiente.length, intervaloMs: this.nivel.config.intervaloLluviaMs });
     this.pararLluvia();
     this.lluviaIniciada = true;
     this.actualizarTextoLluvia();
@@ -965,6 +1021,7 @@ export class GameScene extends Phaser.Scene {
   // Reintenta soltar la gota más tarde (sin duplicar gotas)
   private esperarGota(ms: number) {
     if (this.gotaEnEspera) return;
+    registrar('gotaEspera', { ms, motivo: ms === LLUVIA_ESPERA_MS ? 'ningún tubo seguro' : 'animación en curso', ...(ms === LLUVIA_ESPERA_MS ? this.decisionGota : {}) });
     this.gotaEnEspera = true;
     this.time.delayedCall(ms, () => {
       this.gotaEnEspera = false;
@@ -981,24 +1038,31 @@ export class GameScene extends Phaser.Scene {
     Phaser.Utils.Array.Shuffle(candidatos);
     if (this.esperasGota >= MAX_ESPERAS_GOTA) {
       this.esperasGota = 0;
+      this.decisionGota = { decision: 'al azar tras varias esperas', candidatos: candidatos.length };
       return candidatos[0];
     }
     const objetivo = this.nivel.coloresBase;
     const inicio = performance.now();
+    let probados = 0;
     for (const i of candidatos) {
       if (performance.now() - inicio > PRESUPUESTO_LLUVIA_MS) break;
+      probados++;
       const prueba = clonarTubos(this.tubos);
       prueba[i].bolas.push({ ...nuevaBola(color), lluvia: true });
       intentarSellar(prueba[i]);
       if (tieneSolucion(prueba, NODOS_LLUVIA_JUSTA, objetivo)) {
         this.esperasGota = 0;
+        this.decisionGota = { decision: 'segura', candidatos: candidatos.length, probados, calculoMs: Math.round(performance.now() - inicio) };
         return i;
       }
     }
-    if (performance.now() - inicio <= PRESUPUESTO_LLUVIA_MS && !tieneSolucion(this.tubos, NODOS_LLUVIA_JUSTA, objetivo)) {
+    const calculoMs = Math.round(performance.now() - inicio);
+    if (calculoMs <= PRESUPUESTO_LLUVIA_MS && !tieneSolucion(this.tubos, NODOS_LLUVIA_JUSTA, objetivo)) {
+      this.decisionGota = { decision: 'al azar: el jugador ya no tiene solución', candidatos: candidatos.length, probados, calculoMs };
       return candidatos[0]; // el jugador ya no tiene solución: lluvia normal
     }
     this.esperasGota++;
+    this.decisionGota = { decision: calculoMs > PRESUPUESTO_LLUVIA_MS ? 'sin tiempo de cálculo' : 'ningún tubo seguro', candidatos: candidatos.length, probados, calculoMs, esperas: this.esperasGota };
     return null;
   }
 
@@ -1013,6 +1077,7 @@ export class GameScene extends Phaser.Scene {
 
     const conHueco = this.tubos.map((tubo, i) => ({ tubo, i })).filter(({ tubo }) => !tubo.sellado && tubo.bolas.length < capacidadDe(tubo));
     if (conHueco.length === 0) {
+      registrar('gotaSinHueco', { color: corto(this.lluviaPendiente[0]) });
       this.derrota('lluvia');
       return;
     }
@@ -1030,6 +1095,7 @@ export class GameScene extends Phaser.Scene {
     const bola: Bola = { ...nuevaBola(this.lluviaPendiente.shift()!), lluvia: true };
     tubo.bolas.push(bola);
     const sellado = intentarSellar(tubo);
+    registrar('gota', { tubo: i, color: corto(bola.color), quedan: this.lluviaPendiente.length, ...this.decisionGota, tubos: describirTubos([tubo], [i]).join(' ') });
     this.actualizarTextoLluvia();
 
     const destino = this.posicionHueco(i, tubo.bolas.length - 1);
@@ -1061,6 +1127,7 @@ export class GameScene extends Phaser.Scene {
   // ───────────────────────── Fin y pausa ─────────────────────────
 
   private abrirDialogo(datos: DatosDialogo) {
+    registrar('dialogo', { titulo: datos.titulo, botones: datos.botones.map((b) => b.accion).join(',') });
     this.scene.pause();
     this.scene.launch('Dialogo', datos);
   }
@@ -1090,6 +1157,7 @@ export class GameScene extends Phaser.Scene {
 
     sumarNivel('nivelesSuperados');
     const monedas = (5 + Math.floor(this.puntos / 10)) * (this.esDificil() ? 2 : 1);
+    cerrarRegistroNivel('victoria', { puntos: this.puntos, monedas, lluviaPendiente: this.lluviaPendiente.length }, this.tubos);
     const guardado = getGuardado();
     const siguiente = this.numeroNivel + 1;
     actualizarGuardado({
@@ -1116,6 +1184,7 @@ export class GameScene extends Phaser.Scene {
 
   private derrota(motivo: 'lluvia' | 'sinMovimientos') {
     this.terminado = true;
+    cerrarRegistroNivel('derrota', { motivo, puntos: this.puntos, deshacerDisponible: this.puedeDeshacer() }, this.tubos);
     if (!this.derrotaContada) {
       this.derrotaContada = true;
       sumarNivel('nivelesFallidos');
@@ -1146,6 +1215,7 @@ export class GameScene extends Phaser.Scene {
   // Abre la tienda encima de la partida (al tocar una ayuda sin usos)
   private abrirTienda() {
     if (this.bloqueado()) return;
+    registrar('tienda');
     this.scene.pause();
     this.scene.launch('Tienda', { origen: this.scene.key });
   }
@@ -1192,6 +1262,8 @@ export class GameScene extends Phaser.Scene {
   private deshacer() {
     if (!this.puedeDeshacer() || this.time.now < this.bloqueadoHasta) return;
     if (!gastar('deshacer')) return;
+    reabrirRegistroNivel(); // si venía de una derrota, el nivel vuelve a estar en curso
+    registrar('deshacer', { quedan: cantidadDe('deshacer'), trasDerrota: this.terminado, historial: this.historial.length - 1 });
     sumarHabilidad('deshacer');
     const previo = this.historial.pop()!;
 
@@ -1308,6 +1380,7 @@ export class GameScene extends Phaser.Scene {
   private usarTuboEmergencia() {
     if (!this.tuboDisponible() || this.bloqueado()) return;
     if (!gastar('tuboExtra')) return;
+    registrar('tuboExtra', { quedan: cantidadDe('tuboExtra') });
     sumarHabilidad('tuboExtra');
     if (this.seleccionado !== null) this.bajar(this.seleccionado);
 
