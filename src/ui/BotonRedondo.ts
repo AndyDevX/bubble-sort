@@ -8,24 +8,27 @@ export interface BotonRedondo extends Phaser.GameObjects.Container {
   setHabilitado(habilitado: boolean): void;
 }
 
-// Botón circular con un icono dibujado a mano (no depende de imágenes ni emojis)
+// Botón circular. El icono es un dibujo a mano (Graphics) o la clave de una textura
+// (iconos de habilidad, `src/ui/iconosHabilidad.ts`), que se escala al tamaño del botón.
 export function crearBotonRedondo(
   escena: Phaser.Scene,
   x: number,
   y: number,
   radio: number,
-  dibujarIcono: DibujarIcono,
+  icono: DibujarIcono | string,
   alPulsar: () => void,
 ): BotonRedondo {
   const grafico = escena.add.graphics();
   const pintar = (color: number) => {
     grafico.clear();
     grafico.fillStyle(color).fillCircle(0, 0, radio);
-    dibujarIcono(grafico, color);
+    if (typeof icono !== 'string') icono(grafico, color);
   };
   pintar(Colores.primario);
 
-  const boton = escena.add.container(x, y, [grafico]) as BotonRedondo;
+  const hijos: Phaser.GameObjects.GameObject[] = [grafico];
+  if (typeof icono === 'string') hijos.push(escena.add.image(0, 0, icono).setDisplaySize(radio * 1.6, radio * 1.6));
+  const boton = escena.add.container(x, y, hijos) as BotonRedondo;
   boton.setSize(radio * 2, radio * 2);
   boton.setInteractive({ useHandCursor: true });
 
@@ -67,47 +70,4 @@ export const iconoEngranaje: DibujarIcono = (g, colorFondo) => {
   }
   g.fillStyle(Colores.fondo).fillPoints(puntos, true);
   g.fillStyle(colorFondo).fillCircle(0, 0, 11);
-};
-
-// Dos flechas en círculo: giro de gravedad
-export const iconoGiro: DibujarIcono = (g) => {
-  const r = 22;
-  g.lineStyle(7, Colores.fondo);
-  for (const inicio of [Phaser.Math.DegToRad(-60), Phaser.Math.DegToRad(120)]) {
-    const fin = inicio + Phaser.Math.DegToRad(130);
-    g.beginPath();
-    g.arc(0, 0, r, inicio, fin);
-    g.strokePath();
-    // punta de flecha al final del arco
-    const px = Math.cos(fin) * r;
-    const py = Math.sin(fin) * r;
-    const tx = -Math.sin(fin);
-    const ty = Math.cos(fin);
-    g.fillStyle(Colores.fondo);
-    g.fillTriangle(px + tx * 12, py + ty * 12, px - ty * 9, py + tx * 9, px + ty * 9, py - tx * 9);
-  }
-};
-
-// Flecha curva hacia la izquierda: deshacer
-export const iconoDeshacer: DibujarIcono = (g) => {
-  const r = 18;
-  g.lineStyle(7, Colores.fondo);
-  g.beginPath();
-  g.arc(2, 4, r, Phaser.Math.DegToRad(200), Phaser.Math.DegToRad(80), false);
-  g.strokePath();
-  // punta de flecha en el extremo izquierdo superior
-  const a = Phaser.Math.DegToRad(200);
-  const px = 2 + Math.cos(a) * r;
-  const py = 4 + Math.sin(a) * r;
-  g.fillStyle(Colores.fondo);
-  g.fillTriangle(px - 12, py + 2, px + 6, py - 12, px + 7, py + 9);
-};
-
-// Tubo pequeño con un "+": tubo de emergencia
-export const iconoTuboExtra: DibujarIcono = (g) => {
-  g.lineStyle(5, Colores.fondo);
-  g.strokeRoundedRect(-20, -14, 18, 30, 7);
-  g.fillStyle(Colores.fondo);
-  g.fillRect(4, -1, 18, 5);
-  g.fillRect(10.5, -7.5, 5, 18);
 };

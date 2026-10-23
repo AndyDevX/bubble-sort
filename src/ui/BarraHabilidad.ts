@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { Colores } from '../constantes';
-import { crearBotonRedondo, iconoGiro, type BotonRedondo } from './BotonRedondo';
+import { crearBotonRedondo, type BotonRedondo } from './BotonRedondo';
+import { ICONO_GRAVEDAD } from './iconosHabilidad';
 
 export interface BarraHabilidad {
   colocar(x: number, y: number, ancho: number): void;
@@ -17,7 +18,7 @@ export function crearBarraHabilidad(escena: Phaser.Scene, etiqueta: string, alUs
   const texto = escena.add
     .text(0, 0, etiqueta, { fontFamily: 'sans-serif', fontSize: '28px', color: '#ffffff' })
     .setOrigin(0, 1);
-  const boton: BotonRedondo = crearBotonRedondo(escena, 0, 0, radioBoton, iconoGiro, alUsar);
+  const boton: BotonRedondo = crearBotonRedondo(escena, 0, 0, radioBoton, ICONO_GRAVEDAD, alUsar);
 
   let anchoPista = 300;
   let progreso = 0;

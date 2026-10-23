@@ -5,10 +5,10 @@ import { reproducirEfecto } from '../sistemas/audio';
 import { getGuardado, type Articulo } from '../sistemas/guardado';
 import { CATALOGO, cantidadDe, comprar, type Oferta } from '../sistemas/tienda';
 import { crearBoton } from '../ui/Boton';
-import { iconoDeshacer, iconoTuboExtra, type DibujarIcono } from '../ui/BotonRedondo';
+import { ICONO_DESHACER, ICONO_TUBO } from '../ui/iconosHabilidad';
 import { crearIconoMoneda } from '../ui/Moneda';
 
-const ICONOS: Record<Articulo, DibujarIcono> = { deshacer: iconoDeshacer, tuboExtra: iconoTuboExtra };
+const ICONOS: Record<Articulo, string> = { deshacer: ICONO_DESHACER, tuboExtra: ICONO_TUBO };
 const NOMBRES: Record<string, ClaveTexto> = { deshacer1: 'ofertaDeshacer1', deshacer5: 'ofertaDeshacer5', tubo1: 'ofertaTubo1' };
 const DESCRIPCIONES: Record<string, ClaveTexto> = { deshacer1: 'descDeshacer1', deshacer5: 'descDeshacer5', tubo1: 'descTubo1' };
 
@@ -84,9 +84,9 @@ export class TiendaScene extends Phaser.Scene {
     fondo.fillStyle(0x34344d).fillRoundedRect(izquierda, -ALTO_TARJETA / 2, ancho, ALTO_TARJETA, 24);
 
     // Icono de la habilidad, igual que su botón en la partida
-    const icono = this.add.graphics({ x: izquierda + 70, y: 0 });
-    icono.fillStyle(Colores.primario).fillCircle(0, 0, 44);
-    ICONOS[oferta.articulo](icono, Colores.primario);
+    const circulo = this.add.graphics({ x: izquierda + 70, y: 0 });
+    circulo.fillStyle(Colores.primario).fillCircle(0, 0, 44);
+    const icono = this.add.image(izquierda + 70, 0, ICONOS[oferta.articulo]).setDisplaySize(70, 70);
 
     const xTexto = izquierda + 135;
     const anchoTexto = ancho - 135 - 175;
@@ -123,7 +123,7 @@ export class TiendaScene extends Phaser.Scene {
       precio.setColor(alcanza ? '#1d1d2b' : '#9a9ab0');
     };
 
-    const tarjeta = this.add.container(x, y, [fondo, icono, nombre, descripcion, tienes, boton]);
+    const tarjeta = this.add.container(x, y, [fondo, circulo, icono, nombre, descripcion, tienes, boton]);
 
     boton.on('pointerover', () => pintar(true));
     boton.on('pointerout', () => {

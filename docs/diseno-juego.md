@@ -168,9 +168,16 @@ La dificultad sube con el número de nivel (`configNivel` en `src/juego/niveles.
 
 Inspirado en un vídeo de referencia del usuario (solo tubos y animaciones; botones y fondo aún no).
 
-- **Tubos de ensayo de cristal**: boca con reborde, fondo redondo, cristal translúcido azulado y
-  brillo vertical. Sellado: el cristal se tiñe del color y lleva un **tapón** encajado. El de
-  emergencia, igual pero bajo y con borde naranja.
+- **Luz única**: todo (bolas, tubos, iconos) se ilumina desde arriba a la izquierda.
+- **Tubos de ensayo de vidrio realistas**: boca con aro de vidrio en perspectiva, paredes más
+  visibles en los cantos, reflejos verticales **por delante de las bolas** (las bolas quedan dentro
+  del vidrio) y luz en el fondo redondo. Sellado: el interior se tiñe del color y cae un **tapón**
+  que encaja con un rebote. El de emergencia es bajo y de vidrio ámbar.
+- **Bolas de vidrio** (canicas): núcleo claro, luz concentrada abajo a la derecha, reflejo nítido
+  arriba a la izquierda y filo claro.
+- **Iconos de habilidad** (una sola familia, trazo azul noche sobre el botón celeste, con detalles de
+  vidrio): Deshacer (flecha en gancho), Tubo extra (tubo de ensayo con canicas y «+»), Gravedad
+  (dos flechas en círculo alrededor de un tubo boca abajo).
 - **Entrada del nivel**: los tubos llegan deslizándose desde la derecha, uno tras otro.
 - **Seleccionar**: la bola sube y queda **flotando** suavemente.
 - **Soltar**: las bolas se aplastan un instante al tocar fondo y el tubo **se balancea**. Si caen

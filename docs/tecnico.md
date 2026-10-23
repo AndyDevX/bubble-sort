@@ -141,9 +141,15 @@ BootScene ──► MenuScene ──► GameScene
 - `chispa`: estrella blanca con halo para las partículas. `GameScene` crea **un solo emisor**
   (`crearEfectos`, `emitting: false`) y lo reutiliza con `estallarChispas(x, y, color, n)`
   (`setParticleTint` + `explode`); el tamaño se escala con el diámetro de bola.
-- Tubos: `dibujarTubo` dibuja el tubo de ensayo con `Graphics` (contorno abierto arriba, boca,
-  brillos, tapón) solo al cambiar; las animaciones (balanceo, entrada, saltos) son tweens sobre
-  ese `Graphics`. `colocarTodo` cancela sus tweens al recolocar.
+- Bolas: `dibujarEsfera` (canica de vidrio) la comparten bola, ingrediente y oculta.
+- Tubos (`src/juego/texturasTubo.ts`): texturas `tubo-atras`, `tubo-delante`, `tubo-liquido`,
+  `tubo-tapon` y `tubo-corto-*` (emergencia), dibujadas una vez con degradados de Canvas y
+  escaladas a `anchoTubo / TUBO_ANCHO` con origen `ORIGEN_TUBO`. Cada tubo en pantalla
+  (`VistaTubo`) son **dos contenedores**: atrás (profundidad 0, bajo las bolas) y delante
+  (profundidad 3, reflejos y tapón sobre las bolas). Las animaciones del tubo mueven ambos con
+  `capas(i)`; `colocarTodo` cancela sus tweens al recolocar. Sellar = teñir `liquido` y `tapon`.
+- Iconos de habilidad (`src/ui/iconosHabilidad.ts`): texturas `icono-deshacer`, `icono-tubo`,
+  `icono-gravedad` (128 px). `crearBotonRedondo` acepta la clave de textura en lugar de un dibujo.
 
 ### Guardado (`localStorage`)
 

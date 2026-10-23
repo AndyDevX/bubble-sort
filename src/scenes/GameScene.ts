@@ -20,12 +20,14 @@ import {
 } from '../juego/modelo';
 import { generarNivel, type Nivel } from '../juego/niveles';
 import { claveTextura, colorHex } from '../juego/texturas';
+import { ORIGEN_TUBO, TUBO_ANCHO } from '../juego/texturasTubo';
 import { iniciarEfecto, iniciarMusicaPartida, reproducirEfecto } from '../sistemas/audio';
 import { actualizarGuardado, getGuardado } from '../sistemas/guardado';
 import { cargarNivel, guardarNivel } from '../sistemas/nivelGuardado';
 import { cantidadDe, gastar } from '../sistemas/tienda';
 import { crearBarraHabilidad, type BarraHabilidad } from '../ui/BarraHabilidad';
-import { crearBotonRedondo, iconoDeshacer, iconoPausa, iconoTuboExtra, type BotonRedondo } from '../ui/BotonRedondo';
+import { crearBotonRedondo, iconoPausa, type BotonRedondo } from '../ui/BotonRedondo';
+import { ICONO_DESHACER, ICONO_TUBO } from '../ui/iconosHabilidad';
 import { crearInsignia, type Insignia } from '../ui/Insignia';
 import { alRedimensionar, zonaSegura } from '../ui/layout';
 import { crearIconoMoneda } from '../ui/Moneda';
@@ -52,6 +54,17 @@ interface Instantanea {
   lluviaIniciada: boolean;
 }
 
+// Un tubo en pantalla: capa de atrás (debajo de las bolas) y de delante (reflejos, encima).
+// Las animaciones del tubo mueven las dos capas a la vez (`capas(i)`).
+interface VistaTubo {
+  atras: Phaser.GameObjects.Container;
+  delante: Phaser.GameObjects.Container;
+  vidrioAtras: Phaser.GameObjects.Image;
+  liquido: Phaser.GameObjects.Image;
+  vidrioDelante: Phaser.GameObjects.Image;
+  tapon: Phaser.GameObjects.Image;
+}
+
 // Medidas calculadas según el tamaño de pantalla
 interface Colocacion {
   d: number;           // diámetro de una bola
@@ -68,7 +81,7 @@ export class GameScene extends Phaser.Scene {
 
   // Vista: el modelo (this.tubos) manda; los sprites solo lo representan
   private sprites = new Map<number, Phaser.GameObjects.Image>();
-  private graficosTubo: Phaser.GameObjects.Graphics[] = [];
+  private vistasTubo: VistaTubo[] = [];
   private zonasTubo: Phaser.GameObjects.Zone[] = [];
   private col: Colocacion = { d: 1, anchoTubo: 1, altoTubo: 1, centros: [] };
 
@@ -118,7 +131,7 @@ export class GameScene extends Phaser.Scene {
     this.numeroNivel = getGuardado().nivel;
     this.tubos = [];
     this.sprites = new Map();
-    this.graficosTubo = [];
+    this.vistasTubo = [];
     this.zonasTubo = [];
     this.seleccionado = null;
     this.bloqueadoHasta = 0;
@@ -155,7 +168,7 @@ export class GameScene extends Phaser.Scene {
 
     // Tubos: gráfico + zona táctil más grande que el tubo
     this.tubos.forEach((_, i) => {
-      this.graficosTubo.push(this.add.graphics());
+      this.vistasTubo.push(this.crearVistaTubo());
       const zona = this.add.zone(0, 0, 1, 1).setInteractive({ useHandCursor: true });
       zona.on('pointerup', () => this.tocarTubo(i));
       this.zonasTubo.push(zona);
@@ -203,11 +216,11 @@ export class GameScene extends Phaser.Scene {
 
     this.barra = crearBarraHabilidad(this, t('gravedad'), () => this.usarGravedad());
 
-    this.botonDeshacer = crearBotonRedondo(this, 0, 0, 44, iconoDeshacer, () => this.pulsarDeshacer());
+    this.botonDeshacer = crearBotonRedondo(this, 0, 0, 44, ICONO_DESHACER, () => this.pulsarDeshacer());
     this.insigniaDeshacer = crearInsignia(this);
     this.actualizarDeshacer();
 
-    this.botonTubo = crearBotonRedondo(this, 0, 0, 44, iconoTuboExtra, () => this.pulsarTubo());
+    this.botonTubo = crearBotonRedondo(this, 0, 0, 44, ICONO_TUBO, () => this.pulsarTubo());
     this.insigniaTubo = crearInsignia(this);
     this.actualizarTuboEmergencia();
   }
@@ -287,8 +300,10 @@ export class GameScene extends Phaser.Scene {
 
     this.tubos.forEach((_, i) => {
       const c = this.col.centros[i];
-      this.tweens.killTweensOf(this.graficosTubo[i]);
-      this.graficosTubo[i].setPosition(c.x, c.y).setAngle(0).setScale(1);
+      for (const capa of this.capas(i)) {
+        this.tweens.killTweensOf(capa);
+        capa.setPosition(c.x, c.y).setAngle(0).setScale(1);
+      }
       this.dibujarTubo(i);
       const altoZona = this.col.altoTubo + this.col.d * 1.4;
       this.zonasTubo[i].setPosition(c.x, c.y - this.col.d * 0.5).setSize(this.col.anchoTubo * 1.5, altoZona);
@@ -339,59 +354,46 @@ export class GameScene extends Phaser.Scene {
     return { d, anchoTubo, altoTubo, centros };
   }
 
-  // Tubo de ensayo de cristal: boca con reborde arriba, fondo redondo, brillo vertical a la izquierda.
-  // Se redibuja solo cuando cambia (sellado, recolocar), nunca por frame.
-  private dibujarTubo(i: number) {
-    const g = this.graficosTubo[i];
-    const tubo = this.tubos[i];
-    const { anchoTubo: w, d } = this.col;
-    const emergencia = capacidadDe(tubo) < CAPACIDAD;
-    // El tubo de emergencia es más bajo (1 hueco) y comparte la base con los demás
-    const alto = emergencia ? d * (capacidadDe(tubo) + 0.5) : this.col.altoTubo;
-    const abajo = this.col.altoTubo / 2;
-    const arriba = abajo - alto;
-    const colorSellado = tubo.sellado && tubo.bolas.length > 0 ? colorHex(tubo.bolas[0].color) : null;
-    const borde = colorSellado ?? (emergencia ? 0xffb74d : 0xb3e5fc);
-    const grosor = Math.max(3, w * 0.045);
-    const fondo = { tl: 0, tr: 0, bl: w / 2, br: w / 2 };
-    g.clear();
-
-    // Cristal: relleno translúcido (teñido si está sellado) y contorno
-    g.fillStyle(colorSellado ?? 0xd6f1ff, colorSellado ? 0.2 : 0.1).fillRoundedRect(-w / 2, arriba, w, alto, fondo);
-    // Contorno abierto por arriba (la boca lo tapa): lado, fondo redondo y otro lado
-    const contorno = (margen: number) => {
-      const r = w / 2 - margen;
-      g.beginPath();
-      g.moveTo(-r, arriba + margen);
-      g.lineTo(-r, abajo - w / 2);
-      g.arc(0, abajo - w / 2, r, Math.PI, 0, true);
-      g.lineTo(r, arriba + margen);
-      g.strokePath();
+  private crearVistaTubo(): VistaTubo {
+    const imagen = (clave: string) => this.add.image(0, 0, clave).setOrigin(ORIGEN_TUBO.x, ORIGEN_TUBO.y);
+    const vidrioAtras = imagen('tubo-atras');
+    const liquido = imagen('tubo-liquido').setVisible(false);
+    const vidrioDelante = imagen('tubo-delante');
+    const tapon = imagen('tubo-tapon').setVisible(false);
+    return {
+      atras: this.add.container(0, 0, [vidrioAtras, liquido]).setDepth(0),
+      delante: this.add.container(0, 0, [vidrioDelante, tapon]).setDepth(3),
+      vidrioAtras,
+      liquido,
+      vidrioDelante,
+      tapon,
     };
-    g.lineStyle(grosor, borde, 0.85);
-    contorno(0);
-    // Grosor del cristal: un segundo contorno tenue por dentro
-    g.lineStyle(grosor * 0.6, 0xffffff, 0.12);
-    contorno(grosor);
+  }
 
-    // Brillos: franja larga a la izquierda y otra corta a la derecha
-    const anchoBrillo = w * 0.09;
-    g.fillStyle(0xffffff, 0.38).fillRoundedRect(-w / 2 + w * 0.16, arriba + d * 0.35, anchoBrillo, Math.max(0, alto - d * 0.35 - w * 0.55), anchoBrillo / 2);
-    g.fillStyle(0xffffff, 0.2).fillRoundedRect(w / 2 - w * 0.2, arriba + d * 0.35, anchoBrillo * 0.7, alto * 0.22, anchoBrillo / 3);
+  private capas(i: number): [Phaser.GameObjects.Container, Phaser.GameObjects.Container] {
+    const v = this.vistasTubo[i];
+    return [v.atras, v.delante];
+  }
 
-    // Boca: reborde un poco más ancho que el tubo
-    const altoBoca = Math.max(10, d * 0.16);
-    const sobresale = w * 0.09;
-    g.fillStyle(0xe1f5fe, colorSellado ? 0.35 : 0.22).fillRoundedRect(-w / 2 - sobresale, arriba - altoBoca / 2, w + sobresale * 2, altoBoca, altoBoca / 2);
-    g.lineStyle(grosor * 0.8, borde, 0.9).strokeRoundedRect(-w / 2 - sobresale, arriba - altoBoca / 2, w + sobresale * 2, altoBoca, altoBoca / 2);
-
-    // Sellado: tapón del color, encajado en la boca
-    if (colorSellado !== null) {
-      const altoTapon = d * 0.42;
-      const yTapon = arriba - altoTapon * 0.75;
-      g.fillStyle(colorSellado, 1).fillRoundedRect(-w / 2 + grosor, yTapon, w - grosor * 2, altoTapon, altoTapon * 0.3);
-      g.fillStyle(0xffffff, 0.3).fillRoundedRect(-w / 2 + grosor * 2.5, yTapon + altoTapon * 0.15, w * 0.18, altoTapon * 0.45, w * 0.06);
+  // Tubo de ensayo de vidrio (texturas de `texturasTubo.ts`): solo cambia al sellarse o recolocar.
+  // Sellado: el interior se tiñe del color y aparece el tapón.
+  private dibujarTubo(i: number) {
+    const v = this.vistasTubo[i];
+    const tubo = this.tubos[i];
+    const corto = capacidadDe(tubo) < CAPACIDAD; // el de emergencia (1 hueco), con la misma base
+    const escala = this.col.anchoTubo / TUBO_ANCHO;
+    v.vidrioAtras.setTexture(corto ? 'tubo-corto-atras' : 'tubo-atras');
+    v.vidrioDelante.setTexture(corto ? 'tubo-corto-delante' : 'tubo-delante');
+    const sellado = tubo.sellado && tubo.bolas.length > 0 && !corto;
+    if (sellado) {
+      const color = colorHex(tubo.bolas[0].color);
+      v.liquido.setTint(color).setAlpha(0.3);
+      v.tapon.setTint(color);
     }
+    v.liquido.setVisible(sellado);
+    this.tweens.killTweensOf(v.tapon);
+    v.tapon.setVisible(sellado).setY(0).setAlpha(1);
+    for (const img of [v.vidrioAtras, v.liquido, v.vidrioDelante, v.tapon]) img.setScale(escala);
   }
 
   // ───────────────────────── Sprites ─────────────────────────
@@ -519,11 +521,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   private sacudir(i: number) {
-    const g = this.graficosTubo[i];
+    const capas = this.capas(i);
     const x = this.col.centros[i].x;
-    this.tweens.killTweensOf(g);
-    g.setX(x);
-    this.tweens.add({ targets: g, x: x + 8, duration: 50, yoyo: true, repeat: 2, onComplete: () => g.setX(x) });
+    this.tweens.killTweensOf(capas);
+    for (const capa of capas) capa.setX(x);
+    this.tweens.add({ targets: capas, x: x + 8, duration: 50, yoyo: true, repeat: 2, onComplete: () => capas.forEach((c) => c.setX(x)) });
     reproducirEfecto(this, 'error');
   }
 
@@ -596,11 +598,11 @@ export class GameScene extends Phaser.Scene {
 
   // El tubo se balancea un poco al recibir bolas
   private balancearTubo(i: number) {
-    const g = this.graficosTubo[i];
-    this.tweens.killTweensOf(g);
-    g.setAngle(0);
+    const capas = this.capas(i);
+    this.tweens.killTweensOf(capas);
+    for (const capa of capas) capa.setAngle(0);
     this.tweens.chain({
-      targets: g,
+      targets: capas,
       tweens: [
         { angle: 3, duration: 70, ease: 'Sine.easeOut' },
         { angle: -2, duration: 110, ease: 'Sine.easeInOut' },
@@ -615,7 +617,7 @@ export class GameScene extends Phaser.Scene {
     const duracion = 520;
     const distancia = this.scale.width;
     this.tubos.forEach((tubo, i) => {
-      const objetivos: (Phaser.GameObjects.Graphics | Phaser.GameObjects.Image)[] = [this.graficosTubo[i]];
+      const objetivos: (Phaser.GameObjects.Container | Phaser.GameObjects.Image)[] = [...this.capas(i)];
       for (const bola of tubo.bolas) {
         const s = this.sprites.get(bola.id);
         if (s) objetivos.push(s);
@@ -632,7 +634,7 @@ export class GameScene extends Phaser.Scene {
   // Celebración: los tubos saltan en ola con chispas
   private animarVictoria() {
     this.tubos.forEach((tubo, i) => {
-      const objetivos: (Phaser.GameObjects.Graphics | Phaser.GameObjects.Image)[] = [this.graficosTubo[i]];
+      const objetivos: (Phaser.GameObjects.Container | Phaser.GameObjects.Image)[] = [...this.capas(i)];
       for (const bola of tubo.bolas) {
         const s = this.sprites.get(bola.id);
         if (s) objetivos.push(s);
@@ -680,12 +682,16 @@ export class GameScene extends Phaser.Scene {
 
   private animarSellado(i: number) {
     this.dibujarTubo(i);
-    const g = this.graficosTubo[i];
+    const capas = this.capas(i);
     const c = this.col.centros[i];
     const color = colorHex(this.tubos[i].bolas[0].color);
-    this.tweens.killTweensOf(g);
-    g.setAngle(0).setScale(1);
-    this.tweens.add({ targets: g, scaleX: 1.08, scaleY: 1.04, duration: 130, yoyo: true, ease: 'Quad.easeOut' });
+    this.tweens.killTweensOf(capas);
+    for (const capa of capas) capa.setAngle(0).setScale(1);
+    // El tapón baja hasta encajar en la boca
+    const tapon = this.vistasTubo[i].tapon;
+    tapon.setY(-this.col.d * 0.6).setAlpha(0);
+    this.tweens.add({ targets: tapon, y: 0, alpha: 1, duration: 220, ease: 'Bounce.easeOut' });
+    this.tweens.add({ targets: capas, scaleX: 1.08, scaleY: 1.04, duration: 130, yoyo: true, ease: 'Quad.easeOut' });
     for (let k = 0; k < CAPACIDAD; k++) this.estallarChispas(c.x, this.posicionHueco(i, k).y, color, 6);
     this.estallarChispas(c.x, c.y - this.col.altoTubo / 2, 0xffffff, 10);
     this.sumarPuntos(PUNTOS_SELLAR);
@@ -772,9 +778,9 @@ export class GameScene extends Phaser.Scene {
 
     this.tubos.forEach((tubo, ti) => {
       if (tubo.sellado || tubo.bolas.length === 0 || capacidadDe(tubo) < CAPACIDAD) return;
-      const g = this.graficosTubo[ti];
+      const capas = this.capas(ti);
       const cy = this.col.centros[ti].y;
-      this.tweens.add({ targets: g, angle: 180, duration: giro, ease: 'Sine.easeInOut', onComplete: () => g.setAngle(0) });
+      this.tweens.add({ targets: capas, angle: 180, duration: giro, ease: 'Sine.easeInOut', onComplete: () => capas.forEach((c) => c.setAngle(0)) });
 
       tubo.bolas.forEach((bola, nuevoIndice) => {
         const s = this.sprites.get(bola.id);
@@ -1180,15 +1186,15 @@ export class GameScene extends Phaser.Scene {
     for (const previo of this.historial) previo.tubos.push({ ...nuevo, bolas: [] });
 
     const i = this.tubos.length - 1;
-    this.graficosTubo.push(this.add.graphics());
+    this.vistasTubo.push(this.crearVistaTubo());
     const zona = this.add.zone(0, 0, 1, 1).setInteractive({ useHandCursor: true });
     zona.on('pointerup', () => this.tocarTubo(i));
     this.zonasTubo.push(zona);
 
     this.colocarTodo(this.scale.width); // con un tubo más cambia la colocación
-    const g = this.graficosTubo[i];
-    g.setScale(0);
-    this.tweens.add({ targets: g, scale: 1, duration: 300, ease: 'Back.easeOut' });
+    const capas = this.capas(i);
+    for (const capa of capas) capa.setScale(0);
+    this.tweens.add({ targets: capas, scale: 1, duration: 300, ease: 'Back.easeOut' });
     this.bloquear(300);
     reproducirEfecto(this, 'fusion');
     this.actualizarTuboEmergencia();

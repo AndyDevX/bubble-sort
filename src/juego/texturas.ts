@@ -8,23 +8,81 @@ function rgb(hex: number): [number, number, number] {
   return [(hex >> 16) & 255, (hex >> 8) & 255, hex & 255];
 }
 
-function mezclar(hex: number, con: number, t: number): string {
+function mezclarHex(hex: number, con: number, t: number): number {
   const a = rgb(hex);
   const b = rgb(con);
-  const c = a.map((v, i) => Math.round(v + (b[i] - v) * t));
-  return `rgb(${c[0]},${c[1]},${c[2]})`;
+  const [r, g, bl] = a.map((v, i) => Math.round(v + (b[i] - v) * t));
+  return (r << 16) | (g << 8) | bl;
 }
 
+function mezclar(hex: number, con: number, t: number): string {
+  const [r, g, b] = rgb(mezclarHex(hex, con, t));
+  return `rgb(${r},${g},${b})`;
+}
+
+function rgba(hex: number, alfa: number): string {
+  const [r, g, b] = rgb(hex);
+  return `rgba(${r},${g},${b},${alfa})`;
+}
+
+// Canica de vidrio. Luz desde arriba a la izquierda (igual que tubos e iconos): reflejo nítido
+// arriba-izquierda, la luz atraviesa el vidrio y se concentra abajo-derecha (cáustica), borde más
+// oscuro por el grosor (Fresnel) y un filo claro.
 function dibujarEsfera(ctx: CanvasRenderingContext2D, color: number) {
   const r = TAMANO / 2 - 4;
   const c = TAMANO / 2;
-  const degradado = ctx.createRadialGradient(c - r * 0.35, c - r * 0.4, r * 0.1, c, c, r);
-  degradado.addColorStop(0, mezclar(color, 0xffffff, 0.55));
-  degradado.addColorStop(0.45, mezclar(color, 0xffffff, 0));
-  degradado.addColorStop(1, mezclar(color, 0x000000, 0.35));
-  ctx.fillStyle = degradado;
+  const circulo = () => {
+    ctx.beginPath();
+    ctx.arc(c, c, r, 0, Math.PI * 2);
+  };
+
+  // Cuerpo: núcleo claro desplazado hacia la cáustica, borde profundo
+  const cuerpo = ctx.createRadialGradient(c + r * 0.18, c + r * 0.25, r * 0.05, c, c, r);
+  cuerpo.addColorStop(0, mezclar(color, 0xffffff, 0.45));
+  cuerpo.addColorStop(0.55, mezclar(color, 0xffffff, 0.05));
+  cuerpo.addColorStop(0.85, mezclar(color, 0x000000, 0.3));
+  cuerpo.addColorStop(1, mezclar(color, 0x000000, 0.55));
+  ctx.fillStyle = cuerpo;
+  circulo();
+  ctx.fill();
+
+  ctx.save();
+  circulo();
+  ctx.clip();
+
+  // Cáustica: media luna de luz abajo a la derecha
+  const caustica = ctx.createRadialGradient(c + r * 0.32, c + r * 0.5, 0, c + r * 0.32, c + r * 0.5, r * 0.55);
+  caustica.addColorStop(0, rgba(0xffffff, 0.55));
+  caustica.addColorStop(0.4, rgba(mezclarHex(color, 0xffffff, 0.6), 0.45));
+  caustica.addColorStop(1, rgba(0xffffff, 0));
+  ctx.fillStyle = caustica;
+  ctx.fillRect(0, 0, TAMANO, TAMANO);
+
+  // Reflejo de "ventana": arco ancho y suave en la parte superior
+  const ventana = ctx.createLinearGradient(c, c - r, c, c - r * 0.2);
+  ventana.addColorStop(0, rgba(0xffffff, 0.5));
+  ventana.addColorStop(1, rgba(0xffffff, 0));
+  ctx.fillStyle = ventana;
   ctx.beginPath();
-  ctx.arc(c, c, r, 0, Math.PI * 2);
+  ctx.ellipse(c - r * 0.12, c - r * 0.52, r * 0.62, r * 0.36, -0.35, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // Filo del vidrio
+  ctx.strokeStyle = rgba(0xffffff, 0.35);
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.arc(c, c, r - 1.5, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Reflejo nítido y un destello pequeño en el lado contrario
+  ctx.fillStyle = rgba(0xffffff, 0.95);
+  ctx.beginPath();
+  ctx.ellipse(c - r * 0.42, c - r * 0.42, r * 0.17, r * 0.11, -0.75, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = rgba(0xffffff, 0.6);
+  ctx.beginPath();
+  ctx.arc(c + r * 0.52, c + r * 0.5, r * 0.06, 0, Math.PI * 2);
   ctx.fill();
 }
 
