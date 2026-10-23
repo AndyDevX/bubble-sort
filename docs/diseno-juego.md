@@ -10,7 +10,7 @@ Juego de ordenar colores en tubos para móvil, en vertical. Partimos del documen
 | Flujo | Menú → **Jugar** → partida directamente |
 | Niveles | **Aleatorios** (generados por procedimiento) |
 | Giro de gravedad | **Habilidad**, no modo: se recarga al ir sumando puntos en cada nivel y se muestra con una **barra**; una sola carga |
-| Lluvia | Empieza al 50 % de completado el nivel |
+| Lluvia | Empieza al 35 % de completado el nivel |
 | Sin salida | Si no queda ninguna jugada válida y la Gravedad no está cargada → derrota («No quedan movimientos») |
 | Nivel superado | Todos los tubos ordenados |
 | Plataforma | Navegador móvil y APK con Capacitor; siempre vertical |
@@ -55,7 +55,7 @@ interface Guardado {
 | Mover | Se mueve el **grupo** de bolas seguidas del mismo color de arriba, tantas como quepan en el destino (las ocultas del grupo se mueven y se revelan). Las fusiones son de una en una |
 | Tubo completo | 4 bolas del mismo color → el tubo **se sella** (tapón de color, ya no se puede tocar) · +100 pts |
 | Nivel superado | En cuanto todos los tubos están sellados o vacíos. Si aún no ha caído ninguna gota, la lluvia pendiente se cancela; si ya cayeron, esas bolas también deben estar en tubos sellados (con una tanda a medias no se puede completar) |
-| Lluvia | Empieza al sellar el **50 %** de los colores del nivel. Caen tandas de 4 bolas de un color nuevo, una cada pocos segundos, en un tubo al azar con hueco. Si no queda hueco → derrota |
+| Lluvia | Empieza al sellar el **35 %** de los colores del nivel (con 3 colores, al sellar 2; con 5, al sellar 2; con 7, al sellar 3). Caen tandas de 4 bolas de un color nuevo, una cada pocos segundos, en un tubo al azar con hueco. Si no queda hueco → derrota |
 | Alquimia | Algunas bolas llegan "partidas" en dos ingredientes (anillo blanco). Ingrediente sobre ingrediente de su receta → se fusionan en el color resultado · +25 pts |
 | Niebla | Las bolas ocultas se ven como «?» y se revelan al quedar arriba (y se quedan reveladas) |
 | Puntos | Bola colocada sobre una de su mismo color +10 (cada bola solo puntúa la primera vez en el nivel) · sellar +100 · fusionar +25 |

@@ -7,7 +7,7 @@ export interface ConfigNivel {
   tubosVacios: number;
   fusiones: number;         // bolas del color resultado que llegan partidas en dos ingredientes
   niebla: number;           // 0..1: proporción de bolas (no de arriba) ocultas
-  lotesLluvia: number;      // tandas de 4 bolas que caen a partir del 50 %
+  lotesLluvia: number;      // tandas de 4 bolas que caen a partir del 35 %
   intervaloLluviaMs: number;
 }
 

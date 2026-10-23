@@ -35,6 +35,7 @@ const PUNTOS_FUSION = 25;
 const PUNTOS_ACIERTO = 10; // por bola colocada sobre una de su mismo color
 const PUNTOS_CARGA = 150; // puntos para llenar la barra de Gravedad (una sola carga)
 const MAX_DESHACER = 5; // deshacer disponibles por nivel
+const UMBRAL_LLUVIA = 0.35; // la lluvia empieza al sellar este porcentaje de los colores del nivel
 
 // Estado completo antes de una jugada, para poder deshacerla
 interface Instantanea {
@@ -518,10 +519,10 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    // La lluvia empieza al 50 % de tubos (colores del nivel) sellados
+    // La lluvia empieza al sellar el 35 % de los colores del nivel
     if (!this.lluviaIniciada && this.lluviaPendiente.length > 0) {
       const sellados = this.tubos.filter((t) => t.sellado && this.nivel.coloresBase.includes(t.bolas[0].color)).length;
-      if (sellados / this.nivel.coloresBase.length >= 0.5) this.iniciarLluvia();
+      if (sellados / this.nivel.coloresBase.length >= UMBRAL_LLUVIA) this.iniciarLluvia();
     }
 
     // Sin jugadas posibles y sin Gravedad cargada (que podría desbloquear la partida): se pierde
