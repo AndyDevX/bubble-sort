@@ -5,6 +5,7 @@ import { cargarAudioEnSegundoPlano, detenerMusica } from '../sistemas/audio';
 import { borrarProgreso, getGuardado } from '../sistemas/guardado';
 import { borrarNivelGuardado } from '../sistemas/nivelGuardado';
 import { borrarEstadisticas } from '../sistemas/estadisticas';
+import { alCambiarActualizacion, getEstadoActualizacion, URL_DESCARGA_APK, type EstadoActualizacion } from '../sistemas/actualizaciones';
 import { crearBoton } from '../ui/Boton';
 import { crearBotonAjustes } from '../ui/BotonAjustes';
 import { crearBotonBorrarProgreso } from '../ui/BorrarProgreso';
@@ -90,6 +91,26 @@ export class MenuScene extends Phaser.Scene {
         this.scene.launch('Registro', { origen: this.scene.key });
       });
 
+    // Aviso de actualización de la app (solo en Android; en el navegador no aparece nunca)
+    const aviso = this.add
+      .text(0, 0, '', { fontFamily: 'sans-serif', fontSize: '26px', color: '#a5d6a7', align: 'center' })
+      .setOrigin(0.5)
+      .setPadding(10, 10);
+    const mostrarActualizacion = (e: EstadoActualizacion) => {
+      aviso.removeAllListeners('pointerup').disableInteractive();
+      if (e.tipo === 'nada') return aviso.setText('');
+      const clave = ({ descargando: 'actualizacionDescargando', lista: 'actualizacionLista', apkNuevo: 'actualizacionApk' } as const)[e.tipo];
+      aviso.setText(t(clave, { v: e.version })).setColor(e.tipo === 'apkNuevo' ? '#ffcc80' : '#a5d6a7');
+      if (e.tipo === 'apkNuevo') {
+        // Una URL externa la abre el navegador del teléfono, no el juego
+        aviso.setInteractive({ useHandCursor: true }).on('pointerup', () => (window.location.href = URL_DESCARGA_APK));
+      }
+      return aviso;
+    };
+    mostrarActualizacion(getEstadoActualizacion());
+    const dejarDeEscuchar = alCambiarActualizacion(mostrarActualizacion);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, dejarDeEscuchar);
+
     const ajustes = crearBotonAjustes(this, 0, 0, () => {
       this.scene.pause();
       this.scene.launch('Settings', { origen: this.scene.key });
@@ -120,6 +141,7 @@ export class MenuScene extends Phaser.Scene {
       colores.setPosition(ancho / 2, primero + 260);
       estadisticas.setPosition(ancho / 2, primero + 390);
       nivel.setPosition(ancho / 2, primero + 490);
+      aviso.setPosition(ancho / 2, primero + 550).setWordWrapWidth(ancho - 80);
       monedas.setPosition(zona.x + zona.ancho - 40, zona.y + 60);
       colocarMonedas();
       // Esquina inferior derecha, respetando notch y barra de gestos

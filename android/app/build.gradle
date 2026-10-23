@@ -1,5 +1,10 @@
 apply plugin: 'com.android.application'
 
+// Versión de la app = versión del juego (package.json). versionCode = MAJOR·1000000 + MINOR·1000 + PATCH:
+// siempre crece, así un APK nuevo se instala encima del anterior sin desinstalar.
+def versionJuego = new groovy.json.JsonSlurper().parse(file('../../package.json')).version
+def partesVersion = versionJuego.tokenize('.').collect { it.toInteger() }
+
 android {
     namespace = "com.andy.phasertemplate"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +12,8 @@ android {
         applicationId "com.andy.phasertemplate"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode partesVersion[0] * 1000000 + partesVersion[1] * 1000 + partesVersion[2]
+        versionName versionJuego
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +21,24 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Firma fija para los APK que se instalan a mano (Releases de GitHub): todos los APK deben ir
+    // firmados con la misma clave para poder instalar uno nuevo encima del anterior sin perder el
+    // progreso. La clave está en el repositorio a propósito (no es la de la Play Store; ver
+    // docs/tecnico.md, «APK»).
+    signingConfigs {
+        apk {
+            storeFile file('../firma/odi-sort.jks')
+            storePassword 'odisort-apk'
+            keyAlias 'odi-sort'
+            keyPassword 'odisort-apk'
+        }
+    }
     buildTypes {
+        debug {
+            signingConfig signingConfigs.apk
+        }
         release {
+            signingConfig signingConfigs.apk
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

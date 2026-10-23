@@ -40,7 +40,8 @@ npm run dev        # http://localhost:5173 (también desde el móvil con la IP d
 
 - **Web:** cada push a `main` se publica solo en GitHub Pages (un **build** nuevo cada vez).
 - **Versión:** `MAJOR.MINOR.PATCH`; el PATCH sube en cada despliegue y se muestra en el menú.
-- **APK:** cada versión **MAJOR** genera un APK de Android en las *Releases* del repositorio.
+- **APK:** cada versión **MAJOR** genera un APK de Android en las *Releases* del repositorio. Entre
+  un APK y el siguiente, la app se **actualiza sola** desde GitHub Pages (sin reinstalar).
 
 ## Documentación
 

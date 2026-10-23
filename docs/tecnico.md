@@ -292,7 +292,8 @@ crea un archivo con las mismas claves que `es.ts` y se registra en `src/i18n/ind
 | **Build** | Número de despliegue = `github.run_number` del workflow de Pages. Se inyecta como `VITE_NUMERO_BUILD` junto al commit (`VITE_COMMIT`) |
 | **Menú** | Muestra «v0.0.9 · build 9 · 2f20f9d» (en local, «build dev») |
 | **Web** | Cada push a `main` → `deploy.yml` → https://andydevx.github.io/bubble-sort/ |
-| **APK** | Cada vez que sube el **MAJOR** → `apk.yml` compila `assembleDebug` y crea la Release `vX.0.0` con `odi-sort-vX.0.0.apk` |
+| **APK** | Cada vez que sube el **MAJOR** → `apk.yml` compila `assembleRelease` y crea la Release `vX.0.0` con `odi-sort-vX.0.0.apk` |
+| **App instalada** | Entre APK y APK se actualiza sola desde Pages (PATCH y MINOR del mismo MAJOR); ver «Actualizaciones en caliente» |
 
 ### APK de Android
 
@@ -302,11 +303,39 @@ crea un archivo con las mismas claves que `es.ts` y se registra en `src/i18n/ind
 - Orientación fija en vertical (`android:screenOrientation="portrait"` en `AndroidManifest.xml`).
 - `appId`: `com.andy.phasertemplate` (heredado de la plantilla). **Cambiarlo antes de publicar en
   una tienda**: una vez publicado, cambiarlo crea otra app distinta.
-- El APK es de **depuración** (clave debug): se instala directamente permitiendo «orígenes
-  desconocidos». Para la Play Store hará falta una compilación **release firmada** con un
-  keystore guardado en los secretos del repositorio.
+- El APK es **release** y se instala directamente permitiendo «orígenes desconocidos». Va
+  firmado siempre con la misma clave, `android/firma/odi-sort.jks` (alias `odi-sort`, contraseña
+  `odisort-apk`, en `android/app/build.gradle`), para que cada APK nuevo se instale **encima** del
+  anterior sin perder el progreso. **No la cambies ni la borres**: con otra clave Android obliga a
+  desinstalar (y se pierde el progreso). Está en el repositorio a propósito porque desde la sesión
+  no se pueden crear secretos; para la Play Store se usará otra clave de subida guardada en los
+  secretos del repositorio.
+- `versionName` = versión de `package.json` y `versionCode` = MAJOR·1000000 + MINOR·1000 + PATCH
+  (`android/app/build.gradle`): siempre crece.
+- El APK lleva el mismo número de build que el despliegue de Pages del mismo commit.
 - Se puede lanzar a mano desde la pestaña **Actions** → «APK por versión MAJOR» → *Run workflow*
   (deja el APK como artefacto, sin Release).
+
+### Actualizaciones en caliente (app Android)
+
+Para no reinstalar el APK en cada versión, la app descarga el juego nuevo desde GitHub Pages con
+`@capgo/capacitor-updater` en **modo manual** (sin cuenta ni servidores de Capgo; `statsUrl` vacío).
+
+1. `deploy.yml` comprime `dist/` en `actualizacion/odi-sort-X.Y.Z.zip` y escribe
+   `actualizacion/version.json` (`version`, `build`, `commit`, `zip`).
+2. Al abrirse (y al volver de segundo plano, como mucho cada 10 min) la app
+   (`src/sistemas/actualizaciones.ts`) llama a `notifyAppReady()` y lee `version.json`:
+   - versión más nueva del **mismo MAJOR** → `download` + `next`: se aplica la próxima vez que el
+     juego pase a segundo plano o se vuelva a abrir. El menú avisa «Descargando…» / «Versión X lista»;
+   - **MAJOR nuevo** → no descarga (puede traer cambios nativos); el menú avisa de que hay app nueva
+     y al tocarlo abre las Releases en el navegador;
+   - si un build nuevo no llega a `notifyAppReady` en 15 s (`appReadyTimeout`), Capgo vuelve al
+     anterior y esa versión no se reintenta.
+3. Los paquetes viejos se borran (unos 4 MB cada uno). Al instalar un APK nuevo, Capgo descarta los
+   descargados y usa el que trae el APK (`resetWhenUpdate`).
+
+Lo que **sí** necesita APK nuevo (y por tanto subir el MAJOR): plugins o permisos nuevos, cambios en
+`android/` o en `capacitor.config.ts`, o subir de versión Capacitor.
 
 ## Pruebas
 
@@ -322,6 +351,6 @@ No hay tests automáticos en el repo; las comprobaciones se hacen así:
 ## Limitaciones conocidas
 
 - Los FPS medidos en navegadores sin GPU no son representativos.
-- El APK es de depuración; no hay firma release ni build para iOS.
+- La clave del APK está en el repositorio (vale para instalar a mano, no para la Play Store); no hay build para iOS.
 - Las canciones incluidas pueden tener derechos de autor: tenlo en cuenta antes de publicar en
   una tienda.

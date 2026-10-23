@@ -35,6 +35,19 @@ jobs:
           VITE_NUMERO_BUILD: ${{ github.run_number }}
           VITE_COMMIT: ${{ github.sha }}
 
+      # Actualización en caliente para la app Android (src/sistemas/actualizaciones.ts): el build
+      # comprimido y version.json, que la app consulta al abrirse
+      - name: Paquete de actualización para la app
+        run: |
+          version=$(node -p "require('./package.json').version")
+          zip_nombre="odi-sort-$version.zip"
+          (cd dist && zip -qr "$RUNNER_TEMP/$zip_nombre" .)
+          mkdir -p dist/actualizacion
+          mv "$RUNNER_TEMP/$zip_nombre" dist/actualizacion/
+          node -e "require('fs').writeFileSync('dist/actualizacion/version.json', JSON.stringify({ version: '$version', build: ${{ github.run_number }}, commit: '${{ github.sha }}', zip: '$zip_nombre' }, null, 2))"
+          cat dist/actualizacion/version.json
+          ls -la dist/actualizacion
+
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

@@ -5,9 +5,10 @@
 # - Manual: pestaña Actions → «APK por versión MAJOR» → Run workflow (sirve para probar el
 #   proceso; deja el APK como artefacto de la ejecución, sin crear Release).
 #
-# El APK es de depuración (firmado con la clave debug): se instala directamente en un móvil
-# Android. Para la Play Store hará falta firmar en modo release con un keystore guardado en los
-# secretos del repositorio (ver docs/tecnico.md).
+# El APK es release, firmado siempre con la misma clave (android/firma/odi-sort.jks): así cada APK
+# nuevo se instala encima del anterior sin perder el progreso. Entre versiones MAJOR la app se
+# actualiza sola desde GitHub Pages (src/sistemas/actualizaciones.ts). Para la Play Store hará
+# falta otra clave de subida guardada en los secretos (ver docs/tecnico.md).
 name: APK por versión MAJOR
 
 on:
@@ -18,6 +19,7 @@ on:
 
 permissions:
   contents: write # para crear la Release con el APK
+  actions: read # para leer el número de build del despliegue en Pages
 
 concurrency:
   group: apk
@@ -58,6 +60,18 @@ jobs:
           distribution: temurin
           java-version: 21 # Capacitor 8 necesita JDK 21
 
+      # El APK lleva el mismo número de build que el despliegue en Pages del mismo commit (es el
+      # que sale en el menú); si aún no existe, el de esta ejecución
+      - name: Número de build
+        if: steps.version.outputs.generar == 'true'
+        id: build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          n=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow deploy.yml --commit "$GITHUB_SHA" --limit 1 --json number --jq '.[0].number' 2>/dev/null || true)
+          echo "numero=${n:-${{ github.run_number }}}" >> "$GITHUB_OUTPUT"
+          echo "Build ${n:-${{ github.run_number }}}"
+
       - name: Compilar el juego y sincronizar Android
         if: steps.version.outputs.generar == 'true'
         run: |
@@ -65,7 +79,7 @@ jobs:
           npm run build
           npx cap sync android
         env:
-          VITE_NUMERO_BUILD: ${{ github.run_number }}
+          VITE_NUMERO_BUILD: ${{ steps.build.outputs.numero }}
           VITE_COMMIT: ${{ github.sha }}
 
       - name: Compilar el APK
@@ -73,8 +87,8 @@ jobs:
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
-          cp app/build/outputs/apk/debug/app-debug.apk "../odi-sort-v${{ steps.version.outputs.version }}.apk"
+          ./gradlew assembleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk "../odi-sort-v${{ steps.version.outputs.version }}.apk"
 
       - if: steps.version.outputs.generar == 'true'
         uses: actions/upload-artifact@v7
@@ -88,4 +102,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           v="v${{ steps.version.outputs.version }}"
-          gh release create "$v" "odi-sort-$v.apk" --title "Odi Sort $v" --notes "APK de Odi Sort $v (build ${{ github.run_number }}). Instálalo en Android permitiendo «orígenes desconocidos»."
+          gh release create "$v" "odi-sort-$v.apk" --title "Odi Sort $v" --notes "APK de Odi Sort $v (build ${{ steps.build.outputs.numero }}). Instálalo en Android permitiendo «orígenes desconocidos». Se instala encima de la versión anterior sin perder el progreso, y la app se actualiza sola con cada versión nueva del juego hasta el próximo APK."

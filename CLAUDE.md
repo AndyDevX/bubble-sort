@@ -12,7 +12,7 @@ Documentación: `README.md` (portada) · `docs/diseno-juego.md` (todo lo jugable
 - `npm run compartir` — (con `npm run dev` abierto en otra terminal) túnel público temporal `https://….trycloudflare.com`
 - `npm run cap:sync` / `npm run cap:android` — build y sincronizar con nativo
 - Publicación web: cada push a `main` compila y publica en GitHub Pages (`.github/workflows/deploy.yml`) → https://andydevx.github.io/bubble-sort/
-- APK: cada versión **MAJOR** genera un APK de Android en una Release (`.github/workflows/apk.yml`); también se puede lanzar a mano desde Actions
+- APK: cada versión **MAJOR** genera un APK de Android en una Release (`.github/workflows/apk.yml`); también se puede lanzar a mano desde Actions. Entre APK y APK la app se actualiza sola desde Pages (`src/sistemas/actualizaciones.ts`, Capgo en modo manual); los cambios nativos necesitan APK nuevo
 
 ## Estructura
 - `src/main.ts` — GameConfig
@@ -20,7 +20,7 @@ Documentación: `README.md` (portada) · `docs/diseno-juego.md` (todo lo jugable
 - `src/juego/` — lógica pura sin Phaser: reglas (`modelo.ts`), colores y recetas, generador de niveles y solucionador
 - `src/ui/` — componentes (`Boton`, `BotonRedondo` + iconos, `Insignia`, `BarraHabilidad`, `Slider`) y `layout.ts` (colocación adaptable)
 - `public/sw.js` — Service Worker: guarda audio y build en el caché del dispositivo (sube `VERSION` para invalidarlo)
-- `src/sistemas/` — ajustes y partida guardados, nivel guardado (reiniciar igual), tienda (catálogo, comprar/gastar del inventario), audio (volumen música/efectos), registro del Service Worker, medidor de FPS (solo dev)
+- `src/sistemas/` — ajustes y partida guardados, nivel guardado (reiniciar igual), tienda (catálogo, comprar/gastar del inventario), audio (volumen música/efectos), registro del Service Worker, actualizaciones en caliente de la app Android, medidor de FPS (solo dev)
 - `src/i18n/` — textos; todo texto visible sale de `t('clave')`
 - `public/assets/` — assets estáticos (se cargan como `assets/...`)
 - `public/assets/sfx/` — efectos de sonido de vidrio, generados con `python3 scripts/generar-sonidos.py` (Python + ffmpeg); para cambiar un sonido, edita su función en el script y vuelve a ejecutarlo

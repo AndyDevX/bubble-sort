@@ -93,6 +93,11 @@ documentación de [`docs/`](docs/).
 - `@capacitor/core`, `cli` y `android` en la misma versión.
 - El APK lo genera `.github/workflows/apk.yml` cuando sube el **MAJOR**. No subas el MAJOR sin
   que el usuario lo pida.
+- La app Android se actualiza sola desde Pages dentro del mismo MAJOR (`src/sistemas/actualizaciones.ts`).
+  Si cambias algo **nativo** (plugins, permisos, `android/`, `capacitor.config.ts`), eso no llega por
+  ahí: díselo al usuario, hace falta un APK nuevo (subir el MAJOR).
+- **No cambies** `android/firma/odi-sort.jks`: con otra clave el APK no se instala encima del
+  anterior y el jugador pierde el progreso.
 
 ## 4. Versionado y publicación
 
