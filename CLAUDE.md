@@ -1,7 +1,8 @@
 # Phaser Capacitor Template
 
 Juego: **Odi Sort**. Stack: Phaser 4.2 · Vite 8 · TypeScript 6 · Capacitor 8.
-Diseño del juego y decisiones tomadas: `docs/diseno-juego.md`. Guías: `docs/guia-phaser.md`, `docs/guia-typescript.md`.
+**Lee también [`AGENTS.md`](AGENTS.md)**: flujo de trabajo, reglas y trampas conocidas para agentes.
+Documentación: `README.md` (portada) · `docs/diseno-juego.md` (todo lo jugable) · `docs/tecnico.md` (arquitectura, sistemas, despliegue) · `docs/historial.md` (versiones y builds) · guías `docs/guia-phaser.md`, `docs/guia-typescript.md`.
 
 ## Comandos
 - `npm run dev` — servidor local (http://localhost:5173)
@@ -9,6 +10,7 @@ Diseño del juego y decisiones tomadas: `docs/diseno-juego.md`. Guías: `docs/gu
 - `npm run compartir` — (con `npm run dev` abierto en otra terminal) túnel público temporal `https://….trycloudflare.com`
 - `npm run cap:sync` / `npm run cap:android` — build y sincronizar con nativo
 - Publicación web: cada push a `main` compila y publica en GitHub Pages (`.github/workflows/deploy.yml`) → https://andydevx.github.io/bubble-sort/
+- APK: cada versión **MAJOR** genera un APK de Android en una Release (`.github/workflows/apk.yml`); también se puede lanzar a mano desde Actions
 
 ## Estructura
 - `src/main.ts` — GameConfig

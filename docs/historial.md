@@ -1,0 +1,39 @@
+# Historial de versiones
+
+Cada despliegue en GitHub Pages es un **build** nuevo y sube el **PATCH** de la versión
+(`MAJOR.MINOR.PATCH`). Las versiones 0.0.1–0.0.7 se asignaron después (el versionado empezó en
+0.0.8, alineado con el número de build). Cada versión **MAJOR** genera además un **APK**.
+
+Al publicar, añade la nueva versión arriba del todo (lo indica la skill `publicar`).
+
+| Versión | Build | Commit | Fecha | Cambios |
+| --- | --- | --- | --- | --- |
+| 0.0.10 | 10 | (este) | 2026-10-23 | Documentación completa (README, diseño, técnica, historial) e instrucciones para agentes (`AGENTS.md`) |
+| 0.0.9 | 9 | 2f20f9d | 2026-10-23 | Proyecto Android (Capacitor 8.5.3, vertical) y workflow que genera el APK en cada versión MAJOR |
+| 0.0.8 | 8 | d0982dd | 2026-10-23 | Se gana al sellar los colores iniciales (la lluvia es solo obstáculo). Versionado semántico en el menú |
+| 0.0.7 | 7 | bf8cffa | 2026-10-23 | Número de build en el menú. 9 canciones nuevas comprimidas (2,4 MB). Audio cargado en segundo plano |
+| 0.0.6 | 6 | 58d6a9f | 2026-10-23 | Tubo de emergencia (1 hueco, 1 por nivel, sorteado en la demo). Animación al deshacer |
+| 0.0.5 | 5 | 9e66512 | 2026-10-23 | Inicio de la lluvia medido en bolas bien colocadas |
+| 0.0.4 | 4 | 483b694 | 2026-10-23 | Lluvia al 35 % del nivel |
+| 0.0.3 | 3 | 2582048 | 2026-10-23 | Deshacer (5 por nivel), reiniciar el mismo nivel o generar uno nuevo. Skill `publicar` |
+| 0.0.2 | 2 | c3c7c89 | 2026-10-23 | Acciones del workflow de Pages actualizadas (Node 24) |
+| 0.0.1 | 1 | 9d3c389 | 2026-10-23 | Primera publicación en GitHub Pages |
+
+## Antes de publicar en la web (2026-10-21 / 22)
+
+| Commit | Cambios |
+| --- | --- |
+| 2d4db5f | Caché de audio en el dispositivo (Service Worker) y +10 pts por colocar bien cada bola |
+| bad04ee | Efectos de sonido de vidrio generados por síntesis |
+| 4ed0471 | Ganar al completar todos los tubos; canciones comprimidas al 50 % |
+| a4124e8 | Música de fondo aleatoria y sin fin en las partidas |
+| d98e5d5 | Mover grupos de bolas iguales; derrota «Sin salida» |
+| 5ea98c5 | Quitar el aviso de «Gira el teléfono» |
+| 66e691f | **Partida jugable**: tubos, sellado, alquimia, niebla, lluvia, giro de gravedad, pausa, victoria y derrota |
+| 86ee51b | Quitar la pantalla completa automática |
+| bd60fa2 | Pantalla adaptable (`Scale.EXPAND`), base para 60 fps y documento de diseño |
+| 2434f7d | Pantalla completa automática en el móvil (luego retirada) |
+| 5531b0d | Menú de ajustes (volumen e idioma); el juego pasa a llamarse **Odi Sort** |
+| eeb7a27 | Menú de inicio y plantilla de la escena de juego |
+| dc72243 | Guías de TypeScript 6 y Phaser 4 |
+| a8ef7b7 | Plantilla inicial con skills de Claude Code |

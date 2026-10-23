@@ -1,0 +1,210 @@
+# Odi Sort — Documentación técnica
+
+Cómo está construido el juego, cómo se compila, prueba, versiona y publica. La parte jugable está
+en [diseno-juego.md](./diseno-juego.md); las reglas para agentes, en [`AGENTS.md`](../AGENTS.md).
+
+## Stack
+
+| Herramienta | Versión | Para qué |
+| --- | --- | --- |
+| Phaser | 4.2.1 | Motor: WebGL, escenas, input, tweens, audio |
+| TypeScript | 6.0.3 | Tipado estricto (`strict`, `erasableSyntaxOnly`, `verbatimModuleSyntax`) |
+| Vite | 8.3.x | Servidor de desarrollo y build a `dist/` (`base: './'`) |
+| Capacitor | 8.5.3 (`core`, `cli`, `android`) | App Android (proyecto en `android/`) |
+| Node.js | 22.12+ | Vite 8 y Capacitor 8 |
+| JDK | 21 | Compilar el APK (solo en CI o para Android Studio) |
+
+Guías de referencia del stack: [guia-phaser.md](./guia-phaser.md) y
+[guia-typescript.md](./guia-typescript.md).
+
+## Comandos
+
+```bash
+npm ci                 # instalar exactamente lo del package-lock.json
+npm run dev            # http://localhost:5173 (también por la IP de la red local)
+npm run build          # tsc + vite build → dist/
+npm run preview        # servir dist/ en local
+npm run compartir      # (con npm run dev abierto) túnel público https://….trycloudflare.com
+npm run cap:android    # build + sync + abrir Android Studio
+python3 scripts/generar-sonidos.py   # regenerar los efectos de sonido (Python + ffmpeg)
+```
+
+## Estructura del repositorio
+
+```text
+├─ AGENTS.md / CLAUDE.md      instrucciones para agentes
+├─ README.md                  portada del proyecto
+├─ docs/                      documentación (diseño, técnica, historial, guías)
+├─ .claude/skills/            skills de Claude Code (Phaser, Capacitor, UI, Vite, TS, publicar)
+├─ .github/workflows/
+│  ├─ deploy.yml              cada push a main → GitHub Pages
+│  └─ apk.yml                 cada versión MAJOR → APK en una Release
+├─ android/                   proyecto nativo de Capacitor (se versiona; no editar assets/public)
+├─ public/                    se copia tal cual: favicon, manifest, sw.js, assets/sfx/
+├─ scripts/generar-sonidos.py síntesis de los efectos de vidrio
+└─ src/
+   ├─ main.ts                 GameConfig y arranque
+   ├─ constantes.ts           nombre, colores de UI, versión y build
+   ├─ vite-env.d.ts           tipos de las variables inyectadas por Vite
+   ├─ style.css               lienzo a pantalla completa, columna 3:4 en pantallas anchas
+   ├─ assets/musica/          canciones (se detectan solas con import.meta.glob)
+   ├─ i18n/                   textos: es.ts + t('clave', { valores })
+   ├─ juego/                  lógica pura, sin Phaser (se puede probar con Node)
+   ├─ scenes/                 Boot, Menu, Game, Dialogo, Settings
+   ├─ sistemas/               guardado, audio, caché, ventajas, FPS
+   └─ ui/                     componentes y colocación adaptable
+```
+
+## Arquitectura
+
+### Escenas
+
+```text
+BootScene ──► MenuScene ──► GameScene
+ (texturas)    │  ▲             │
+               │  └── Dialogo ◄─┤  pausa / victoria / derrota (Game queda en pausa)
+               └──► Settings ◄──┘  (también desde Dialogo); vuelve a la escena de origen
+```
+
+- **BootScene** genera las texturas de las bolas y pasa al menú al instante (no espera audio).
+- **MenuScene** para la música y lanza la **carga del audio en segundo plano**.
+- **GameScene** contiene la partida. `init(datos)` recibe `modo`: `continuar` (cargar el nivel
+  guardado), `reiniciar` (misma configuración) o `nuevo` (generar otro).
+- **DialogoScene** ejecuta acciones: `continuar`, `deshacer` (evento `'deshacer'` a Game),
+  `reiniciar`, `nuevo`, `siguiente`, `ajustes`, `menu`.
+- **SettingsScene** guarda al momento; si cambia el idioma, reinicia la escena de origen con sus
+  mismos datos.
+
+### Modelo y vista
+
+- **El modelo manda** (`src/juego/modelo.ts`): `Tubo { bolas, sellado, capacidad? }` y
+  `Bola { id, color, oculta, ingrediente }`. Cada jugada **cambia primero el modelo** y después
+  se anima; si la pantalla cambia de tamaño a mitad, la vista se reconstruye desde el modelo
+  (`sincronizarSprites`) sin perder nada.
+- Funciones clave: `evaluarMovimiento`, `aplicarMovimiento` (grupos, fusiones, sellado,
+  revelado), `invertirTubos`, `hayMovimientos`, `nivelCompleto(tubos, coloresIniciales)`,
+  `bolasBienColocadas`, `clonarTubos`, `capacidadDe`.
+- `GameScene` mantiene un `Map<id, Image>` de sprites y bloquea los toques mientras dura una
+  animación (`bloqueadoHasta`, en tiempo de juego).
+
+### Generador de niveles y solucionador
+
+- `src/juego/niveles.ts`: `configNivel(n)` (dificultad) y `generarNivel(n)` (baraja, reparte y
+  aplica niebla). Rechaza tableros con un tubo ya resuelto.
+- `src/juego/solucionador.ts`: búsqueda en profundidad con tubos codificados como texto y
+  estados visitados. Usa **las mismas reglas que el juego** (grupos, fusiones, sellado). Si las
+  reglas de movimiento cambian, **hay que actualizar también el solucionador**.
+
+### Deshacer
+
+- Antes de cada jugada se guarda una **instantánea** (tubos clonados, puntos, carga, bolas
+  puntuadas, lluvia). Se guardan como mucho tantas como deshacer queden.
+- Al deshacer se restaura y `animarHaciaModelo` anima cada bola de su posición actual a la del
+  modelo restaurado.
+- Al añadir el tubo de emergencia se añade también (vacío) a las instantáneas.
+
+### Pantalla adaptable
+
+- `Scale.EXPAND` con 720×1280 como tamaño **mínimo**: el juego crece hasta llenar la pantalla.
+- Toda la interfaz se coloca en `alRedimensionar(this, (ancho, alto) => …)` y lo pegado a los
+  bordes dentro de `zonaSegura(this)` (notch y barra de gestos) — `src/ui/layout.ts`.
+- En pantallas anchas, `style.css` limita el lienzo a una columna de proporción 3:4.
+- Los tubos se colocan en 1 fila (≤ 5) o 2 filas, con el tamaño de bola calculado según el
+  espacio disponible.
+
+### Audio
+
+- `src/sistemas/audio.ts`:
+  - `cargarAudioEnSegundoPlano(escena)`: encola lo que falte (primero efectos, luego canciones) y
+    arranca el cargador **sin bloquear**. Si la escena se cierra a medias, la siguiente retoma.
+  - `iniciarMusicaPartida` / `detenerMusica`: playlist aleatoria sin fin (no repite la anterior).
+  - `reproducirEfecto(escena, efecto, variar?)`: efectos con volumen de Ajustes y tono variable.
+- **Efectos** en `public/assets/sfx/` (ogg + mp3), generados con `scripts/generar-sonidos.py`.
+- **Canciones** en `src/assets/musica/`: MP3 32 kbps a 16 kHz, **máximo 1,5 MB** cada una. No
+  usar MP3 a 8 kHz (MPEG-2.5): Safari no lo reproduce bien.
+
+### Texturas
+
+- Bolas dibujadas una vez al arrancar en `CanvasTexture` de 128 px (esfera con degradado,
+  ingrediente con anillo discontinuo, oculta con «?») — `src/juego/texturas.ts`.
+
+### Guardado (`localStorage`)
+
+| Clave | Contenido | Módulo |
+| --- | --- | --- |
+| `odi-sort:partida` | `{ nivel, mejorNivel, monedas }` | `sistemas/guardado.ts` |
+| `odi-sort:nivel` | `{ numero, nivel (configuración inicial), ventajas }` | `sistemas/nivelGuardado.ts` |
+| `odi-sort:ajustes` | `{ volumenMusica, volumenEfectos, idioma }` | `sistemas/ajustes.ts` |
+
+Todas las lecturas validan los datos y vuelven a valores por defecto si algo no cuadra. Si el
+navegador no deja guardar, el nivel se mantiene en memoria.
+
+### Ventajas
+
+`src/sistemas/ventajas.ts` centraliza los usos de habilidades especiales por nivel. Hoy:
+`repartirVentajas()` sortea el tubo de emergencia (50 %). Para la tienda o los anuncios solo hay
+que cambiar esa función.
+
+### Caché sin conexión
+
+`public/sw.js` (Service Worker, solo en navegador y con HTTPS o localhost):
+
+- Audio: se sirve del caché y se actualiza en segundo plano.
+- Archivos del build con huella en el nombre: se guardan una vez.
+- `index.html`: siempre de la red.
+- Sube `VERSION` para vaciar el caché de todos los jugadores (p. ej. al reemplazar canciones).
+
+### Textos
+
+Todo texto visible sale de `t('clave', { valores })` (`src/i18n/`). Para añadir un idioma se
+crea un archivo con las mismas claves que `es.ts` y se registra en `src/i18n/index.ts`.
+
+### Rendimiento (60 fps)
+
+- Todo el movimiento con **tweens** (sin lógica por frame en `update`).
+- Texturas dibujadas una vez; los `Graphics` solo se redibujan al cambiar de estado o de tamaño.
+- `fps.target: 60` con `smoothStep`; no se limita a 60 para no dar tirones en pantallas de
+  90/120 Hz.
+- En `npm run dev` hay un contador de FPS arriba a la izquierda. Medir en un **móvil real**.
+
+## Versionado, builds y despliegue
+
+| Concepto | Cómo funciona |
+| --- | --- |
+| **Versión** | `MAJOR.MINOR.PATCH` en `package.json`. El **PATCH** sube en cada despliegue (lo hace la skill `publicar`). **MINOR/MAJOR** solo cuando lo pide el usuario |
+| **Build** | Número de despliegue = `github.run_number` del workflow de Pages. Se inyecta como `VITE_NUMERO_BUILD` junto al commit (`VITE_COMMIT`) |
+| **Menú** | Muestra «v0.0.9 · build 9 · 2f20f9d» (en local, «build dev») |
+| **Web** | Cada push a `main` → `deploy.yml` → https://andydevx.github.io/bubble-sort/ |
+| **APK** | Cada vez que sube el **MAJOR** → `apk.yml` compila `assembleDebug` y crea la Release `vX.0.0` con `odi-sort-vX.0.0.apk` |
+
+### APK de Android
+
+- El proyecto `android/` se generó con `npx cap add android` y **se versiona** (es código fuente).
+  Lo que hay en `android/app/src/main/assets/public` se regenera con `npx cap sync` y está en
+  `.gitignore`.
+- Orientación fija en vertical (`android:screenOrientation="portrait"` en `AndroidManifest.xml`).
+- `appId`: `com.andy.phasertemplate` (heredado de la plantilla). **Cambiarlo antes de publicar en
+  una tienda**: una vez publicado, cambiarlo crea otra app distinta.
+- El APK es de **depuración** (clave debug): se instala directamente permitiendo «orígenes
+  desconocidos». Para la Play Store hará falta una compilación **release firmada** con un
+  keystore guardado en los secretos del repositorio.
+- Se puede lanzar a mano desde la pestaña **Actions** → «APK por versión MAJOR» → *Run workflow*
+  (deja el APK como artefacto, sin Release).
+
+## Pruebas
+
+No hay tests automáticos en el repo; las comprobaciones se hacen así:
+
+- **Lógica** (`src/juego/`): se compila a JS en una carpeta temporal y se ejecuta con Node
+  (generar cientos de niveles, comprobar que tienen solución, casos de reglas).
+- **Juego**: Chromium sin pantalla con Playwright (`executablePath: '/opt/pw-browsers/chromium'`
+  en las sesiones en la nube), con toques reales. En desarrollo el juego se expone en
+  `window.juego` para leer el estado (`juego.scene.getScene('Game')`).
+- Ver en [`AGENTS.md`](../AGENTS.md) los trucos y trampas conocidas de estas pruebas.
+
+## Limitaciones conocidas
+
+- Los FPS medidos en navegadores sin GPU no son representativos.
+- El APK es de depuración; no hay firma release ni build para iOS.
+- Las canciones incluidas pueden tener derechos de autor: tenlo en cuenta antes de publicar en
+  una tienda.

@@ -22,7 +22,11 @@ push a `main` publica el juego en GitHub Pages: https://andydevx.github.io/bubbl
 ## 2. Documentar
 
 - Si cambian reglas del juego → `docs/diseno-juego.md` (tabla «Reglas concretas»).
-- Si cambian estructura, comandos o convenciones → `CLAUDE.md`.
+- Si cambian estructura, sistemas o despliegue → `docs/tecnico.md`; convenciones → `CLAUDE.md` / `AGENTS.md`.
+- **Siempre**: añade la nueva versión arriba de la tabla de `docs/historial.md` (versión, build,
+  commit, fecha y cambios). El build será el siguiente `run_number` del workflow de Pages
+  (`gh run list --repo AndyDevX/bubble-sort --workflow deploy.yml --limit 1` + 1); el commit,
+  el de la publicación anterior se puede completar en la siguiente.
 - Si se añade o regenera audio: efectos con `python3 scripts/generar-sonidos.py`; canciones en
   `src/assets/musica/`. Si un audio cambia **con el mismo nombre** y debe oírse ya, sube
   `VERSION` en `public/sw.js` (si no, el caché del Service Worker sirve el viejo una visita más).
@@ -37,6 +41,9 @@ npm version patch --no-git-tag-version   # o: minor / major si el usuario lo pid
 ```
 
 (actualiza `package.json` y `package-lock.json`; no lo repitas si en este mismo cambio ya se ajustó a mano)
+
+Si sube el **MAJOR**, el workflow `apk.yml` generará el APK y lo publicará como Release `vX.0.0`:
+compruébalo también (`gh run list --repo AndyDevX/bubble-sort --workflow apk.yml --limit 1`).
 
 ## 4. Commit y push a main
 
