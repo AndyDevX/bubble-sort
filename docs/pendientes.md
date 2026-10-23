@@ -11,8 +11,11 @@ que ya no aplique. Detalles de seguridad en [seguridad.md](./seguridad.md).
   desconocidos»).
 - [ ] **Tú** — Comprobar que https://andydevx.github.io/bubble-sort/actualizacion/version.json
   responde con la última versión (desde la sesión no se puede abrir `github.io`).
-- [ ] **Tú** — Probar la actualización en caliente: abrir la app, salir y volver a entrar. Abajo a la
-  izquierda debe poner la última versión (1.0.1 o posterior), no la 1.0.0.
+- [ ] **Tú** — Probar la actualización en caliente. La 1.0.0 instalada tiene el método antiguo:
+  abrir la app, **esperar en el menú** a que salga «Versión X lista…» (unos segundos) y entonces
+  salir con el botón de inicio y volver a entrar. Desde ahí la app instala sola en el menú. Si el
+  aviso no sale nunca, pasar el registro (sus primeras líneas dicen qué falló, desde la versión
+  1.0.3).
 - [ ] **Tú** — Jugar unos niveles con la lluvia nueva (v0.1.12: menos tubos vacíos, lluvia
   aleatoria que no bloquea) y pasar un **registro** nuevo (menú → Registro → descargar).
 - [ ] **Claude** — Con ese registro, ajustar la dificultad si hace falta. Opciones ya pensadas:

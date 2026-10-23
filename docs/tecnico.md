@@ -323,15 +323,21 @@ Para no reinstalar el APK en cada versión, la app descarga el juego nuevo desde
 
 1. `deploy.yml` comprime `dist/` en `actualizacion/odi-sort-X.Y.Z.zip` y escribe
    `actualizacion/version.json` (`version`, `build`, `commit`, `zip`).
-2. Al abrirse (y al volver de segundo plano, como mucho cada 10 min) la app
+2. Al abrirse (y al volver de segundo plano, como mucho cada 2 min) la app
    (`src/sistemas/actualizaciones.ts`) llama a `notifyAppReady()` y lee `version.json`:
-   - versión más nueva del **mismo MAJOR** → `download` + `next`: se aplica la próxima vez que el
-     juego pase a segundo plano o se vuelva a abrir. El menú avisa «Descargando…» / «Versión X lista»;
+   - versión más nueva del **mismo MAJOR** → `download` + `next`. Si el jugador está en el **menú**
+     (sin ventanas encima), se instala en ese momento con `set` (el juego se recarga; el menú dice
+     «Descargando…» y luego «Instalando…»). Si está jugando, se instala al volver al menú o, por
+     `next`, al pasar la app a segundo plano. **Hasta v1.0.2 solo se instalaba al salir y volver a
+     entrar después de terminar la descarga**, y no había rastro de los errores;
    - **MAJOR nuevo** → no descarga (puede traer cambios nativos); el menú avisa de que hay app nueva
      y al tocarlo abre las Releases en el navegador;
    - si un build nuevo no llega a `notifyAppReady` en 15 s (`appReadyTimeout`), Capgo vuelve al
      anterior y esa versión no se reintenta.
-3. Los paquetes viejos se borran (unos 4 MB cada uno). Al instalar un APK nuevo, Capgo descarta los
+3. Cada paso (arranque, al día, descargando, lista, error y su motivo) se apunta en
+   `odi-sort:actualizaciones` (últimas 30 líneas) y sale en la cabecera del **registro de
+   depuración**: si una actualización no llega, el registro dice por qué.
+4. Los paquetes viejos se borran (unos 4 MB cada uno). Al instalar un APK nuevo, Capgo descarta los
    descargados y usa el que trae el APK (`resetWhenUpdate`).
 
 Lo que **sí** necesita APK nuevo (y por tanto subir el MAJOR): plugins o permisos nuevos, cambios en

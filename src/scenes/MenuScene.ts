@@ -5,7 +5,7 @@ import { cargarAudioEnSegundoPlano, detenerMusica } from '../sistemas/audio';
 import { borrarProgreso, getGuardado } from '../sistemas/guardado';
 import { borrarNivelGuardado } from '../sistemas/nivelGuardado';
 import { borrarEstadisticas } from '../sistemas/estadisticas';
-import { alCambiarActualizacion, getEstadoActualizacion, URL_DESCARGA_APK, type EstadoActualizacion } from '../sistemas/actualizaciones';
+import { alCambiarActualizacion, getEstadoActualizacion, instalarActualizacion, URL_DESCARGA_APK, type EstadoActualizacion } from '../sistemas/actualizaciones';
 import { crearBoton } from '../ui/Boton';
 import { crearBotonAjustes } from '../ui/BotonAjustes';
 import { crearBotonBorrarProgreso } from '../ui/BorrarProgreso';
@@ -99,11 +99,22 @@ export class MenuScene extends Phaser.Scene {
     const mostrarActualizacion = (e: EstadoActualizacion) => {
       aviso.removeAllListeners('pointerup').disableInteractive();
       if (e.tipo === 'nada') return aviso.setText('');
-      const clave = ({ descargando: 'actualizacionDescargando', lista: 'actualizacionLista', apkNuevo: 'actualizacionApk' } as const)[e.tipo];
+      if (e.tipo === 'error') return aviso.setText(t('actualizacionError')).setColor('#77778f');
+      const clave = (
+        { descargando: 'actualizacionDescargando', lista: 'actualizacionInstalando', instalando: 'actualizacionInstalando', apkNuevo: 'actualizacionApk' } as const
+      )[e.tipo];
       aviso.setText(t(clave, { v: e.version })).setColor(e.tipo === 'apkNuevo' ? '#ffcc80' : '#a5d6a7');
       if (e.tipo === 'apkNuevo') {
         // Una URL externa la abre el navegador del teléfono, no el juego
         aviso.setInteractive({ useHandCursor: true }).on('pointerup', () => (window.location.href = URL_DESCARGA_APK));
+      }
+      // Descargada y en el menú (sin ventanas encima): se instala ya; el juego se recarga
+      if (e.tipo === 'lista') {
+        const intentar = () => {
+          if (this.scene.isActive() && !this.scene.isPaused()) instalarActualizacion();
+          else this.time.delayedCall(1000, intentar); // hay una ventana abierta: se espera
+        };
+        this.time.delayedCall(1200, intentar);
       }
       return aviso;
     };

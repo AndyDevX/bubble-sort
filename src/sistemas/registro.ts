@@ -1,4 +1,5 @@
 import { COMMIT_BUILD, NUMERO_BUILD, VERSION } from '../constantes';
+import { historialActualizaciones } from './actualizaciones';
 import type { ColorId } from '../juego/colores';
 import type { Tubo } from '../juego/modelo';
 import type { ConfigNivel } from '../juego/niveles';
@@ -228,6 +229,7 @@ function cabecera(): string {
     `Partidas registradas: ${entradas.length}`,
     'Tubos: de abajo arriba; «?» oculta, «*» ingrediente, «~» lluvia, «#» sellado.',
     'Tiempos: [real | juego] desde el inicio del nivel (el de juego se para en pausa).',
+    ...(historialActualizaciones().length ? ['Actualizaciones de la app (últimas):', ...historialActualizaciones().slice(-10).map((l) => `  ${l}`)] : []),
   ].join('\n');
 }
 
