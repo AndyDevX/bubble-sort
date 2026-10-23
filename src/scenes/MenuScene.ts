@@ -2,9 +2,11 @@ import Phaser from 'phaser';
 import { COMMIT_BUILD, NOMBRE_JUEGO, NUMERO_BUILD, VERSION } from '../constantes';
 import { t } from '../i18n';
 import { cargarAudioEnSegundoPlano, detenerMusica } from '../sistemas/audio';
-import { getGuardado } from '../sistemas/guardado';
+import { borrarProgreso, getGuardado } from '../sistemas/guardado';
+import { borrarNivelGuardado } from '../sistemas/nivelGuardado';
 import { crearBoton } from '../ui/Boton';
 import { crearBotonAjustes } from '../ui/BotonAjustes';
+import { crearBotonBorrarProgreso } from '../ui/BorrarProgreso';
 import { alRedimensionar, zonaSegura } from '../ui/layout';
 import { crearIconoMoneda } from '../ui/Moneda';
 
@@ -71,6 +73,20 @@ export class MenuScene extends Phaser.Scene {
       this.scene.launch('Settings', { origen: this.scene.key });
     });
 
+    // Borrar progreso: arriba a la izquierda, casi invisible y con pulsación larga + confirmación
+    const borrar = crearBotonBorrarProgreso(this, () => {
+      borrarProgreso();
+      borrarNivelGuardado();
+      this.scene.restart({ borrado: true });
+    });
+    if ((this.sys.settings.data as { borrado?: boolean } | undefined)?.borrado) {
+      const aviso = this.add
+        .text(0, 0, t('progresoBorrado'), { fontFamily: 'sans-serif', fontSize: '30px', color: '#a5d6a7' })
+        .setOrigin(0.5);
+      this.tweens.add({ targets: aviso, alpha: 0, delay: 1800, duration: 500 });
+      alRedimensionar(this, (ancho, alto) => aviso.setPosition(ancho / 2, alto * 0.55 - 110));
+    }
+
     alRedimensionar(this, (ancho, alto) => {
       const zona = zonaSegura(this);
       titulo.setPosition(ancho / 2, alto * 0.3);
@@ -82,6 +98,7 @@ export class MenuScene extends Phaser.Scene {
       // Esquina inferior derecha, respetando notch y barra de gestos
       ajustes.setPosition(zona.x + zona.ancho - 90, zona.y + zona.alto - 90);
       build.setPosition(zona.x + 30, zona.y + zona.alto - 30);
+      borrar.colocar(zona.x + 46, zona.y + 60);
     });
   }
 }

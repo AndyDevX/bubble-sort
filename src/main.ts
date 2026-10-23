@@ -29,6 +29,9 @@ const config: Phaser.Types.Core.GameConfig = {
   render: {
     powerPreference: 'high-performance',
   },
+  input: {
+    activePointers: 3, // varios dedos: un toque rápido con otro dedo no se pierde
+  },
   physics: {
     default: 'arcade',
     arcade: { gravity: { x: 0, y: 0 } },

@@ -57,3 +57,12 @@ export function cargarNivel(numero: number): Nivel | null {
     return null;
   }
 }
+
+export function borrarNivelGuardado(): void {
+  enMemoria = null;
+  try {
+    localStorage.removeItem(CLAVE);
+  } catch {
+    // Sin almacenamiento: basta con la copia en memoria
+  }
+}

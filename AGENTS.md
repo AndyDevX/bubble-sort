@@ -117,6 +117,10 @@ npx tsc -p . --noEmit false --outDir /tmp/salida --module esnext \
 
 Genera cientos de niveles y comprueba `tieneSolucion`, tiempos y casos límite.
 
+**Solubilidad**: si cambias la dificultad (`configNivel`), las reglas o la lluvia, ejecuta
+`npm run simular` (50 niveles × 3 velocidades de jugador con lluvia). Debe salir 100 % en todo:
+el usuario exige que **todos los niveles se puedan resolver sin habilidades**.
+
 ### Juego en el navegador
 
 - Arranca un servidor de prueba en **otro puerto**: `npx vite --port 4190 --strictPort`.

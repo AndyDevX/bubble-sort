@@ -7,6 +7,7 @@ Documentación: `README.md` (portada) · `docs/diseno-juego.md` (todo lo jugable
 ## Comandos
 - `npm run dev` — servidor local (http://localhost:5173)
 - `npm run build` — tsc + build a `dist/`
+- `npm run simular` — mide la solubilidad sin habilidades de 50 niveles con lluvia (debe dar 100 %)
 - `npm run compartir` — (con `npm run dev` abierto en otra terminal) túnel público temporal `https://….trycloudflare.com`
 - `npm run cap:sync` / `npm run cap:android` — build y sincronizar con nativo
 - Publicación web: cada push a `main` compila y publica en GitHub Pages (`.github/workflows/deploy.yml`) → https://andydevx.github.io/bubble-sort/

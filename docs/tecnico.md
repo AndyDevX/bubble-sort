@@ -98,8 +98,25 @@ BootScene ──► MenuScene ──► GameScene
 - `src/juego/niveles.ts`: `configNivel(n)` (dificultad) y `generarNivel(n)` (baraja, reparte y
   aplica niebla). Rechaza tableros con un tubo ya resuelto.
 - `src/juego/solucionador.ts`: búsqueda en profundidad con tubos codificados como texto y
-  estados visitados. Usa **las mismas reglas que el juego** (grupos, fusiones, sellado). Si las
-  reglas de movimiento cambian, **hay que actualizar también el solucionador**.
+  estados visitados. Usa **las mismas reglas que el juego** (grupos, fusiones, sellado, capacidad
+  de cada tubo). Si las reglas de movimiento cambian, **hay que actualizar también el
+  solucionador** (y `scripts/simular-solubilidad.mjs`).
+- `tieneSolucion(tubos, limite, coloresObjetivo?)`: sin objetivo exige todo sellado o vacío (al
+  generar); con `coloresObjetivo` basta con sellar esos colores (partida con lluvia).
+- `configNivel(n)`: colores, `desbloqueados` (paleta `ORDEN_COLORES`), `tubosVacios` = 2 + tandas de
+  lluvia. `colorNuevo(n)` dice qué color se desbloquea en el nivel n (siempre sale en él).
+
+### Lluvia justa
+
+`GameScene.elegirTuboGota`: baraja los tubos con hueco y, para cada uno, simula la gota y llama a
+`tieneSolucion(..., 8000 nodos, coloresBase)`; usa el primero que deja solución. Si ninguno, la
+gota espera 700 ms (salvo que el estado actual ya no tenga solución: entonces cae al azar).
+Presupuesto de 40 ms por intento para no dar tirones; tras 4 esperas seguidas cae al azar.
+Coste medido en PC: mediana 0,6 ms, p95 5 ms, peor 30 ms por comprobación.
+
+`npm run simular [niveles=50 pruebas=10]` (`scripts/simular-solubilidad.mjs`) compila
+`src/juego` a una carpeta temporal y mide la solubilidad con lluvia; termina con error si algún
+nivel no llega al 100 %.
 
 ### Deshacer
 
@@ -109,6 +126,14 @@ BootScene ──► MenuScene ──► GameScene
 - Al deshacer se restaura y `animarHaciaModelo` anima cada bola de su posición actual a la del
   modelo restaurado.
 - Al añadir el tubo de emergencia se añade también (vacío) a las instantáneas.
+
+### Entrada táctil
+
+- Las zonas de los tubos usan `pointerdown` (respuesta al tocar) y `input.activePointers: 3` en
+  `main.ts` (toques rápidos con varios dedos).
+- Mover no bloquea la entrada: el modelo cambia al instante y las bolas pueden recibir otra jugada
+  en pleno vuelo (`killTweensOf` + `tamanoNormal`). Solo bloquean la fusión, el giro de gravedad,
+  deshacer, la entrada del nivel y el tubo de emergencia.
 
 ### Pantalla adaptable
 
@@ -159,7 +184,9 @@ BootScene ──► MenuScene ──► GameScene
 | `odi-sort:nivel` | `{ numero, nivel (configuración inicial) }` (los antiguos traen `ventajas`, que se ignora) | `sistemas/nivelGuardado.ts` |
 | `odi-sort:ajustes` | `{ volumenMusica, volumenEfectos, idioma }` | `sistemas/ajustes.ts` |
 
-Todas las lecturas validan los datos y vuelven a valores por defecto si algo no cuadra. Si el
+Todas las lecturas validan los datos y vuelven a valores por defecto si algo no cuadra.
+`borrarProgreso()` y `borrarNivelGuardado()` borran partida y nivel (no los ajustes); los usa el
+botón oculto del menú (`src/ui/BorrarProgreso.ts`). Si el
 navegador no deja guardar, el nivel se mantiene en memoria.
 
 ### Tienda e inventario

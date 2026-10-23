@@ -56,3 +56,13 @@ export function actualizarGuardado(cambios: Partial<Guardado>): void {
     // Sin almacenamiento disponible: el progreso dura solo esta sesión
   }
 }
+
+// Borra todo el progreso (nivel, récord, monedas e inventario). Los ajustes no se tocan.
+export function borrarProgreso(): void {
+  actual = { ...POR_DEFECTO, inventario: { ...POR_DEFECTO.inventario } };
+  try {
+    localStorage.removeItem(CLAVE_GUARDADO);
+  } catch {
+    // Sin almacenamiento: basta con la copia en memoria
+  }
+}

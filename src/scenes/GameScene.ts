@@ -18,7 +18,8 @@ import {
   type Movimiento,
   type Tubo,
 } from '../juego/modelo';
-import { generarNivel, type Nivel } from '../juego/niveles';
+import { colorNuevo, generarNivel, type Nivel } from '../juego/niveles';
+import { tieneSolucion } from '../juego/solucionador';
 import { claveTextura, colorHex } from '../juego/texturas';
 import { ORIGEN_TUBO, TUBO_ANCHO } from '../juego/texturasTubo';
 import { iniciarEfecto, iniciarMusicaPartida, reproducirEfecto } from '../sistemas/audio';
@@ -43,6 +44,10 @@ const PUNTOS_CARGA = 150; // puntos para llenar la barra de Gravedad (una sola c
 const MAX_HISTORIAL = 50; // jugadas que se recuerdan para deshacer (los usos salen de la tienda)
 const DURACION_ALERTA_LLUVIA = 2600; // ms de aviso (sonido + pantalla parpadeando) antes de la primera gota
 const UMBRAL_LLUVIA = 0.35; // la lluvia empieza al llevar este porcentaje del nivel resuelto (bolas bien colocadas)
+const NODOS_LLUVIA_JUSTA = 8000; // límite del solucionador por tubo candidato (rápido en móvil)
+const LLUVIA_ESPERA_MS = 700; // si ningún tubo es seguro, la gota lo reintenta tras este tiempo
+const PRESUPUESTO_LLUVIA_MS = 40; // tiempo máximo de comprobación por intento (evita tirones)
+const MAX_ESPERAS_GOTA = 4; // esperas seguidas antes de dejar caer la gota al azar
 
 // Estado completo antes de una jugada, para poder deshacerla
 interface Instantanea {
@@ -98,6 +103,7 @@ export class GameScene extends Phaser.Scene {
   private bienAlEmpezar = 0; // bolas bien colocadas por azar al empezar el nivel
   private temporizadorLluvia: Phaser.Time.TimerEvent | null = null;
   private gotaEnEspera = false;
+  private esperasGota = 0;
 
   private historial: Instantanea[] = [];
   private tuboUsado = false; // el tubo de emergencia se puede poner una vez por nivel
@@ -143,6 +149,7 @@ export class GameScene extends Phaser.Scene {
     this.lluviaIniciada = false;
     this.temporizadorLluvia = null;
     this.gotaEnEspera = false;
+    this.esperasGota = 0;
     this.historial = [];
     this.tuboUsado = false;
     this.sonidoAlarma = null;
@@ -170,7 +177,8 @@ export class GameScene extends Phaser.Scene {
     this.tubos.forEach((_, i) => {
       this.vistasTubo.push(this.crearVistaTubo());
       const zona = this.add.zone(0, 0, 1, 1).setInteractive({ useHandCursor: true });
-      zona.on('pointerup', () => this.tocarTubo(i));
+      // Al tocar (no al levantar el dedo): respuesta inmediata
+      zona.on('pointerdown', () => this.tocarTubo(i));
       this.zonasTubo.push(zona);
     });
 
@@ -178,6 +186,7 @@ export class GameScene extends Phaser.Scene {
     this.crearEfectos();
     alRedimensionar(this, (ancho) => this.colocarTodo(ancho));
     this.animarEntrada();
+    this.avisarColorNuevo();
 
     // El diálogo de derrota puede pedir deshacer
     const alPedirDeshacer = () => this.deshacer();
@@ -498,6 +507,7 @@ export class GameScene extends Phaser.Scene {
     if (!sprite) return;
     const pos = this.posicionLevantada(i);
     this.tweens.killTweensOf(sprite);
+    this.tamanoNormal(sprite);
     // Sube y queda flotando suavemente mientras está seleccionada
     this.tweens.chain({
       targets: sprite,
@@ -517,7 +527,13 @@ export class GameScene extends Phaser.Scene {
     if (!sprite) return;
     const pos = this.posicionHueco(i, tubo.bolas.length - 1);
     this.tweens.killTweensOf(sprite);
+    this.tamanoNormal(sprite);
     this.tweens.add({ targets: sprite, x: pos.x, y: pos.y, duration: 120, ease: 'Quad.easeIn' });
+  }
+
+  // Una animación cortada a medias (p. ej. el aplastamiento al aterrizar) no debe dejar la bola deformada
+  private tamanoNormal(sprite: Phaser.GameObjects.Image) {
+    sprite.setDisplaySize(this.col.d * 0.92, this.col.d * 0.92);
   }
 
   private sacudir(i: number) {
@@ -549,7 +565,9 @@ export class GameScene extends Phaser.Scene {
     const encima = this.posicionLevantada(destino);
     const desfase = 50;
     const duracion = 260 + desfase * (res.bolas.length - 1);
-    this.bloquear(duracion);
+    // El modelo ya está actualizado: se puede seguir jugando mientras las bolas vuelan. Solo la
+    // fusión bloquea (su bola nueva aún no tiene sprite hasta que termina la animación).
+    if (res.movimiento.tipo === 'fusionar') this.bloquear(duracion);
 
     const ordenSalida = [...res.bolas].reverse();
     ordenSalida.forEach((bola, n) => {
@@ -557,6 +575,7 @@ export class GameScene extends Phaser.Scene {
       if (!sprite) return;
       const hueco = this.posicionHueco(destino, primerHueco + res.bolas.indexOf(bola));
       this.tweens.killTweensOf(sprite);
+      this.tamanoNormal(sprite);
       this.tweens.chain({
         targets: sprite,
         delay: n * desfase,
@@ -591,9 +610,10 @@ export class GameScene extends Phaser.Scene {
 
   // La bola se aplasta un instante al tocar fondo
   private aterrizar(sprite: Phaser.GameObjects.Image) {
+    this.tamanoNormal(sprite); // parte del tamaño real aunque otra animación la dejara deformada
     const sx = sprite.scaleX;
     const sy = sprite.scaleY;
-    this.tweens.add({ targets: sprite, scaleX: sx * 1.12, scaleY: sy * 0.86, duration: 70, yoyo: true, ease: 'Quad.easeOut', onComplete: () => sprite.setScale(sx, sy) });
+    this.tweens.add({ targets: sprite, scaleX: sx * 1.12, scaleY: sy * 0.86, duration: 70, yoyo: true, ease: 'Quad.easeOut', onComplete: () => this.tamanoNormal(sprite) });
   }
 
   // El tubo se balancea un poco al recibir bolas
@@ -629,6 +649,26 @@ export class GameScene extends Phaser.Scene {
       }
     });
     this.bloquear(duracion + desfase * this.tubos.length);
+  }
+
+  // Al llegar a un nivel que desbloquea un color: aviso con la bola nueva (no bloquea los toques)
+  private avisarColorNuevo() {
+    const color = colorNuevo(this.numeroNivel);
+    if (!color) return;
+    const d = Math.max(70, this.col.d);
+    const bola = this.add.image(0, -d * 0.2, `bola-${color}`).setDisplaySize(d, d);
+    const texto = this.add
+      .text(0, d * 0.65, t('nuevoColor'), { fontFamily: 'sans-serif', fontSize: '44px', fontStyle: 'bold', color: '#ffffff', stroke: '#1d1d2b', strokeThickness: 8 })
+      .setOrigin(0.5);
+    const aviso = this.add.container(this.scale.width / 2, this.scale.height * 0.45, [bola, texto]).setDepth(10).setAlpha(0).setScale(0.6);
+    this.tweens.chain({
+      targets: aviso,
+      tweens: [
+        { alpha: 1, scale: 1, duration: 350, delay: 500, ease: 'Back.easeOut' },
+        { alpha: 0, y: aviso.y - 40, duration: 400, delay: 1400, ease: 'Quad.easeIn', onComplete: () => aviso.destroy() },
+      ],
+    });
+    this.time.delayedCall(550, () => this.estallarChispas(aviso.x, aviso.y - d * 0.2, colorHex(color), 18));
   }
 
   // Celebración: los tubos saltan en ola con chispas
@@ -700,8 +740,9 @@ export class GameScene extends Phaser.Scene {
       const s = this.sprites.get(bola.id);
       if (!s) continue;
       s.setTexture(claveTextura(bola));
+      this.tamanoNormal(s);
       const escala = s.scaleX;
-      this.tweens.add({ targets: s, scale: escala * 1.15, duration: 120, yoyo: true });
+      this.tweens.add({ targets: s, scale: escala * 1.15, duration: 120, yoyo: true, onComplete: () => this.tamanoNormal(s) });
     }
   }
 
@@ -878,18 +919,52 @@ export class GameScene extends Phaser.Scene {
     this.textoLluvia.setText(t('lluviaRestante', { n: this.lluviaPendiente.length }));
   }
 
+  // Reintenta soltar la gota más tarde (sin duplicar gotas)
+  private esperarGota(ms: number) {
+    if (this.gotaEnEspera) return;
+    this.gotaEnEspera = true;
+    this.time.delayedCall(ms, () => {
+      this.gotaEnEspera = false;
+      this.soltarGota();
+    });
+  }
+
+  // Lluvia justa: la gota cae en un tubo al azar entre los que dejan el nivel con solución sin
+  // habilidades. Si ninguno lo deja, devuelve null (la gota espera) salvo que el jugador ya no
+  // tenga solución por sus propias jugadas: entonces cae al azar, como siempre.
+  // Cada intento tiene un presupuesto de tiempo para no dar tirones; si se agota, se reintenta
+  // y, tras varias esperas seguidas, la gota cae al azar para que la lluvia nunca se quede parada.
+  private elegirTuboGota(candidatos: number[], color: ColorId): number | null {
+    Phaser.Utils.Array.Shuffle(candidatos);
+    if (this.esperasGota >= MAX_ESPERAS_GOTA) {
+      this.esperasGota = 0;
+      return candidatos[0];
+    }
+    const objetivo = this.nivel.coloresBase;
+    const inicio = performance.now();
+    for (const i of candidatos) {
+      if (performance.now() - inicio > PRESUPUESTO_LLUVIA_MS) break;
+      const prueba = clonarTubos(this.tubos);
+      prueba[i].bolas.push({ ...nuevaBola(color), lluvia: true });
+      intentarSellar(prueba[i]);
+      if (tieneSolucion(prueba, NODOS_LLUVIA_JUSTA, objetivo)) {
+        this.esperasGota = 0;
+        return i;
+      }
+    }
+    if (performance.now() - inicio <= PRESUPUESTO_LLUVIA_MS && !tieneSolucion(this.tubos, NODOS_LLUVIA_JUSTA, objetivo)) {
+      return candidatos[0]; // el jugador ya no tiene solución: lluvia normal
+    }
+    this.esperasGota++;
+    return null;
+  }
+
   private soltarGota() {
     if (this.terminado || this.lluviaPendiente.length === 0) return;
 
-    // Si hay una animación en curso, espera un poco (sin duplicar gotas)
+    // Si hay una animación en curso, espera un poco
     if (this.bloqueado()) {
-      if (!this.gotaEnEspera) {
-        this.gotaEnEspera = true;
-        this.time.delayedCall(200, () => {
-          this.gotaEnEspera = false;
-          this.soltarGota();
-        });
-      }
+      this.esperarGota(200);
       return;
     }
 
@@ -899,7 +974,14 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    const { tubo, i } = conHueco[Math.floor(Math.random() * conHueco.length)];
+    const color = this.lluviaPendiente[0];
+    const i = this.elegirTuboGota(conHueco.map((c) => c.i), color);
+    if (i === null) {
+      // Ningún tubo es seguro ahora mismo: la gota espera un poco a que el jugador mueva
+      this.esperarGota(LLUVIA_ESPERA_MS);
+      return;
+    }
+    const tubo = this.tubos[i];
     if (this.seleccionado === i) this.bajar(i);
 
     const bola: Bola = { ...nuevaBola(this.lluviaPendiente.shift()!), lluvia: true };
@@ -1188,7 +1270,7 @@ export class GameScene extends Phaser.Scene {
     const i = this.tubos.length - 1;
     this.vistasTubo.push(this.crearVistaTubo());
     const zona = this.add.zone(0, 0, 1, 1).setInteractive({ useHandCursor: true });
-    zona.on('pointerup', () => this.tocarTubo(i));
+    zona.on('pointerdown', () => this.tocarTubo(i));
     this.zonasTubo.push(zona);
 
     this.colocarTodo(this.scale.width); // con un tubo más cambia la colocación

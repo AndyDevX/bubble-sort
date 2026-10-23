@@ -181,27 +181,31 @@ def derrota():
     return s
 
 
-def tono_alarma(f, duracion):
-    """Tono de alarma: fundamental + armónicos impares (zumbido de sirena) con envolvente suave."""
+def sirena_whoop(duracion, f_inicio, f_fin):
+    """Barrido ascendente de sirena real ("whoop"): onda de sierra (armónicos 1/k) con fase continua,
+    saturada como un altavoz de megafonía. Sin vidrio: tiene que sonar a alarma de verdad."""
     n = int(FS * duracion)
-    ataque, suelta = int(0.012 * FS), int(0.04 * FS)
+    ataque, suelta = int(0.015 * FS), int(0.07 * FS)
+    fase = 0.0
     muestras = []
     for i in range(n):
-        t = i / FS
-        v = math.sin(math.tau * f * t) + 0.33 * math.sin(math.tau * 3 * f * t) + 0.15 * math.sin(math.tau * 5 * f * t)
+        avance = i / n
+        f = f_inicio + (f_fin - f_inicio) * avance ** 0.6  # sube rápido y se estira al final
+        fase += math.tau * f / FS
+        v = sum(math.sin(k * fase) / k for k in range(1, 11))
+        v = math.tanh(1.6 * v)  # saturación de bocina
         env = min(1.0, i / ataque, (n - i) / suelta)
         muestras.append(v * env)
     return muestras
 
 
 def alarma():
-    """Aviso de peligro de la lluvia (~2,5 s): sirena de dos tonos con un golpe de vidrio en cada tono."""
-    s = silencio(2.6)
-    for i in range(8):
-        f = 740 if i % 2 == 0 else 988
-        t = i * 0.3
-        mezclar(s, paso_bajo(tono_alarma(f, 0.27), 3500), t, 0.5)
-        mezclar(s, vidrio(f * 2, caida=0.06, golpe=0.15), t, 0.25)
+    """Aviso de peligro de la lluvia (~2,6 s): cuatro "whoops" de sirena de evacuación con eco de sala."""
+    s = silencio(2.75)
+    for i in range(4):
+        mezclar(s, paso_bajo(sirena_whoop(0.6, 320, 920), 4200), i * 0.65, 0.8)
+    eco = list(s)
+    mezclar(s, eco, 0.11, 0.22)  # rebote corto, como en una nave o un pasillo
     return s
 
 
@@ -257,7 +261,7 @@ def guardar(nombre, muestras):
 if __name__ == '__main__':
     for nombre, generar in SONIDOS.items():
         # La alarma es un tono continuo: más baja para que suene parecida a los demás efectos
-        muestras = normalizar(generar(), pico=0.4 if nombre == 'alarma' else 0.8)
+        muestras = normalizar(generar(), pico=0.3 if nombre == 'alarma' else 0.8)
         guardar(nombre, muestras)
         print(f'{nombre:12s} {len(muestras) / FS:.2f} s')
     print(f'Listo: {SALIDA}')

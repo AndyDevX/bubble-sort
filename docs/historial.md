@@ -8,7 +8,8 @@ Al publicar, añade la nueva versión arriba del todo (lo indica la skill `publi
 
 | Versión | Build | Commit | Fecha | Cambios |
 | --- | --- | --- | --- | --- |
-| 0.0.14 | 14 | (este) | 2026-10-23 | Tubos de ensayo de vidrio realistas (dos capas, reflejos sobre las bolas, tapón que cae), bolas de vidrio e iconos de habilidad nuevos |
+| 0.1.0 | 15 | (este) | 2026-10-23 | **MINOR**: todos los niveles resolubles sin habilidades (lluvia justa + tubo extra por tanda, medido con `npm run simular`: 100 %). Colores que se desbloquean poco a poco. Alarma de sirena real. Respuesta táctil inmediata. Borrar progreso (botón oculto) |
+| 0.0.14 | 14 | cec8c77 | 2026-10-23 | Tubos de ensayo de vidrio realistas (dos capas, reflejos sobre las bolas, tapón que cae), bolas de vidrio e iconos de habilidad nuevos |
 | 0.0.13 | 13 | 9cdbe1d | 2026-10-23 | Tubos de ensayo de cristal (boca, fondo redondo, brillo, tapón al sellar) y animaciones: entrada deslizante, bola flotando, aterrizaje con balanceo, chispas, flechas de Gravedad, ola de victoria |
 | 0.0.12 | 12 | 912706e | 2026-10-23 | **Tienda**: deshacer (150 / 5 por 600) y tubo extra (500, máx. 1 por nivel) se compran con monedas. Se quitan los 5 deshacer gratis y el sorteo del tubo |
 | 0.0.11 | 11 | 9b6e1e2 | 2026-10-23 | Bolas de lluvia congeladas. Alerta de lluvia de ~2,6 s con alarma y pantalla parpadeando en rojo y ámbar |

@@ -31,6 +31,7 @@ npm run dev        # http://localhost:5173 (también desde el móvil con la IP d
 | `npm run dev` | Servidor de desarrollo con recarga al guardar |
 | `npm run build` | Comprueba tipos y genera `dist/` |
 | `npm run preview` | Sirve `dist/` en local |
+| `npm run simular` | Mide que todos los niveles se pueden resolver sin habilidades (con lluvia) |
 | `npm run compartir` | Con `npm run dev` abierto, crea un enlace público temporal |
 | `npm run cap:android` | Compila, sincroniza y abre el proyecto en Android Studio |
 

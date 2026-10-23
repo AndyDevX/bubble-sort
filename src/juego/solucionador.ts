@@ -1,9 +1,13 @@
 import { buscarFusion, type ColorId } from './colores';
-import { CAPACIDAD, type Tubo } from './modelo';
+import { CAPACIDAD, capacidadDe, type Tubo } from './modelo';
 
-// Comprueba si un nivel tiene solución (sin tener en cuenta niebla ni lluvia).
-// Representa cada tubo como texto: una letra por bola; mayúscula = ingrediente.
+// Comprueba si un nivel tiene solución sin habilidades (la niebla no influye: el solucionador ve
+// todas las bolas). Representa cada tubo como texto: una letra por bola; mayúscula = ingrediente.
 // Un tubo sellado se representa con '#'.
+//
+// Objetivo: sin `coloresObjetivo`, todos los tubos sellados o vacíos (generar niveles). Con
+// `coloresObjetivo` (partida en curso, con lluvia), basta con sellar esos colores: las bolas de
+// lluvia pueden quedar en cualquier tubo, como en el juego.
 
 interface Codificacion {
   letraDe: Map<ColorId, string>;
@@ -32,12 +36,13 @@ function sellable(tubo: string): boolean {
   return tubo.length === CAPACIDAD && tubo === tubo[0].repeat(CAPACIDAD) && tubo[0] === tubo[0].toLowerCase();
 }
 
-function completo(estado: string[]): boolean {
-  return estado.every((t) => t === '#' || t === '');
-}
-
-export function tieneSolucion(tubos: Tubo[], limiteNodos = 40000): boolean {
+export function tieneSolucion(tubos: Tubo[], limiteNodos = 40000, coloresObjetivo?: ColorId[]): boolean {
   const { estado: inicial, cod } = codificar(tubos);
+
+  // Letras que deben acabar selladas (las de lluvia no). Los ingredientes (mayúsculas) siempre.
+  const objetivo = coloresObjetivo ? new Set(coloresObjetivo.map((c) => cod.letraDe.get(c)).filter((l) => l !== undefined)) : null;
+  const completo = (estado: string[]) =>
+    estado.every((t) => t === '#' || t === '' || (objetivo !== null && [...t].every((l) => l === l.toLowerCase() && !objetivo.has(l))));
 
   const fusionar = (x: string, y: string): string | null => {
     const cx = cod.colorDe.get(x.toLowerCase());
@@ -54,7 +59,9 @@ export function tieneSolucion(tubos: Tubo[], limiteNodos = 40000): boolean {
     return l;
   };
 
-  const clave = (e: string[]) => [...e].sort().join('|');
+  // Capacidad de cada tubo (el de emergencia tiene 1); va en la clave porque los índices no cambian
+  const capacidades = tubos.map(capacidadDe);
+  const clave = (e: string[]) => e.map((t, i) => capacidades[i] + t).sort().join('|');
   const visitados = new Set<string>([clave(inicial)]);
   const pila: string[][] = [inicial];
   let nodos = 0;
@@ -85,7 +92,7 @@ export function tieneSolucion(tubos: Tubo[], limiteNodos = 40000): boolean {
         if (hacia === '' || tope === bola) {
           // Igual que en el juego: se mueve el grupo de iguales de arriba, tantas como quepan
           if (hacia === '' && monocolor) continue; // mover un tubo de un solo color a uno vacío no sirve
-          const libres = CAPACIDAD - hacia.length;
+          const libres = capacidades[d] - hacia.length;
           if (libres <= 0) continue;
           quitar = Math.min(grupo, libres);
           nuevoHacia = hacia + bola.repeat(quitar);
