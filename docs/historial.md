@@ -8,7 +8,8 @@ Al publicar, añade la nueva versión arriba del todo (lo indica la skill `publi
 
 | Versión | Build | Commit | Fecha | Cambios |
 | --- | --- | --- | --- | --- |
-| 1.0.1 | 30 | (este) | 2026-10-23 | Revisión de seguridad (`docs/seguridad.md`) y skills de seguridad, workflows y Google Ads. Primera versión que llega a la app por actualización en caliente |
+| 1.0.2 | 31 | (este) | 2026-10-23 | Lista de pendientes (`docs/pendientes.md`): comprobaciones, seguridad, anuncios y Play Store |
+| 1.0.1 | 30 | ca24231 | 2026-10-23 | Revisión de seguridad (`docs/seguridad.md`) y skills de seguridad, workflows y Google Ads. Primera versión que llega a la app por actualización en caliente |
 | 1.0.0 | 29 | 616ccfd | 2026-10-23 | **MAJOR: primer APK de Android** en las Releases (`odi-sort-v1.0.0.apk`). Desde aquí la app se actualiza sola con cada versión 1.x publicada en Pages |
 | 0.1.13 | 28 | 181b2f7 | 2026-10-23 | Preparación del APK: la app Android se **actualiza sola** desde GitHub Pages (Capgo en modo manual; `actualizacion/version.json` + .zip en cada despliegue). APK release firmado siempre con la misma clave y con la versión del juego |
 | 0.1.12 | 27 | 55e1f39 | 2026-10-23 | **Lluvia fluida y variada**: las gotas y las fusiones ya no bloquean los toques; la lluvia empieza entre el 25 y el 45 %, mezcla colores y cambia de ritmo (ráfagas) en cada partida. **Menos tubos vacíos** (2 + 1 al llover, antes hasta 5): ya hace falta pensar o usar habilidades. La lluvia justa espera en vez de caer al azar (corrige un 100 % optimista del simulador) |

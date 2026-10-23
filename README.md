@@ -51,6 +51,7 @@ npm run dev        # http://localhost:5173 (también desde el móvil con la IP d
 | [docs/tecnico.md](docs/tecnico.md) | Arquitectura, sistemas, guardado, audio, versionado, despliegue y APK |
 | [docs/historial.md](docs/historial.md) | Versiones y builds publicados |
 | [docs/seguridad.md](docs/seguridad.md) | Revisión de seguridad: hallazgos y pendientes |
+| [docs/pendientes.md](docs/pendientes.md) | Lista de pendientes (seguridad, anuncios, Play Store) |
 | [docs/analisis-dificultad.md](docs/analisis-dificultad.md) | Curva de dificultad medida (generado por `npm run analizar`) |
 | [AGENTS.md](AGENTS.md) | Instrucciones para agentes de IA que trabajen en el repo |
 | [docs/guia-phaser.md](docs/guia-phaser.md) · [docs/guia-typescript.md](docs/guia-typescript.md) | Manuales del stack |

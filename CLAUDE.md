@@ -2,7 +2,7 @@
 
 Juego: **Odi Sort**. Stack: Phaser 4.2 · Vite 8 · TypeScript 6 · Capacitor 8.
 **Lee también [`AGENTS.md`](AGENTS.md)**: flujo de trabajo, reglas y trampas conocidas para agentes.
-Documentación: `README.md` (portada) · `docs/diseno-juego.md` (todo lo jugable) · `docs/tecnico.md` (arquitectura, sistemas, despliegue) · `docs/historial.md` (versiones y builds) · `docs/seguridad.md` (revisión de seguridad) · guías `docs/guia-phaser.md`, `docs/guia-typescript.md`.
+Documentación: `README.md` (portada) · `docs/diseno-juego.md` (todo lo jugable) · `docs/tecnico.md` (arquitectura, sistemas, despliegue) · `docs/historial.md` (versiones y builds) · `docs/seguridad.md` (revisión de seguridad) · `docs/pendientes.md` (lo que falta; márcalo al terminar) · guías `docs/guia-phaser.md`, `docs/guia-typescript.md`.
 
 ## Comandos
 - `npm run dev` — servidor local (http://localhost:5173)
