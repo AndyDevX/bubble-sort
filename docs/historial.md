@@ -8,7 +8,8 @@ Al publicar, añade la nueva versión arriba del todo (lo indica la skill `publi
 
 | Versión | Build | Commit | Fecha | Cambios |
 | --- | --- | --- | --- | --- |
-| 1.0.11 | 40 | (este) | 2026-10-24 | CrazyGames sin herramientas de depuración: ni registro (ni su pantalla ni el texto del menú) ni build/commit en el menú, solo la versión. El medidor de FPS ya solo existía en desarrollo |
+| 1.0.12 | 41 | (este) | 2026-10-24 | **Nuevo diseño de interfaz** (vídeo de referencia del usuario): fondo crema con manchas, botones «caramelo» con brillo y relieve (colores por función), botones de icono a juego, insignias rojas, contadores en pastilla, ventanas crema y fuente redondeada Fredoka. Las canicas no cambian |
+| 1.0.11 | 40 | bd873b0 | 2026-10-24 | CrazyGames sin herramientas de depuración: ni registro (ni su pantalla ni el texto del menú) ni build/commit en el menú, solo la versión. El medidor de FPS ya solo existía en desarrollo |
 | 1.0.10 | 39 | 0f990e5 | 2026-10-24 | CrazyGames: el progreso (partida, nivel, ajustes y estadísticas) se guarda con el **Data Module** de su SDK, en la cuenta del jugador. La web y la app siguen con `localStorage` |
 | 1.0.9 | 38 | 2da8c8d | 2026-10-24 | **Música libre de derechos para CrazyGames**: 8 pistas CC0 (CoMiGo, Écrivain y hernandack) elegidas por su tono tranquilo o de hielo, alargadas a ~2,5 min y con el volumen igualado. La web y la app no cambian |
 | 1.0.8 | 37 | 80901f9 | 2026-10-24 | **Versión para CrazyGames**: build propio (`npm run build:crazygames`) con su SDK de anuncios (entre niveles cada 2 niveles; con recompensa: monedas dobles al ganar y deshacer gratis al perder), sin las canciones de la web y sin Service Worker. Cada versión publica una Release `crazygames-vX.Y.Z` con el .zip. La música libre de derechos queda pendiente (la red del entorno no deja descargarla) |

@@ -192,6 +192,23 @@ nivel no llega al 100 %.
   en pleno vuelo (`killTweensOf` + `tamanoNormal`). Solo bloquean la fusión, el giro de gravedad,
   deshacer, la entrada del nivel y el tubo de emergencia.
 
+### Tema visual
+
+- `src/ui/tema.ts`: paleta (`Tema`), colores de botón (`Botones`: azul, verde, naranja, rojo,
+  crema), `FUENTE` y `estiloTexto`, `crearFondo` (textura crema generada con el canvas 2D, cubre la
+  pantalla y se recoloca al redimensionar), `crearVelo`, `dibujarPanel`, `dibujarPastilla` y
+  `dibujarCaramelo` (botón con brillo y relieve; devuelve cuánto baja la cara para mover el texto o
+  el icono). **Todo color o estilo nuevo de la interfaz debe salir de aquí.**
+- `crearBoton(..., colores)` y `crearBotonRedondo(..., colores)` aceptan el color (por defecto
+  azul). Los iconos dibujados a mano (`iconoPausa`, `iconoEngranaje`) van en blanco.
+- Fuente: `@fontsource/fredoka` (pesos 500 y 700, subconjunto latino) importada en `main.ts`.
+  Phaser pinta el texto en un canvas y no lo repinta cuando llega la fuente, así que `main.ts`
+  espera a `document.fonts.load` (máx. 3 s) antes de crear el juego.
+- Con fondo claro, las chispas usan mezcla normal (con ADD se volvían blancas e invisibles) y el
+  interior de la boca de los tubos es azul grisáceo claro.
+- Color de fondo también en `style.css`, `index.html` (theme-color) y `manifest.webmanifest`. La
+  app Android nativa (pantalla de carga) sigue oscura hasta el próximo APK.
+
 ### Pantalla adaptable
 
 - `Scale.EXPAND` con 720×1280 como tamaño **mínimo**: el juego crece hasta llenar la pantalla.

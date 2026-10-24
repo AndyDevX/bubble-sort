@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
-import { Colores } from '../constantes';
 import { CODIGOS_IDIOMA, getIdioma, nombreDeIdioma, setIdioma, t } from '../i18n';
 import { actualizarAjustes, getAjustes } from '../sistemas/ajustes';
 import { aplicarVolumenMusica, reproducirEfecto } from '../sistemas/audio';
 import { crearBoton } from '../ui/Boton';
 import { crearSlider } from '../ui/Slider';
+import { Botones, crearVelo, dibujarPanel, FUENTE, Tema } from '../ui/tema';
 
 // Se abre encima de la escena que la lanza (que queda en pausa) y vuelve a ella al cerrar
 export class SettingsScene extends Phaser.Scene {
@@ -25,18 +25,15 @@ export class SettingsScene extends Phaser.Scene {
     const ajustes = getAjustes();
 
     // Fondo oscuro que además bloquea los toques a la escena de debajo
-    this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6).setInteractive();
+    crearVelo(this);
 
     const panelAncho = 620;
     const panelAlto = 900;
-    this.add
-      .graphics()
-      .fillStyle(Colores.panel)
-      .fillRoundedRect((width - panelAncho) / 2, (height - panelAlto) / 2, panelAncho, panelAlto, 32);
+    dibujarPanel(this.add.graphics(), (width - panelAncho) / 2, (height - panelAlto) / 2, panelAncho, panelAlto, 32);
 
     const arriba = (height - panelAlto) / 2;
-    const estiloTitulo = { fontFamily: 'sans-serif', fontSize: '64px', color: '#ffffff', fontStyle: 'bold' };
-    const estiloEtiqueta = { fontFamily: 'sans-serif', fontSize: '38px', color: '#ffffff' };
+    const estiloTitulo = { fontFamily: FUENTE, fontSize: '64px', color: Tema.texto, fontStyle: 'bold' };
+    const estiloEtiqueta = { fontFamily: FUENTE, fontSize: '38px', color: Tema.texto };
     const xEtiqueta = (width - panelAncho) / 2 + 50;
     const anchoSlider = 380;
     const xSlider = width / 2 - 55;
@@ -66,7 +63,7 @@ export class SettingsScene extends Phaser.Scene {
     this.add.text(xEtiqueta, arriba + 540, t('idioma'), estiloEtiqueta).setOrigin(0, 0.5);
     this.crearSelectorIdioma(width / 2, arriba + 620);
 
-    crearBoton(this, width / 2, arriba + panelAlto - 110, t('volver'), () => this.cerrar());
+    crearBoton(this, width / 2, arriba + panelAlto - 110, t('volver'), () => this.cerrar(), Botones.crema);
 
     // Si cambia el tamaño de la pantalla, se vuelve a construir (los valores ya están guardados)
     const alCambiarTamano = () => this.scene.restart({ origen: this.escenaOrigen });
@@ -76,10 +73,10 @@ export class SettingsScene extends Phaser.Scene {
 
   private crearSelectorIdioma(x: number, y: number) {
     const hayVarios = CODIGOS_IDIOMA.length > 1;
-    const colorFlecha = hayVarios ? '#ffffff' : '#66667a';
+    const colorFlecha = hayVarios ? Tema.texto : Tema.textoSuave;
 
     const nombre = this.add
-      .text(x, y, nombreDeIdioma(getIdioma()), { fontFamily: 'sans-serif', fontSize: '40px', color: '#ffffff' })
+      .text(x, y, nombreDeIdioma(getIdioma()), { fontFamily: FUENTE, fontSize: '40px', color: Tema.texto })
       .setOrigin(0.5);
 
     const cambiar = (paso: number) => {
@@ -90,7 +87,7 @@ export class SettingsScene extends Phaser.Scene {
       this.scene.restart({ origen: this.escenaOrigen }); // repinta los textos en el nuevo idioma
     };
 
-    const estiloFlecha = { fontFamily: 'sans-serif', fontSize: '56px', color: colorFlecha };
+    const estiloFlecha = { fontFamily: FUENTE, fontSize: '56px', color: colorFlecha };
     const izquierda = this.add.text(x - 200, y, '‹', estiloFlecha).setOrigin(0.5).setPadding(24, 8);
     const derecha = this.add.text(x + 200, y, '›', estiloFlecha).setOrigin(0.5).setPadding(24, 8);
 

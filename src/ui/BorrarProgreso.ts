@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
-import { Colores } from '../constantes';
 import { t } from '../i18n';
 import { reproducirEfecto } from '../sistemas/audio';
 import { crearBoton } from './Boton';
+import { Botones, dibujarPanel, FUENTE, Tema } from './tema';
 
 const MANTENER_MS = 1500; // pulsación larga necesaria: evita borrar por un toque accidental
 const RADIO = 26;
@@ -15,7 +15,7 @@ export interface BotonBorrarProgreso {
 // después confirmar en una ventana: dos pasos para que nadie borre su partida sin querer.
 export function crearBotonBorrarProgreso(escena: Phaser.Scene, alBorrar: () => void): BotonBorrarProgreso {
   const icono = escena.add.graphics();
-  icono.lineStyle(3, 0xffffff, 1);
+  icono.lineStyle(3, Tema.sombra, 1);
   icono.strokeRect(-9, -6, 18, 20); // cubo
   icono.lineBetween(-13, -10, 13, -10); // tapa
   icono.lineBetween(-4, -14, 4, -14); // asa
@@ -26,7 +26,7 @@ export function crearBotonBorrarProgreso(escena: Phaser.Scene, alBorrar: () => v
   boton.setSize(RADIO * 2.4, RADIO * 2.4).setInteractive({ useHandCursor: true });
 
   const pista = escena.add
-    .text(0, 0, t('mantenBorrar'), { fontFamily: 'sans-serif', fontSize: '22px', color: '#aaaacc' })
+    .text(0, 0, t('mantenBorrar'), { fontFamily: FUENTE, fontSize: '22px', color: Tema.textoSuave })
     .setOrigin(0, 0.5)
     .setAlpha(0);
 
@@ -78,22 +78,22 @@ export function crearBotonBorrarProgreso(escena: Phaser.Scene, alBorrar: () => v
 function mostrarConfirmacion(escena: Phaser.Scene, alBorrar: () => void) {
   const { width, height } = escena.scale;
   reproducirEfecto(escena, 'error');
-  const velo = escena.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7).setInteractive().setDepth(20);
+  const velo = escena.add.rectangle(width / 2, height / 2, width, height, Tema.sombra, 0.45).setInteractive().setDepth(20);
   const ancho = Math.min(620, width - 60);
   const alto = 560;
   const arriba = (height - alto) / 2;
   const panel = escena.add.graphics().setDepth(20);
-  panel.fillStyle(Colores.panel).fillRoundedRect((width - ancho) / 2, arriba, ancho, alto, 32);
+  dibujarPanel(panel, (width - ancho) / 2, arriba, ancho, alto, 32);
   panel.lineStyle(4, 0xff5252, 0.8).strokeRoundedRect((width - ancho) / 2, arriba, ancho, alto, 32);
   const titulo = escena.add
-    .text(width / 2, arriba + 80, t('borrarTitulo'), { fontFamily: 'sans-serif', fontSize: '48px', color: '#ff8a80', fontStyle: 'bold' })
+    .text(width / 2, arriba + 80, t('borrarTitulo'), { fontFamily: FUENTE, fontSize: '48px', color: Tema.peligro, fontStyle: 'bold' })
     .setOrigin(0.5)
     .setDepth(20);
   const texto = escena.add
     .text(width / 2, arriba + 175, t('borrarTexto'), {
-      fontFamily: 'sans-serif',
+      fontFamily: FUENTE,
       fontSize: '30px',
-      color: '#ffffff',
+      color: Tema.texto,
       align: 'center',
       wordWrap: { width: ancho - 80 },
     })
@@ -105,7 +105,7 @@ function mostrarConfirmacion(escena: Phaser.Scene, alBorrar: () => void) {
   const borrar = crearBoton(escena, width / 2, arriba + 320, t('borrarSi'), () => {
     cerrar();
     alBorrar();
-  }).setDepth(20);
-  const volver = crearBoton(escena, width / 2, arriba + 450, t('cancelar'), cerrar).setDepth(20);
+  }, Botones.rojo).setDepth(20);
+  const volver = crearBoton(escena, width / 2, arriba + 450, t('cancelar'), cerrar, Botones.crema).setDepth(20);
   piezas.push(borrar, volver);
 }

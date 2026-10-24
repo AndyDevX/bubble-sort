@@ -349,7 +349,24 @@ jugadas que no estropeen nada hasta que se derrite (`scripts/lib/juego.mjs`, `cr
 
 ## Aspecto y animaciones
 
-Inspirado en un vídeo de referencia del usuario (solo tubos y animaciones; botones y fondo aún no).
+Inspirado en vídeos de referencia del usuario: el primero para tubos y animaciones; el segundo
+(v1.0.12) para botones, interfaz y fondo, en un estilo casual claro. Las canicas no cambiaron.
+
+- **Fondo** crema con manchas grandes y difuminadas, como papel (textura generada una vez).
+- **Botones «caramelo»**: cara de color con una franja de brillo y dos destellos arriba a la
+  izquierda, relieve más oscuro abajo y sombra suave; al tocarlos la cara se hunde sobre el
+  relieve. Colores por función: **verde** para avanzar (Jugar, Continuar, Siguiente, Seguir
+  jugando), **azul** para ayudas y navegación (Reiniciar, Deshacer, Colores, Estadísticas),
+  **naranja** para la tienda y los anuncios con recompensa, **crema** para salir (Menú, Volver,
+  Ajustes) y **rojo** para borrar el progreso.
+- **Botones de icono** (pausa, ajustes, deshacer, tubo extra, Gravedad): cuadrados redondeados
+  del mismo estilo, con el icono en blanco; Gravedad en verde.
+- **Insignias** rojas con borde blanco (usos que quedan o «+»).
+- **Contadores** (monedas) en **pastillas** blancas translúcidas; barra de Gravedad en pastilla con
+  relleno ámbar brillante.
+- **Ventanas** crema con borde y sombra, sobre un velo marrón translúcido.
+- **Texto** marrón con la fuente redondeada **Fredoka** (licencia OFL, incluida en el juego); el
+  título «Odi Sort» en azul con contorno blanco y sombra.
 
 - **Luz única**: todo (bolas, tubos, iconos) se ilumina desde arriba a la izquierda.
 - **Tubos de ensayo de vidrio realistas**: boca con aro de vidrio en perspectiva, paredes más

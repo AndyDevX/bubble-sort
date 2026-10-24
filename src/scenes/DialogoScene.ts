@@ -1,7 +1,22 @@
 import { anuncioEntreNiveles } from '../sistemas/anuncios';
 import Phaser from 'phaser';
-import { Colores } from '../constantes';
 import { crearBoton } from '../ui/Boton';
+import { Botones, crearVelo, dibujarPanel, FUENTE, Tema, type ColoresBoton } from '../ui/tema';
+
+// Color de cada botón según lo que hace: seguir (verde), ayudas (azul), anuncios y tienda
+// (naranja), salir (crema)
+const COLOR_ACCION: Record<AccionDialogo, ColoresBoton> = {
+  continuar: Botones.verde,
+  siguiente: Botones.verde,
+  seguir: Botones.verde,
+  deshacer: Botones.azul,
+  reiniciar: Botones.azul,
+  deshacerAnuncio: Botones.naranja,
+  duplicarAnuncio: Botones.naranja,
+  tienda: Botones.naranja,
+  ajustes: Botones.crema,
+  menu: Botones.crema,
+};
 
 export type AccionDialogo = 'continuar' | 'deshacer' | 'seguir' | 'deshacerAnuncio' | 'duplicarAnuncio' | 'reiniciar' | 'siguiente' | 'tienda' | 'ajustes' | 'menu';
 
@@ -30,7 +45,7 @@ export class DialogoScene extends Phaser.Scene {
     const { titulo, texto, bola, botones } = this.datos;
 
     // Fondo oscuro que además bloquea los toques a la partida
-    this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6).setInteractive().setDepth(-2);
+    crearVelo(this);
 
     const separacion = 140;
     const altoBola = bola ? 170 : 0; // hueco para la bola, entre el título y el texto
@@ -38,21 +53,18 @@ export class DialogoScene extends Phaser.Scene {
     // El texto se parte en líneas para caber en el panel; su alto real coloca lo demás
     const objetoTexto = texto
       ? this.add
-          .text(width / 2, 0, texto, { fontFamily: 'sans-serif', fontSize: '32px', color: '#aaaacc', align: 'center', wordWrap: { width: anchoPanel - 70, useAdvancedWrap: true } })
+          .text(width / 2, 0, texto, { fontFamily: FUENTE, fontSize: '32px', color: Tema.textoSuave, align: 'center', wordWrap: { width: anchoPanel - 70, useAdvancedWrap: true } })
           .setOrigin(0.5)
       : null;
     const altoTexto = objetoTexto?.height ?? 0;
     const primerBoton = (texto ? 230 + altoTexto : 200) + altoBola; // distancia del borde superior al primer botón
     const altoPanel = primerBoton + (botones.length - 1) * separacion + 115;
     const arriba = (height - altoPanel) / 2;
-    this.add
-      .graphics()
-      .fillStyle(Colores.panel)
-      .fillRoundedRect((width - anchoPanel) / 2, arriba, anchoPanel, altoPanel, 32)
+    dibujarPanel(this.add.graphics(), (width - anchoPanel) / 2, arriba, anchoPanel, altoPanel, 32)
       .setDepth(-1);
 
     this.add
-      .text(width / 2, arriba + 90, titulo, { fontFamily: 'sans-serif', fontSize: '56px', color: '#ffffff', fontStyle: 'bold' })
+      .text(width / 2, arriba + 90, titulo, { fontFamily: FUENTE, fontSize: '56px', color: Tema.texto, fontStyle: 'bold' })
       .setOrigin(0.5);
 
     if (bola) {
@@ -74,7 +86,7 @@ export class DialogoScene extends Phaser.Scene {
     let y = arriba + primerBoton;
 
     for (const boton of botones) {
-      crearBoton(this, width / 2, y, boton.texto, () => this.ejecutar(boton.accion));
+      crearBoton(this, width / 2, y, boton.texto, () => this.ejecutar(boton.accion), COLOR_ACCION[boton.accion]);
       y += separacion;
     }
 

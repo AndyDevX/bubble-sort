@@ -1,5 +1,4 @@
 import Phaser from 'phaser';
-import { Colores } from '../constantes';
 import { t } from '../i18n';
 import { nombreColor } from '../i18n/nombresColor';
 import type { ColorId } from '../juego/colores';
@@ -7,6 +6,7 @@ import { nivelDesbloqueo, ORDEN_COLORES } from '../juego/niveles';
 import { reproducirEfecto } from '../sistemas/audio';
 import { getGuardado } from '../sistemas/guardado';
 import { crearBoton } from '../ui/Boton';
+import { Botones, crearVelo, dibujarPanel, FUENTE, Tema } from '../ui/tema';
 
 const COLUMNAS = 4;
 const ALTO_CELDA = 128;
@@ -37,33 +37,33 @@ export class ColeccionScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.scale;
-    this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6).setInteractive();
+    crearVelo(this);
 
     const panelAncho = Math.min(660, width - 30);
     const panelAlto = Math.min(height - 40, 1220);
     const arriba = (height - panelAlto) / 2;
     const izquierda = (width - panelAncho) / 2;
-    this.add.graphics().fillStyle(Colores.panel).fillRoundedRect(izquierda, arriba, panelAncho, panelAlto, 32);
+    dibujarPanel(this.add.graphics(), izquierda, arriba, panelAncho, panelAlto, 32);
 
     const descubiertos = ORDEN_COLORES.filter((c) => this.descubierto(c)).length;
     this.add
-      .text(width / 2, arriba + 65, t('colores'), { fontFamily: 'sans-serif', fontSize: '56px', color: '#ffffff', fontStyle: 'bold' })
+      .text(width / 2, arriba + 65, t('colores'), { fontFamily: FUENTE, fontSize: '56px', color: Tema.texto, fontStyle: 'bold' })
       .setOrigin(0.5);
     this.add
       .text(width / 2, arriba + 120, t('descubiertos', { n: descubiertos, total: ORDEN_COLORES.length }), {
-        fontFamily: 'sans-serif',
+        fontFamily: FUENTE,
         fontSize: '28px',
-        color: '#aaaacc',
+        color: Tema.textoSuave,
       })
       .setOrigin(0.5);
 
     // Vista grande del color seleccionado
     const grande = this.add.image(width / 2, arriba + 228, 'bola-bloqueada').setDisplaySize(BOLA_GRANDE, BOLA_GRANDE);
     const nombre = this.add
-      .text(width / 2, arriba + 320, '', { fontFamily: 'sans-serif', fontSize: '36px', color: '#ffffff', fontStyle: 'bold' })
+      .text(width / 2, arriba + 320, '', { fontFamily: FUENTE, fontSize: '36px', color: Tema.texto, fontStyle: 'bold' })
       .setOrigin(0.5);
     const detalle = this.add
-      .text(width / 2, arriba + 360, '', { fontFamily: 'sans-serif', fontSize: '24px', color: '#81d4fa' })
+      .text(width / 2, arriba + 360, '', { fontFamily: FUENTE, fontSize: '24px', color: Tema.info })
       .setOrigin(0.5);
     const marca = this.add.graphics();
 
@@ -76,7 +76,7 @@ export class ColeccionScene extends Phaser.Scene {
       detalle.setText(visto ? (nivel <= 1 ? t('deSalida') : t('desbloqueadoEn', { n: nivel })) : t('seDesbloqueaEn', { n: nivel }));
       const celda = celdas.get(color);
       if (celda) {
-        marca.clear().lineStyle(4, Colores.primario).strokeCircle(celda.x, celda.y, BOLA_CELDA / 2 + 6);
+        marca.clear().lineStyle(5, Botones.azul.cara).strokeCircle(celda.x, celda.y, BOLA_CELDA / 2 + 6);
       }
       if (animar) {
         const escala = grande.scaleX;
@@ -97,9 +97,9 @@ export class ColeccionScene extends Phaser.Scene {
       const bola = this.add.image(x, y, visto ? `bola-${color}` : 'bola-bloqueada').setDisplaySize(BOLA_CELDA, BOLA_CELDA);
       this.add
         .text(x, y + BOLA_CELDA / 2 + 16, visto ? nombreColor(color) : t('nivelCorto', { n: nivelDesbloqueo(color) }), {
-          fontFamily: 'sans-serif',
+          fontFamily: FUENTE,
           fontSize: '20px',
-          color: visto ? '#ffffff' : '#66667a',
+          color: visto ? Tema.texto : Tema.textoSuave,
         })
         .setOrigin(0.5);
       bola.setInteractive({ useHandCursor: true }).on('pointerup', () => {
@@ -109,7 +109,7 @@ export class ColeccionScene extends Phaser.Scene {
     });
     mostrar(this.seleccionado, false);
 
-    crearBoton(this, width / 2, arriba + panelAlto - 75, t('volver'), () => this.cerrar());
+    crearBoton(this, width / 2, arriba + panelAlto - 75, t('volver'), () => this.cerrar(), Botones.crema);
 
     // Al cambiar el tamaño se reconstruye conservando el color elegido
     const alCambiarTamano = () => this.scene.restart({ origen: this.escenaOrigen, seleccionado: this.seleccionado });

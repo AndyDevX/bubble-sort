@@ -64,8 +64,9 @@ function dibujarAtras(ctx: CanvasRenderingContext2D, arriba: number, tinte: Rgb)
   cuerpo(ctx, arriba);
   ctx.fill();
 
-  // Interior de la boca (se ve la abertura en ligera perspectiva) y su borde trasero
-  ctx.fillStyle = 'rgba(8,16,28,0.35)';
+  // Interior de la boca (se ve la abertura en ligera perspectiva) y su borde trasero. Azul grisáceo
+  // claro: sobre el fondo crema un tono oscuro se veía como una raya gris
+  ctx.fillStyle = 'rgba(110,150,185,0.22)';
   boca(ctx, arriba, TUBO_ANCHO / 2 - 2, 8, 0, Math.PI * 2);
   ctx.fill();
   ctx.strokeStyle = rgba(tinte, 0.55);

@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
-import { Colores } from '../constantes';
 import { t } from '../i18n';
 import { reproducirEfecto } from '../sistemas/audio';
 import { borrarRegistro, getRegistro, textoCompleto, textoResumen, type EntradaRegistro } from '../sistemas/registro';
+import { Botones, dibujarPanel, FUENTE, Tema } from '../ui/tema';
 
 const ALTO_LINEA = 34;
 const ALTO_BOTON = 84;
@@ -23,19 +23,19 @@ export class RegistroScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.scale;
-    this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7).setInteractive();
+    this.add.rectangle(width / 2, height / 2, width, height, Tema.sombra, 0.45).setInteractive();
     const panelAncho = Math.min(680, width - 24);
     const panelAlto = Math.min(height - 40, 1220);
     const arriba = (height - panelAlto) / 2;
     const izquierda = (width - panelAncho) / 2;
-    this.add.graphics().fillStyle(Colores.panel).fillRoundedRect(izquierda, arriba, panelAncho, panelAlto, 32);
+    dibujarPanel(this.add.graphics(), izquierda, arriba, panelAncho, panelAlto, 32);
 
     const entradas = getRegistro();
     this.add
-      .text(width / 2, arriba + 60, t('registro'), { fontFamily: 'sans-serif', fontSize: '50px', color: '#ffffff', fontStyle: 'bold' })
+      .text(width / 2, arriba + 60, t('registro'), { fontFamily: FUENTE, fontSize: '50px', color: Tema.texto, fontStyle: 'bold' })
       .setOrigin(0.5);
     this.add
-      .text(width / 2, arriba + 110, t('registroPartidas', { n: entradas.length }), { fontFamily: 'sans-serif', fontSize: '24px', color: '#aaaacc' })
+      .text(width / 2, arriba + 110, t('registroPartidas', { n: entradas.length }), { fontFamily: FUENTE, fontSize: '24px', color: Tema.textoSuave })
       .setOrigin(0.5);
 
     // Lista: una línea por partida, la más reciente arriba
@@ -48,14 +48,14 @@ export class RegistroScene extends Phaser.Scene {
       .text(izquierda + 26, arribaLista, lineas.length ? lineas.join('\n') : t('registroVacio'), {
         fontFamily: 'monospace',
         fontSize: '19px',
-        color: '#d0d0e0',
+        color: Tema.texto,
         lineSpacing: ALTO_LINEA - 22,
         wordWrap: { width: panelAncho - 52 },
       })
       .setCrop(0, 0, panelAncho - 52, altoLista);
 
     this.aviso = this.add
-      .text(width / 2, arriba + panelAlto - botonesAlto - 40, '', { fontFamily: 'sans-serif', fontSize: '24px', color: '#a5d6a7' })
+      .text(width / 2, arriba + panelAlto - botonesAlto - 40, '', { fontFamily: FUENTE, fontSize: '24px', color: Tema.positivo })
       .setOrigin(0.5);
 
     // Botones en dos columnas
@@ -88,13 +88,13 @@ export class RegistroScene extends Phaser.Scene {
   private boton(x: number, y: number, ancho: number, texto: string, alPulsar: () => void) {
     const fondo = this.add.graphics();
     const pintar = (color: number) => fondo.clear().fillStyle(color).fillRoundedRect(-ancho / 2, -ALTO_BOTON / 2, ancho, ALTO_BOTON, 22);
-    pintar(Colores.primario);
+    pintar(Botones.azul.cara);
     const etiqueta = this.add
-      .text(0, 0, texto, { fontFamily: 'sans-serif', fontSize: '28px', color: '#1d1d2b', fontStyle: 'bold', align: 'center', wordWrap: { width: ancho - 20 } })
+      .text(0, 0, texto, { fontFamily: FUENTE, fontSize: '28px', color: '#ffffff', fontStyle: 'bold', align: 'center', wordWrap: { width: ancho - 20 } })
       .setOrigin(0.5);
     const boton = this.add.container(x, y, [fondo, etiqueta]).setSize(ancho, ALTO_BOTON).setInteractive({ useHandCursor: true });
-    boton.on('pointerover', () => pintar(Colores.primarioClaro));
-    boton.on('pointerout', () => pintar(Colores.primario));
+    boton.on('pointerover', () => pintar(Botones.azul.brillo));
+    boton.on('pointerout', () => pintar(Botones.azul.cara));
     boton.on('pointerup', () => {
       reproducirEfecto(this, 'boton');
       alPulsar();
@@ -110,7 +110,7 @@ export class RegistroScene extends Phaser.Scene {
   private async copiar(texto: string) {
     try {
       await navigator.clipboard.writeText(texto);
-      this.mostrarAviso(t('registroCopiado', { n: Math.round(texto.length / 1024) }), '#a5d6a7');
+      this.mostrarAviso(t('registroCopiado', { n: Math.round(texto.length / 1024) }), Tema.positivo);
       return;
     } catch {
       // Sin API del portapapeles (o sin permiso): método antiguo con un textarea temporal
@@ -123,8 +123,8 @@ export class RegistroScene extends Phaser.Scene {
     area.select();
     const ok = document.execCommand('copy');
     area.remove();
-    if (ok) this.mostrarAviso(t('registroCopiado', { n: Math.round(texto.length / 1024) }), '#a5d6a7');
-    else this.mostrarAviso(t('registroNoCopiado'), '#ff8a80');
+    if (ok) this.mostrarAviso(t('registroCopiado', { n: Math.round(texto.length / 1024) }), Tema.positivo);
+    else this.mostrarAviso(t('registroNoCopiado'), Tema.peligro);
   }
 
   private descargar() {
@@ -139,7 +139,7 @@ export class RegistroScene extends Phaser.Scene {
     enlace.click();
     enlace.remove();
     setTimeout(() => URL.revokeObjectURL(url), 2000);
-    this.mostrarAviso(t('registroDescargado', { nombre }), '#a5d6a7');
+    this.mostrarAviso(t('registroDescargado', { nombre }), Tema.positivo);
   }
 
   private cerrar() {

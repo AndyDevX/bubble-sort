@@ -20,7 +20,7 @@ Documentación: `README.md` (portada) · `docs/diseno-juego.md` (todo lo jugable
 - `src/plataforma.ts` — `EN_CRAZYGAMES` (build de CrazyGames o web/app); `src/sistemas/anuncios.ts` — anuncios del SDK de CrazyGames (en la web no hacen nada)
 - `src/scenes/` — una clase por escena: `BootScene` (carga) → `MenuScene` → `GameScene`; `DialogoScene` (pausa/victoria/derrota), `TiendaScene` y `SettingsScene` se abren encima
 - `src/juego/` — lógica pura sin Phaser: reglas (`modelo.ts`), colores y recetas, generador de niveles y solucionador
-- `src/ui/` — componentes (`Boton`, `BotonRedondo` + iconos, `Insignia`, `BarraHabilidad`, `Slider`) y `layout.ts` (colocación adaptable)
+- `src/ui/` — componentes (`Boton`, `BotonRedondo` + iconos, `Insignia`, `BarraHabilidad`, `Slider`), `tema.ts` (paleta, fuente Fredoka, fondo crema, botones caramelo, paneles y pastillas: todo color de la interfaz sale de aquí) y `layout.ts` (colocación adaptable)
 - `public/sw.js` — Service Worker: guarda audio y build en el caché del dispositivo (sube `VERSION` para invalidarlo)
 - `src/sistemas/` — ajustes y partida guardados, nivel guardado (reiniciar igual), tienda (catálogo, comprar/gastar del inventario), audio (volumen música/efectos), registro del Service Worker, actualizaciones en caliente de la app Android, medidor de FPS (solo dev)
 - `src/i18n/` — textos; todo texto visible sale de `t('clave')`

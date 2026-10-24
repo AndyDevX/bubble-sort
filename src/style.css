@@ -4,7 +4,7 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #1d1d2b;
+  background: #f7e9d4; /* Tema.fondoCss */
   touch-action: none;           /* sin zoom ni scroll del navegador al jugar */
   -webkit-user-select: none;
   user-select: none;

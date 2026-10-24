@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { Colores } from '../constantes';
+import { Botones, Tema, estiloTexto } from './tema';
 
 export interface Slider {
   setValor(valor: number): void;
@@ -20,20 +20,22 @@ export function crearSlider(
   const izquierda = x - ancho / 2;
 
   const grafico = escena.add.graphics();
-  const tirador = escena.add.circle(0, y, radioTirador, 0xffffff);
-  const porcentaje = escena.add
-    .text(x + ancho / 2 + 30, y, '', { fontFamily: 'sans-serif', fontSize: '32px', color: '#ffffff' })
-    .setOrigin(0, 0.5);
+  // Tirador: bola blanca con borde y sombra
+  const tirador = escena.add.graphics({ x: 0, y });
+  tirador.fillStyle(Tema.sombra, 0.2).fillCircle(1, 4, radioTirador);
+  tirador.fillStyle(Botones.crema.relieve).fillCircle(0, 0, radioTirador);
+  tirador.fillStyle(0xffffff).fillCircle(0, -2, radioTirador - 4);
+  const porcentaje = escena.add.text(x + ancho / 2 + 30, y, '', estiloTexto(32, Tema.texto)).setOrigin(0, 0.5);
 
   let valor = Phaser.Math.Clamp(valorInicial, 0, 1);
   let arrastrando = false;
 
   const pintar = () => {
     grafico.clear();
-    grafico.fillStyle(Colores.pista).fillRoundedRect(izquierda, y - altoPista / 2, ancho, altoPista, altoPista / 2);
+    grafico.fillStyle(Tema.pista).fillRoundedRect(izquierda, y - altoPista / 2, ancho, altoPista, altoPista / 2);
     if (valor > 0) {
       grafico
-        .fillStyle(Colores.primario)
+        .fillStyle(Botones.azul.cara)
         .fillRoundedRect(izquierda, y - altoPista / 2, Math.max(altoPista, ancho * valor), altoPista, altoPista / 2);
     }
     tirador.setX(izquierda + ancho * valor);

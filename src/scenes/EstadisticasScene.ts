@@ -1,19 +1,19 @@
 import Phaser from 'phaser';
-import { Colores } from '../constantes';
 import { t, type ClaveTexto } from '../i18n';
 import { nombreColor } from '../i18n/nombresColor';
 import { ORDEN_COLORES } from '../juego/niveles';
 import { getEstadisticas, total, type Habilidad } from '../sistemas/estadisticas';
 import { crearBoton } from '../ui/Boton';
 import { ICONO_DESHACER, ICONO_GRAVEDAD, ICONO_TUBO } from '../ui/iconosHabilidad';
+import { Botones, crearVelo, dibujarCaramelo, dibujarPanel, FUENTE, Tema } from '../ui/tema';
 
 const COLUMNAS = 6;
 const ALTO_FILA = 80;
 const BOLA = 50;
 
-const estiloSeccion = { fontFamily: 'sans-serif', fontSize: '30px', color: '#81d4fa', fontStyle: 'bold' };
-const estiloNumero = { fontFamily: 'sans-serif', fontSize: '46px', color: '#ffffff', fontStyle: 'bold' };
-const estiloEtiqueta = { fontFamily: 'sans-serif', fontSize: '22px', color: '#aaaacc' };
+const estiloSeccion = { fontFamily: FUENTE, fontSize: '30px', color: Tema.info, fontStyle: 'bold' };
+const estiloNumero = { fontFamily: FUENTE, fontSize: '46px', color: Tema.texto, fontStyle: 'bold' };
+const estiloEtiqueta = { fontFamily: FUENTE, fontSize: '22px', color: Tema.textoSuave };
 
 // Estadísticas del jugador. Se abre encima del menú (que queda en pausa) y vuelve a él al cerrar.
 export class EstadisticasScene extends Phaser.Scene {
@@ -30,15 +30,15 @@ export class EstadisticasScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale;
     const e = getEstadisticas();
-    this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6).setInteractive();
+    crearVelo(this);
 
     const panelAncho = Math.min(660, width - 30);
     const panelAlto = Math.min(height - 40, 1220);
     const arriba = (height - panelAlto) / 2;
     const izquierda = (width - panelAncho) / 2;
-    this.add.graphics().fillStyle(Colores.panel).fillRoundedRect(izquierda, arriba, panelAncho, panelAlto, 32);
+    dibujarPanel(this.add.graphics(), izquierda, arriba, panelAncho, panelAlto, 32);
     this.add
-      .text(width / 2, arriba + 65, t('estadisticas'), { fontFamily: 'sans-serif', fontSize: '56px', color: '#ffffff', fontStyle: 'bold' })
+      .text(width / 2, arriba + 65, t('estadisticas'), { fontFamily: FUENTE, fontSize: '56px', color: Tema.texto, fontStyle: 'bold' })
       .setOrigin(0.5);
 
     // Niveles: tres cifras en fila y el porcentaje de victorias
@@ -69,7 +69,7 @@ export class EstadisticasScene extends Phaser.Scene {
     ];
     habilidades.forEach(([habilidad, icono, clave], i) => {
       const x = izquierda + (panelAncho / 3) * (i + 0.5);
-      this.add.graphics().fillStyle(Colores.primario).fillCircle(x - 34, arriba + 385, 30);
+      dibujarCaramelo(this.add.graphics({ x: x - 34, y: arriba + 385 }), 60, 60, 18, Botones.azul);
       this.add.image(x - 34, arriba + 385, icono).setDisplaySize(48, 48);
       this.add.text(x + 10, arriba + 385, String(e.habilidades[habilidad]), { ...estiloNumero, fontSize: '40px' }).setOrigin(0, 0.5);
       this.add.text(x, arriba + 432, t(clave), estiloEtiqueta).setOrigin(0.5);
@@ -80,7 +80,7 @@ export class EstadisticasScene extends Phaser.Scene {
     y = this.rejillaColores(t('estTubos', { n: total('tubosLlenos') }), e.tubosLlenos, izquierda, panelAncho, y);
     this.rejillaColores(t('estCanicas', { n: total('canicasMovidas') }), e.canicasMovidas, izquierda, panelAncho, y + 20);
 
-    crearBoton(this, width / 2, arriba + panelAlto - 75, t('volver'), () => this.cerrar());
+    crearBoton(this, width / 2, arriba + panelAlto - 75, t('volver'), () => this.cerrar(), Botones.crema);
 
     const alCambiarTamano = () => this.scene.restart({ origen: this.escenaOrigen });
     this.scale.once(Phaser.Scale.Events.RESIZE, alCambiarTamano);
@@ -102,7 +102,7 @@ export class EstadisticasScene extends Phaser.Scene {
       const yy = y + 60 + ALTO_FILA * Math.floor(i / COLUMNAS);
       const bola = this.add.image(x, yy, `bola-${color}`).setDisplaySize(BOLA, BOLA);
       bola.setInteractive();
-      const cifra = this.add.text(x, yy + BOLA / 2 + 12, String(datos[color]), { ...estiloEtiqueta, color: '#ffffff' }).setOrigin(0.5);
+      const cifra = this.add.text(x, yy + BOLA / 2 + 12, String(datos[color]), { ...estiloEtiqueta, color: Tema.texto }).setOrigin(0.5);
       // Al tocar una bola se ve el nombre del color en lugar de la cifra
       bola.on('pointerdown', () => cifra.setText(nombreColor(color)));
       bola.on('pointerup', () => cifra.setText(String(datos[color])));

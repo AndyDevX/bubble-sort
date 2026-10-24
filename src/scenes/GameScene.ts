@@ -40,6 +40,7 @@ import { crearInsignia, type Insignia } from '../ui/Insignia';
 import { alRedimensionar, zonaSegura } from '../ui/layout';
 import { crearIconoMoneda } from '../ui/Moneda';
 import type { DatosDialogo } from './DialogoScene';
+import { crearFondo, dibujarPastilla, FUENTE, Tema } from '../ui/tema';
 
 // Cómo empieza la partida: seguir con el nivel guardado, reiniciarlo igual o generar uno nuevo
 // No hay «nivel nuevo»: todos los niveles tienen solución, así que solo se reinicia el mismo
@@ -130,6 +131,7 @@ export class GameScene extends Phaser.Scene {
   private textoPuntos!: Phaser.GameObjects.Text;
   private textoMonedas!: Phaser.GameObjects.Text;
   private iconoMoneda!: Phaser.GameObjects.Graphics;
+  private pastillaMonedas!: Phaser.GameObjects.Graphics;
   private textoLluvia!: Phaser.GameObjects.Text;
   private avisoLluvia!: Phaser.GameObjects.Text;
   private veloAlerta!: Phaser.GameObjects.Rectangle;
@@ -174,6 +176,7 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     this.cameras.main.fadeIn(250);
+    crearFondo(this);
     iniciarMusicaPartida(this);
 
     // La configuración inicial del nivel se guarda al generarlo; reiniciar la vuelve a cargar igual
@@ -259,7 +262,7 @@ export class GameScene extends Phaser.Scene {
   // ───────────────────────── Interfaz ─────────────────────────
 
   private crearInterfaz() {
-    const estilo = { fontFamily: 'sans-serif', color: '#ffffff' };
+    const estilo = { fontFamily: FUENTE, color: Tema.texto };
 
     this.botonPausa = crearBotonRedondo(this, 0, 0, 44, iconoPausa, () => this.pausar());
 
@@ -268,15 +271,16 @@ export class GameScene extends Phaser.Scene {
         ...estilo,
         fontSize: '40px',
         fontStyle: 'bold',
-        color: this.esDificil() ? '#ff8a65' : '#ffffff',
+        color: this.esDificil() ? Tema.aviso : Tema.texto,
       })
       .setOrigin(0.5);
-    this.textoPuntos = this.add.text(0, 0, t('puntos', { n: 0 }), { ...estilo, fontSize: '28px', color: '#aaaacc' }).setOrigin(0.5);
+    this.textoPuntos = this.add.text(0, 0, t('puntos', { n: 0 }), { ...estilo, fontSize: '28px', color: Tema.textoSuave }).setOrigin(0.5);
 
+    this.pastillaMonedas = this.add.graphics().setDepth(-1);
     this.iconoMoneda = crearIconoMoneda(this);
     this.textoMonedas = this.add.text(0, 0, String(getGuardado().monedas), { ...estilo, fontSize: '32px' }).setOrigin(1, 0.5);
 
-    this.textoLluvia = this.add.text(0, 0, '', { ...estilo, fontSize: '26px', color: '#81d4fa' }).setOrigin(1, 0.5).setVisible(false);
+    this.textoLluvia = this.add.text(0, 0, '', { ...estilo, fontSize: '28px', color: Tema.info, fontStyle: 'bold' }).setStroke('#ffffff', 6).setOrigin(1, 0.5).setVisible(false);
     this.avisoLluvia = this.add
       .text(0, 0, t('empiezaLluvia'), { ...estilo, fontSize: '52px', fontStyle: 'bold', color: '#ffd54f', stroke: '#7f1d1d', strokeThickness: 8 })
       .setOrigin(0.5)
@@ -311,7 +315,7 @@ export class GameScene extends Phaser.Scene {
         },
         alpha: { start: 1, end: 0 },
         gravityY: 260,
-        blendMode: Phaser.BlendModes.ADD,
+        blendMode: Phaser.BlendModes.NORMAL, // sobre el fondo claro, ADD las volvía blancas e invisibles
       })
       .setDepth(6);
 
@@ -388,6 +392,8 @@ export class GameScene extends Phaser.Scene {
 
   private colocarIconoMoneda() {
     this.iconoMoneda.setPosition(this.textoMonedas.x - this.textoMonedas.width - 30, this.textoMonedas.y);
+    // Pastilla translúcida detrás de la moneda y la cifra
+    dibujarPastilla(this.pastillaMonedas, this.iconoMoneda.x - 30, this.textoMonedas.y - 27, this.textoMonedas.x - this.iconoMoneda.x + 50, 54);
   }
 
   private calcularColocacion(x: number, y: number, ancho: number, alto: number): Colocacion {
@@ -821,7 +827,7 @@ export class GameScene extends Phaser.Scene {
   private mostrarPuntosFlotantes(tubo: number, puntos: number) {
     const pos = this.posicionLevantada(tubo);
     const texto = this.add
-      .text(pos.x, pos.y, `+${puntos}`, { fontFamily: 'sans-serif', fontSize: '34px', color: '#81d4fa', fontStyle: 'bold' })
+      .text(pos.x, pos.y, `+${puntos}`, { fontFamily: FUENTE, fontSize: '36px', color: Tema.info, fontStyle: 'bold', stroke: '#ffffff', strokeThickness: 6 })
       .setOrigin(0.5)
       .setDepth(5);
     this.tweens.add({ targets: texto, y: pos.y - 60, alpha: 0, duration: 700, ease: 'Quad.easeOut', onComplete: () => texto.destroy() });
@@ -1242,7 +1248,7 @@ export class GameScene extends Phaser.Scene {
         let etiqueta = this.etiquetasHielo.get(bola.id);
         if (!etiqueta) {
           etiqueta = this.add
-            .text(0, 0, texto, { fontFamily: 'sans-serif', fontStyle: 'bold', color: '#ffffff', stroke: '#01579b', strokeThickness: 6 })
+            .text(0, 0, texto, { fontFamily: FUENTE, fontStyle: 'bold', color: '#ffffff', stroke: '#01579b', strokeThickness: 6 })
             .setOrigin(0.5)
             .setDepth(4);
           this.etiquetasHielo.set(bola.id, etiqueta);

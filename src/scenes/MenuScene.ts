@@ -13,6 +13,7 @@ import { crearBotonAjustes } from '../ui/BotonAjustes';
 import { crearBotonBorrarProgreso } from '../ui/BorrarProgreso';
 import { alRedimensionar, zonaSegura } from '../ui/layout';
 import { crearIconoMoneda } from '../ui/Moneda';
+import { Botones, crearFondo, dibujarPastilla, estiloTexto, FUENTE, Tema } from '../ui/tema';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -21,19 +22,18 @@ export class MenuScene extends Phaser.Scene {
 
   create() {
     // La música es solo de las partidas: aquí se para y se adelanta la carga
+    crearFondo(this);
     detenerMusica();
     cargarAudioEnSegundoPlano(this);
     cargaTerminada();
     enJuego(false);
 
+    // Título: grande, azul con contorno blanco y sombra marrón (estilo caramelo)
     const titulo = this.add
-      .text(0, 0, NOMBRE_JUEGO, {
-        fontFamily: 'sans-serif',
-        fontSize: '96px',
-        color: '#ffffff',
-        fontStyle: 'bold',
-      })
-      .setOrigin(0.5);
+      .text(0, 0, NOMBRE_JUEGO, estiloTexto(112, '#3d8fe0'))
+      .setOrigin(0.5)
+      .setStroke('#ffffff', 14)
+      .setShadow(0, 8, 'rgba(122, 82, 50, 0.35)', 6, true, true);
 
     const jugar = crearBoton(this, 0, 0, t('jugar'), () => {
       jugar.disableInteractive(); // evita arrancar dos veces con un doble toque
@@ -41,12 +41,12 @@ export class MenuScene extends Phaser.Scene {
       this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
         this.scene.start('Game');
       });
-    });
+    }, Botones.verde);
 
     const tienda = crearBoton(this, 0, 0, t('tienda'), () => {
       this.scene.pause();
       this.scene.launch('Tienda', { origen: this.scene.key });
-    });
+    }, Botones.naranja);
 
     const colores = crearBoton(this, 0, 0, t('colores'), () => {
       this.scene.pause();
@@ -61,9 +61,14 @@ export class MenuScene extends Phaser.Scene {
     // Monedas arriba a la derecha (se actualizan al volver de la tienda)
     const iconoMoneda = crearIconoMoneda(this, 22);
     const monedas = this.add
-      .text(0, 0, String(getGuardado().monedas), { fontFamily: 'sans-serif', fontSize: '40px', color: '#ffffff', fontStyle: 'bold' })
+      .text(0, 0, String(getGuardado().monedas), { fontFamily: FUENTE, fontSize: '40px', color: Tema.texto, fontStyle: 'bold' })
       .setOrigin(1, 0.5);
-    const colocarMonedas = () => iconoMoneda.setPosition(monedas.x - monedas.width - 36, monedas.y);
+    // Pastilla translúcida detrás de la moneda y la cifra
+    const pastilla = this.add.graphics().setDepth(-1);
+    const colocarMonedas = () => {
+      iconoMoneda.setPosition(monedas.x - monedas.width - 36, monedas.y);
+      dibujarPastilla(pastilla, iconoMoneda.x - 34, monedas.y - 30, monedas.x - iconoMoneda.x + 56, 60);
+    };
     const alReanudar = () => {
       monedas.setText(String(getGuardado().monedas));
       colocarMonedas();
@@ -72,16 +77,16 @@ export class MenuScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.events.off(Phaser.Scenes.Events.RESUME, alReanudar));
 
     const nivel = this.add
-      .text(0, 0, t('nivel', { n: getGuardado().nivel }), { fontFamily: 'sans-serif', fontSize: '32px', color: '#aaaacc' })
+      .text(0, 0, t('nivel', { n: getGuardado().nivel }), { fontFamily: FUENTE, fontSize: '32px', color: Tema.textoSuave })
       .setOrigin(0.5);
 
     // Versión y build abajo a la izquierda (el engranaje ocupa la esquina derecha)
     const build = this.add
       // En CrazyGames solo la versión (build y commit son datos de depuración)
       .text(0, 0, EN_CRAZYGAMES ? `v${VERSION}` : [t('version', { v: VERSION, n: NUMERO_BUILD }), COMMIT_BUILD].filter(Boolean).join(' · '), {
-        fontFamily: 'sans-serif',
+        fontFamily: FUENTE,
         fontSize: '24px',
-        color: '#66667a',
+        color: Tema.textoSuave,
       })
       .setOrigin(0, 1);
 
@@ -89,7 +94,7 @@ export class MenuScene extends Phaser.Scene {
     const registro = EN_CRAZYGAMES
       ? null
       : this.add
-          .text(0, 0, t('registro'), { fontFamily: 'sans-serif', fontSize: '26px', color: '#8888a8' })
+          .text(0, 0, t('registro'), { fontFamily: FUENTE, fontSize: '26px', color: Tema.textoSuave })
           .setOrigin(0, 1)
           .setPadding(10, 10)
           .setInteractive({ useHandCursor: true })
@@ -100,17 +105,17 @@ export class MenuScene extends Phaser.Scene {
 
     // Aviso de actualización de la app (solo en Android; en el navegador no aparece nunca)
     const aviso = this.add
-      .text(0, 0, '', { fontFamily: 'sans-serif', fontSize: '26px', color: '#a5d6a7', align: 'center' })
+      .text(0, 0, '', { fontFamily: FUENTE, fontSize: '26px', color: Tema.positivo, align: 'center' })
       .setOrigin(0.5)
       .setPadding(10, 10);
     const mostrarActualizacion = (e: EstadoActualizacion) => {
       aviso.removeAllListeners('pointerup').disableInteractive();
       if (e.tipo === 'nada') return aviso.setText('');
-      if (e.tipo === 'error') return aviso.setText(t('actualizacionError')).setColor('#77778f');
+      if (e.tipo === 'error') return aviso.setText(t('actualizacionError')).setColor(Tema.textoSuave);
       const clave = (
         { descargando: 'actualizacionDescargando', lista: 'actualizacionInstalando', instalando: 'actualizacionInstalando', apkNuevo: 'actualizacionApk' } as const
       )[e.tipo];
-      aviso.setText(t(clave, { v: e.version })).setColor(e.tipo === 'apkNuevo' ? '#ffcc80' : '#a5d6a7');
+      aviso.setText(t(clave, { v: e.version })).setColor(e.tipo === 'apkNuevo' ? Tema.aviso : Tema.positivo);
       if (e.tipo === 'apkNuevo') {
         // Una URL externa la abre el navegador del teléfono, no el juego
         aviso.setInteractive({ useHandCursor: true }).on('pointerup', () => (window.location.href = URL_DESCARGA_APK));
@@ -143,7 +148,7 @@ export class MenuScene extends Phaser.Scene {
     });
     if ((this.sys.settings.data as { borrado?: boolean } | undefined)?.borrado) {
       const aviso = this.add
-        .text(0, 0, t('progresoBorrado'), { fontFamily: 'sans-serif', fontSize: '30px', color: '#a5d6a7' })
+        .text(0, 0, t('progresoBorrado'), { fontFamily: FUENTE, fontSize: '30px', color: Tema.positivo })
         .setOrigin(0.5);
       this.tweens.add({ targets: aviso, alpha: 0, delay: 1800, duration: 500 });
       alRedimensionar(this, (ancho, alto) => aviso.setPosition(ancho / 2, alto * 0.5 - 100));
