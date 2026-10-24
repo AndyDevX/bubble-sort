@@ -1,12 +1,13 @@
 import Phaser from 'phaser';
+import canciones from 'virtual:musica';
 import { getAjustes } from './ajustes';
 
 type Sonido = ReturnType<Phaser.Scene['sound']['add']>;
 
-// Todas las canciones de src/assets/musica (las detecta Vite al compilar)
-const PISTAS = Object.values(
-  import.meta.glob<string>('../assets/musica/*.{mp3,ogg,m4a}', { eager: true, query: '?url', import: 'default' }),
-).map((url, i) => ({ clave: `musica-${i}`, url }));
+// Canciones de las partidas (las detecta Vite al compilar, `virtual:musica` en vite.config.ts):
+// src/assets/musica en la web y la app; en el build de CrazyGames, solo src/assets/musica-crazygames
+// (música libre de derechos, ver su LEEME.md), sin las canciones de la otra carpeta.
+const PISTAS = canciones.map((url, i) => ({ clave: `musica-${i}`, url }));
 
 let musicaActual: Sonido | null = null;
 let ultimaClave: string | null = null;

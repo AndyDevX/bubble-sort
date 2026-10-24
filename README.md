@@ -42,6 +42,8 @@ npm run dev        # http://localhost:5173 (también desde el móvil con la IP d
 - **Versión:** `MAJOR.MINOR.PATCH`; el PATCH sube en cada despliegue y se muestra en el menú.
 - **APK:** cada versión **MAJOR** genera un APK de Android en las *Releases* del repositorio. Entre
   un APK y el siguiente, la app se **actualiza sola** desde GitHub Pages (sin reinstalar).
+- **CrazyGames:** cada versión genera también un paquete `.zip` para el portal (Release
+  `crazygames-vX.Y.Z`): con su SDK de anuncios y sin las canciones de la versión web.
 
 ## Documentación
 

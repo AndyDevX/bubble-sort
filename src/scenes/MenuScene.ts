@@ -5,6 +5,7 @@ import { cargarAudioEnSegundoPlano, detenerMusica } from '../sistemas/audio';
 import { borrarProgreso, getGuardado } from '../sistemas/guardado';
 import { borrarNivelGuardado } from '../sistemas/nivelGuardado';
 import { borrarEstadisticas } from '../sistemas/estadisticas';
+import { cargaTerminada, enJuego } from '../sistemas/anuncios';
 import { alCambiarActualizacion, getEstadoActualizacion, instalarActualizacion, URL_DESCARGA_APK, type EstadoActualizacion } from '../sistemas/actualizaciones';
 import { crearBoton } from '../ui/Boton';
 import { crearBotonAjustes } from '../ui/BotonAjustes';
@@ -21,6 +22,8 @@ export class MenuScene extends Phaser.Scene {
     // La música es solo de las partidas: aquí se para y se adelanta la carga
     detenerMusica();
     cargarAudioEnSegundoPlano(this);
+    cargaTerminada();
+    enJuego(false);
 
     const titulo = this.add
       .text(0, 0, NOMBRE_JUEGO, {

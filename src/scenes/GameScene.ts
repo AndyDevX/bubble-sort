@@ -31,7 +31,8 @@ import { actualizarGuardado, getGuardado } from '../sistemas/guardado';
 import { cargarNivel, guardarNivel } from '../sistemas/nivelGuardado';
 import { sumarColor, sumarHabilidad, sumarNivel } from '../sistemas/estadisticas';
 import { ajustarRelojJuego, cerrarRegistroNivel, corto, describirTubos, iniciarRegistroNivel, reabrirRegistroNivel, registrar } from '../sistemas/registro';
-import { cantidadDe, gastar } from '../sistemas/tienda';
+import { cantidadDe, gastar, regalar } from '../sistemas/tienda';
+import { anuncioRecompensa, enJuego, hayAnuncios } from '../sistemas/anuncios';
 import { crearBarraHabilidad, type BarraHabilidad } from '../ui/BarraHabilidad';
 import { crearBotonRedondo, iconoPausa, type BotonRedondo } from '../ui/BotonRedondo';
 import { ICONO_DESHACER, ICONO_PELIGRO, ICONO_TUBO } from '../ui/iconosHabilidad';
@@ -115,7 +116,10 @@ export class GameScene extends Phaser.Scene {
   private tuboUsado = false; // el tubo de emergencia se puede poner una vez por nivel
   // Estadísticas: cada derrota y cada color sellado cuentan una vez por partida (deshacer no duplica)
   private derrotaContada = false;
-  private sinSolucionAceptada = false; // «Seguir jugando» tras «Sin solución»: no se vuelve a avisar
+  private sinSolucionAceptada = false;
+  private monedasGanadas = 0; // monedas del nivel recién ganado (para duplicarlas con un anuncio)
+  private monedasDuplicadas = false;
+  private dialogoDerrota: (() => DatosDialogo) | null = null; // «Seguir jugando» tras «Sin solución»: no se vuelve a avisar
   private sellosContados = new Set<ColorId>();
 
   private chispas!: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -221,12 +225,21 @@ export class GameScene extends Phaser.Scene {
     this.events.on('deshacer', alPedirDeshacer);
     const alSeguir = () => this.seguirSinSolucion();
     this.events.on('seguir', alSeguir);
+    const alDeshacerAnuncio = () => void this.deshacerConAnuncio();
+    const alDuplicarAnuncio = () => void this.duplicarConAnuncio();
+    this.events.on('deshacerAnuncio', alDeshacerAnuncio);
+    this.events.on('duplicarAnuncio', alDuplicarAnuncio);
     // Al volver de la tienda (directa o desde la pausa) puede haber cambiado el inventario
     const alReanudar = () => {
       registrar('reanudar');
       this.actualizarInventario();
+      enJuego(!this.terminado);
     };
-    const alPausar = () => registrar('pausa');
+    const alPausar = () => {
+      registrar('pausa');
+      enJuego(false);
+    };
+    enJuego(true); // CrazyGames: la partida está en marcha (se para con cada ventana)
     this.events.on(Phaser.Scenes.Events.RESUME, alReanudar);
     this.events.on(Phaser.Scenes.Events.PAUSE, alPausar);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -234,6 +247,9 @@ export class GameScene extends Phaser.Scene {
       cerrarRegistroNivel('salida', { puntos: this.puntos }, this.tubos);
       this.events.off('deshacer', alPedirDeshacer);
       this.events.off('seguir', alSeguir);
+      this.events.off('deshacerAnuncio', alDeshacerAnuncio);
+      this.events.off('duplicarAnuncio', alDuplicarAnuncio);
+      enJuego(false);
       this.events.off(Phaser.Scenes.Events.RESUME, alReanudar);
       this.events.off(Phaser.Scenes.Events.PAUSE, alPausar);
       this.pararLluvia(); // también corta la alarma si estaba sonando
@@ -1332,16 +1348,50 @@ export class GameScene extends Phaser.Scene {
     reproducirEfecto(this, 'victoria');
     this.animarVictoria();
 
-    this.time.delayedCall(950, () =>
-      this.abrirDialogo({
-        titulo: t('nivelCompletado'),
-        texto: t(this.esDificil() ? 'recompensaDoble' : 'recompensa', { puntos: this.puntos, monedas }),
-        botones: [
-          { texto: t('siguiente'), accion: 'siguiente' },
-          { texto: t('menu'), accion: 'menu' },
-        ],
-      }),
-    );
+    this.monedasGanadas = monedas;
+    this.monedasDuplicadas = false;
+    this.time.delayedCall(950, () => this.abrirDialogo(this.dialogoVictoria()));
+  }
+
+  private dialogoVictoria(): DatosDialogo {
+    const monedas = this.monedasGanadas * (this.monedasDuplicadas ? 2 : 1);
+    return {
+      titulo: t('nivelCompletado'),
+      texto: t(this.esDificil() ? 'recompensaDoble' : 'recompensa', { puntos: this.puntos, monedas }),
+      botones: [
+        { texto: t('siguiente'), accion: 'siguiente' },
+        // CrazyGames: ver un anuncio duplica las monedas del nivel (una vez)
+        ...(hayAnuncios() && !this.monedasDuplicadas ? [{ texto: t('duplicarAnuncio', { n: this.monedasGanadas }), accion: 'duplicarAnuncio' as const }] : []),
+        { texto: t('menu'), accion: 'menu' },
+      ],
+    };
+  }
+
+  private async duplicarConAnuncio() {
+    this.scene.pause();
+    const visto = await anuncioRecompensa(this);
+    this.scene.resume();
+    if (visto && !this.monedasDuplicadas) {
+      this.monedasDuplicadas = true;
+      actualizarGuardado({ monedas: getGuardado().monedas + this.monedasGanadas });
+      this.textoMonedas.setText(String(getGuardado().monedas));
+      this.colocarIconoMoneda();
+      reproducirEfecto(this, 'victoria');
+    }
+    this.abrirDialogo(this.dialogoVictoria());
+  }
+
+  // Al perder sin deshacer comprados: ver un anuncio da uno gratis y se usa en el momento
+  private async deshacerConAnuncio() {
+    this.scene.pause();
+    const visto = await anuncioRecompensa(this);
+    this.scene.resume();
+    if (visto) {
+      regalar('deshacer', 1);
+      this.deshacer();
+    } else if (this.terminado) {
+      this.abrirDialogo(this.dialogoDerrota!());
+    }
   }
 
   private derrota(motivo: 'sinMovimientos' | 'sinSolucion', salvacion: number | null = null) {
@@ -1366,6 +1416,8 @@ export class GameScene extends Phaser.Scene {
       botones: [
         // Con deshacer comprados se puede volver atrás en vez de perder
         ...(this.puedeDeshacer() ? [{ texto: t('deshacer', { n: cantidadDe('deshacer') }), accion: 'deshacer' as const }] : []),
+        // CrazyGames: sin deshacer comprados, uno gratis a cambio de un anuncio
+        ...(hayAnuncios() && cantidadDe('deshacer') === 0 && this.historial.length > 0 ? [{ texto: t('deshacerAnuncio'), accion: 'deshacerAnuncio' as const }] : []),
         // Sin solución aún quedan jugadas: se puede seguir para comprobarlo (la derrota ya cuenta)
         ...(motivo === 'sinSolucion' ? [{ texto: t('seguirJugando'), accion: 'seguir' as const }] : []),
         { texto: t('reiniciarNivel'), accion: 'reiniciar' },
@@ -1375,6 +1427,7 @@ export class GameScene extends Phaser.Scene {
       // Al volver de la tienda el diálogo se rehace (puede que ahora haya deshacer)
       recalcular: dialogo,
     });
+    this.dialogoDerrota = dialogo;
     this.time.delayedCall(500, () => this.abrirDialogo(dialogo()));
   }
 

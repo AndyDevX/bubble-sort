@@ -75,7 +75,23 @@ Menores, sin prisa:
   clasificación por edades.
 - [ ] **Tú** — Revisar los **derechos de las canciones** incluidas antes de publicar.
 
-## 5. Anuncios en la web (más adelante)
+## 5. CrazyGames (en curso)
+
+- [x] **Tú** — Cuentas de CrazyGames y GameDistribution.
+- [x] **Claude** — Build propio (`npm run build:crazygames`), SDK v3 con anuncios entre niveles y
+  con recompensa, sin las canciones de la web; Release `crazygames-vX.Y.Z` con el .zip en cada
+  versión.
+- [ ] **Tú** — Permitir `opengameart.org` en la red del entorno (Ajustes del entorno → Network
+  access → Allowed domains) o subir tú los archivos de música CC0.
+- [ ] **Claude** — Integrar música CC0 en `src/assets/musica-crazygames/` (candidatas: «Short Loops
+  Background Music Pack» de hernandack e «Icy Heights» de Écrivain, CC0 en OpenGameArt; «Short
+  Music Loops» de CoMiGo, CC0 en itch.io). Comprobar la licencia de cada una y apuntarla en su
+  LEEME.md.
+- [ ] **Tú** — Subir el .zip de la última Release `crazygames-v…` en el portal de desarrolladores
+  de CrazyGames, con portada, descripción y categoría (Claude puede proponer los textos).
+- [ ] **Tú** — Decidir lo de la exclusividad antes de subirlo a GameDistribution.
+
+## 6. Anuncios en la web propia (más adelante)
 
 - [ ] **Tú** — Dominio propio (AdSense no suele aprobar subdominios `github.io`).
 - [ ] **Claude** — AdSense para juegos HTML5 (*Ad Placement API*) en la versión web.

@@ -380,6 +380,18 @@ Inspirado en un vídeo de referencia del usuario (solo tubos y animaciones; boto
 - **Música**: solo durante la partida, canciones aleatorias y sin fin (nunca la misma dos veces
   seguidas). Se para en el menú. Sonido intencionadamente "degradado".
 - Volúmenes independientes en Ajustes; al soltar el slider de efectos suena una muestra.
+- **Versión de CrazyGames**: no lleva estas canciones (por si tienen derechos); solo música libre
+  de derechos de `src/assets/musica-crazygames/` (de momento vacía: sin música, con efectos).
+
+## Anuncios (solo en CrazyGames)
+
+La web y la app no tienen anuncios. En la versión de CrazyGames:
+- **Entre niveles**: al pulsar «Siguiente» tras ganar, como mucho cada 2 niveles (y uno cada 3
+  minutos como máximo, lo limita CrazyGames). Nunca después de perder.
+- **Con recompensa** (los elige el jugador): «▶ +N monedas» al ganar (duplica las monedas del
+  nivel, una vez) y «▶ Deshacer gratis» al perder si no te quedan deshacer comprados.
+- Mientras sale el anuncio, el juego está en pausa y en silencio. Con bloqueador de anuncios todo
+  funciona igual, solo que sin esos botones de recompensa.
 
 ## Guardado (en el dispositivo)
 

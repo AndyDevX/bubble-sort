@@ -12,6 +12,7 @@ import { setIdioma } from './i18n';
 import { getAjustes } from './sistemas/ajustes';
 import { registrarCacheOffline } from './sistemas/cacheOffline';
 import { iniciarActualizaciones } from './sistemas/actualizaciones';
+import { iniciarAnuncios } from './sistemas/anuncios';
 import './style.css';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -48,6 +49,7 @@ setIdioma(getAjustes().idioma);
 const juego = new Phaser.Game(config);
 registrarCacheOffline();
 iniciarActualizaciones();
+void iniciarAnuncios();
 
 if (import.meta.env.DEV) {
   Object.assign(window, { juego }); // para depurar desde la consola del navegador

@@ -1,0 +1,75 @@
+# Genera el paquete para subir a CrazyGames en cada versión nueva y lo publica como Release
+# «crazygames-vX.Y.Z» con el .zip (el usuario lo sube a mano en el portal de desarrolladores).
+#
+# - Automático: en cada push a main que cambie package.json (cada despliegue sube la versión).
+# - Manual: pestaña Actions → «Paquete para CrazyGames» → Run workflow (deja el .zip como artefacto).
+#
+# El build de CrazyGames (`npm run build:crazygames`) no lleva las canciones de src/assets/musica,
+# solo las de src/assets/musica-crazygames (libres de derechos), y carga el SDK de anuncios.
+# La Release no se marca como «latest»: el enlace «descargar el APK nuevo» de la app apunta a la
+# última Release y debe seguir llevando al APK.
+name: Paquete para CrazyGames
+
+on:
+  push:
+    branches: [main]
+    paths: [package.json]
+  workflow_dispatch:
+
+permissions:
+  contents: write # para crear la Release
+  actions: read # para leer el número de build del despliegue en Pages
+
+concurrency:
+  group: crazygames
+  cancel-in-progress: false
+
+jobs:
+  paquete:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      # Mismo número de build que el despliegue en Pages del mismo commit (sale en el menú)
+      - name: Versión y build
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+          n=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow deploy.yml --commit "$GITHUB_SHA" --limit 1 --json number --jq '.[0].number' 2>/dev/null || true)
+          echo "numero=${n:-${{ github.run_number }}}" >> "$GITHUB_OUTPUT"
+
+      - name: Compilar para CrazyGames
+        run: |
+          npm ci
+          npm run build:crazygames
+        env:
+          VITE_NUMERO_BUILD: ${{ steps.version.outputs.numero }}
+          VITE_COMMIT: ${{ github.sha }}
+
+      - name: Empaquetar
+        run: |
+          zip_nombre="odi-sort-crazygames-v${{ steps.version.outputs.version }}.zip"
+          (cd dist-crazygames && zip -qr "../$zip_nombre" .)
+          echo "ZIP=$zip_nombre" >> "$GITHUB_ENV"
+          unzip -l "$zip_nombre" | tail -1
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: odi-sort-crazygames-v${{ steps.version.outputs.version }}
+          path: ${{ env.ZIP }}
+
+      - name: Publicar la Release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="crazygames-v${{ steps.version.outputs.version }}"
+          gh release create "$v" "$ZIP" --latest=false --title "Odi Sort para CrazyGames v${{ steps.version.outputs.version }}" \
+            --notes "Paquete para subir a CrazyGames (build ${{ steps.version.outputs.numero }}): sube el .zip tal cual (sin descomprimir) en el portal de desarrolladores. Sin las canciones de la versión web; con el SDK de anuncios de CrazyGames."

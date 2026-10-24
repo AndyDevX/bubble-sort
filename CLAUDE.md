@@ -7,6 +7,7 @@ Documentación: `README.md` (portada) · `docs/diseno-juego.md` (todo lo jugable
 ## Comandos
 - `npm run dev` — servidor local (http://localhost:5173)
 - `npm run build` — tsc + build a `dist/`
+- `npm run build:crazygames` — build para CrazyGames a `dist-crazygames/` (SDK de anuncios, solo música de `src/assets/musica-crazygames/`, sin Service Worker); cada versión publica una Release `crazygames-vX.Y.Z` con el .zip (`.github/workflows/crazygames.yml`)
 - `npm run simular` — mide la solubilidad sin habilidades de 50 niveles con lluvia (debe dar 100 %)
 - `npm run analizar` — análisis estadístico de la curva de dificultad → `docs/analisis-dificultad.md` (1000 niveles: `-- niveles=1000 muestras=5 intentos=4 tramo=50 salida=analisis-1000`)
 - `npm run compartir` — (con `npm run dev` abierto en otra terminal) túnel público temporal `https://….trycloudflare.com`
@@ -16,6 +17,7 @@ Documentación: `README.md` (portada) · `docs/diseno-juego.md` (todo lo jugable
 
 ## Estructura
 - `src/main.ts` — GameConfig
+- `src/plataforma.ts` — `EN_CRAZYGAMES` (build de CrazyGames o web/app); `src/sistemas/anuncios.ts` — anuncios del SDK de CrazyGames (en la web no hacen nada)
 - `src/scenes/` — una clase por escena: `BootScene` (carga) → `MenuScene` → `GameScene`; `DialogoScene` (pausa/victoria/derrota), `TiendaScene` y `SettingsScene` se abren encima
 - `src/juego/` — lógica pura sin Phaser: reglas (`modelo.ts`), colores y recetas, generador de niveles y solucionador
 - `src/ui/` — componentes (`Boton`, `BotonRedondo` + iconos, `Insignia`, `BarraHabilidad`, `Slider`) y `layout.ts` (colocación adaptable)
@@ -24,6 +26,7 @@ Documentación: `README.md` (portada) · `docs/diseno-juego.md` (todo lo jugable
 - `src/i18n/` — textos; todo texto visible sale de `t('clave')`
 - `public/assets/` — assets estáticos (se cargan como `assets/...`)
 - `public/assets/sfx/` — efectos de sonido de vidrio, generados con `python3 scripts/generar-sonidos.py` (Python + ffmpeg); para cambiar un sonido, edita su función en el script y vuelve a ejecutarlo
+- `src/assets/musica-crazygames/` — canciones del build de CrazyGames: **solo libres de derechos**, con licencia anotada en su `LEEME.md`
 - `src/assets/musica/` — canciones de las partidas (se detectan solas; aleatorias y sin fin). Súbelas ya comprimidas, **máximo 1,5 MB cada una**: `ffmpeg -i entrada -map_metadata -1 -ar 16000 -c:a libmp3lame -b:a 32k salida.mp3` (no uses 8 kHz en MP3: Safari no lo reproduce bien)
 - Audio: nada bloquea el arranque; efectos y canciones se cargan en segundo plano (`cargarAudioEnSegundoPlano`)
 - Versión: `MAJOR.MINOR.PATCH` en `package.json`; la skill `publicar` sube el PATCH en cada despliegue (MINOR/MAJOR solo si el usuario lo pide). Se muestra en el menú

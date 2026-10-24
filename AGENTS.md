@@ -188,3 +188,16 @@ juego (formato en `docs/tecnico.md`). Úsalo para reproducir fallos: busca `toqu
 - No usar `enum`, APIs de Phaser 3, posiciones fijas ni polling en `update()`.
 - No dar por probado algo que no se ha visto pasar; decir explícitamente lo que no se pudo
   comprobar.
+
+### CrazyGames
+
+- Hay dos builds: `npm run build` (web y app) y `npm run build:crazygames`. Si añades algo que solo
+  tiene sentido en uno (anuncios, enlaces externos, Service Worker, audio), usa `EN_CRAZYGAMES`
+  (`src/plataforma.ts`) y comprueba que el otro build no lo arrastra.
+- **Trampa**: `import.meta.glob` empaqueta los archivos de todas las carpetas que mencione el
+  código, aunque la rama no se use. Por eso la música va por `virtual:musica` (vite.config.ts).
+  Comprueba con `ls dist-crazygames/assets` que no se cuela ninguna canción de `src/assets/musica/`.
+- En CrazyGames no puede haber enlaces externos ni anuncios propios, y el juego debe funcionar con
+  bloqueador de anuncios. Las Releases `crazygames-v…` se crean con `--latest=false`.
+- Desde la sesión no se puede descargar el SDK real ni probar anuncios de verdad: las pruebas usan
+  un SDK simulado (Playwright, `page.route` a `sdk.crazygames.com`).

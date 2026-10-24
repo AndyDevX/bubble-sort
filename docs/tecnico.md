@@ -23,6 +23,7 @@ Guías de referencia del stack: [guia-phaser.md](./guia-phaser.md) y
 npm ci                 # instalar exactamente lo del package-lock.json
 npm run dev            # http://localhost:5173 (también por la IP de la red local)
 npm run build          # tsc + vite build → dist/
+npm run build:crazygames  # build para CrazyGames → dist-crazygames/ (sin canciones de la web, con SDK)
 npm run preview        # servir dist/ en local
 npm run compartir      # (con npm run dev abierto) túnel público https://….trycloudflare.com
 npm run cap:android    # build + sync + abrir Android Studio
@@ -211,8 +212,12 @@ nivel no llega al 100 %.
     (la alarma de la lluvia). El gestor de sonido es **global**: lo que no se pare sigue sonando
     al cambiar de escena.
 - **Efectos** en `public/assets/sfx/` (ogg + mp3), generados con `scripts/generar-sonidos.py`.
-- **Canciones** en `src/assets/musica/`: MP3 32 kbps a 16 kHz, **máximo 1,5 MB** cada una. No
-  usar MP3 a 8 kHz (MPEG-2.5): Safari no lo reproduce bien.
+- **Canciones** en `src/assets/musica/` (web y app) y `src/assets/musica-crazygames/` (build de
+  CrazyGames, solo música libre de derechos con su licencia en el `LEEME.md`): MP3 32 kbps a 16 kHz,
+  **máximo 1,5 MB** cada una. No usar MP3 a 8 kHz (MPEG-2.5): Safari no lo reproduce bien.
+  Se importan con el módulo virtual `virtual:musica` (plugin `musica-plataforma` de
+  `vite.config.ts`), que solo lista la carpeta de la plataforma. **No uses `import.meta.glob` con
+  las dos carpetas**: aunque el código de una rama no se use, Vite empaqueta los archivos de ambas.
 
 ### Texturas
 
@@ -335,6 +340,33 @@ crea un archivo con las mismas claves que `es.ts` y se registra en `src/i18n/ind
 | **Web** | Cada push a `main` → `deploy.yml` → https://andydevx.github.io/bubble-sort/ |
 | **APK** | Cada vez que sube el **MAJOR** → `apk.yml` compila `assembleRelease` y crea la Release `vX.0.0` con `odi-sort-vX.0.0.apk` |
 | **App instalada** | Entre APK y APK se actualiza sola desde Pages (PATCH y MINOR del mismo MAJOR); ver «Actualizaciones en caliente» |
+
+### Build para CrazyGames
+
+- `npm run build:crazygames` (`vite build --mode crazygames`) → `dist-crazygames/`. En ese modo
+  `VITE_PLATAFORMA` = `crazygames` (`src/plataforma.ts`, `EN_CRAZYGAMES`) y el plugin
+  `html-crazygames` de `vite.config.ts` añade a `index.html` el script del SDK v3
+  (`https://sdk.crazygames.com/crazygames-sdk-v3.js`), quita el manifiesto y borra `sw.js` y
+  `manifest.webmanifest` del paquete. Tampoco se registra el Service Worker. Música: solo
+  `src/assets/musica-crazygames/`.
+- **Anuncios** (`src/sistemas/anuncios.ts`; en la web y la app no hacen nada):
+  - `iniciarAnuncios` (main.ts): `SDK.init()`, `loadingStart`; `cargaTerminada` (menú) →
+    `loadingStop`. `enJuego(sí/no)` → `gameplayStart`/`gameplayStop`: la partida al crearse y al
+    reanudarse; se para con cada ventana (pausa), al salir y durante los anuncios.
+  - `anuncioEntreNiveles` («midgame»): al pulsar «Siguiente» tras ganar, como mucho cada 2 niveles
+    (el SDK además limita a uno cada 3 minutos). Nunca tras perder.
+  - `anuncioRecompensa` («rewarded»): «▶ +N monedas» en la victoria (duplica las del nivel, una
+    vez) y «▶ Deshacer gratis» en la derrota si no quedan deshacer comprados (`regalar` + deshacer).
+  - Durante el anuncio se silencia el sonido y la partida está en pausa; si no hay anuncio
+    (bloqueador, sin conexión) no pasa nada y no hay recompensa. Cada anuncio queda en el registro
+    (`anuncio`, `regalo`).
+- **Release**: `.github/workflows/crazygames.yml` → en cada versión, Release
+  `crazygames-vX.Y.Z` con `odi-sort-crazygames-vX.Y.Z.zip` (se sube tal cual al portal). Se crea con
+  `--latest=false`: la última Release debe seguir siendo la del APK (el aviso de «app nueva» enlaza
+  a `releases/latest`).
+- Probar en local: `npx vite --mode crazygames` (sin el SDK real, que no carga en local sin
+  conexión, el juego va sin anuncios). El SDK real solo se puede probar en el portal (vista previa
+  de CrazyGames).
 
 ### APK de Android
 

@@ -42,3 +42,10 @@ export function gastar(articulo: Articulo): boolean {
   actualizarGuardado({ inventario: { ...inventario, [articulo]: inventario[articulo] - 1 } });
   return true;
 }
+
+// Añade usos gratis (recompensa de un anuncio)
+export function regalar(articulo: Articulo, cantidad: number): void {
+  const { inventario } = getGuardado();
+  registrar('regalo', { articulo, cantidad });
+  actualizarGuardado({ inventario: { ...inventario, [articulo]: inventario[articulo] + cantidad } });
+}

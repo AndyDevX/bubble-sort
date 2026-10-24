@@ -1,8 +1,9 @@
+import { anuncioEntreNiveles } from '../sistemas/anuncios';
 import Phaser from 'phaser';
 import { Colores } from '../constantes';
 import { crearBoton } from '../ui/Boton';
 
-export type AccionDialogo = 'continuar' | 'deshacer' | 'seguir' | 'reiniciar' | 'siguiente' | 'tienda' | 'ajustes' | 'menu';
+export type AccionDialogo = 'continuar' | 'deshacer' | 'seguir' | 'deshacerAnuncio' | 'duplicarAnuncio' | 'reiniciar' | 'siguiente' | 'tienda' | 'ajustes' | 'menu';
 
 export interface DatosDialogo {
   titulo: string;
@@ -96,8 +97,11 @@ export class DialogoScene extends Phaser.Scene {
         this.scene.resume('Game');
         break;
       case 'deshacer':
-      case 'seguir': {
-        // Deshacer la última jugada o seguir jugando una partida que ya no tiene solución
+      case 'seguir':
+      case 'deshacerAnuncio':
+      case 'duplicarAnuncio': {
+        // Deshacer la última jugada, seguir jugando una partida que ya no tiene solución o ver un
+        // anuncio con recompensa: lo resuelve la partida
         const juego = this.scene.get('Game');
         this.scene.stop();
         this.scene.resume('Game');
@@ -107,8 +111,9 @@ export class DialogoScene extends Phaser.Scene {
       case 'reiniciar': // mismo nivel, misma configuración inicial
         this.scene.start('Game', { modo: 'reiniciar' });
         break;
-      case 'siguiente': // el guardado ya apunta al siguiente nivel
-        this.scene.start('Game', { modo: 'continuar' });
+      case 'siguiente': // el guardado ya apunta al siguiente nivel (antes, a veces, un anuncio)
+        this.input.enabled = false;
+        void anuncioEntreNiveles(this).then(() => this.scene.start('Game', { modo: 'continuar' }));
         break;
       case 'tienda':
         this.scene.pause();

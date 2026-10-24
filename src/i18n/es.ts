@@ -26,6 +26,8 @@ export const es = {
   sinSolucionPista1: 'Tu última jugada lo cerró: deshaciéndola vuelves a tener solución.',
   sinSolucionPista: 'Deshaciendo tus últimas {n} jugadas vuelves a tener solución.',
   seguirJugando: 'Seguir jugando',
+  deshacerAnuncio: '▶ Deshacer gratis',
+  duplicarAnuncio: '▶ +{n} monedas',
   sinSalida: 'Sin salida',
   sinMovimientos: 'No quedan movimientos',
   tienda: 'Tienda',
