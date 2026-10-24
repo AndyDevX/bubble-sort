@@ -368,6 +368,10 @@ crea un archivo con las mismas claves que `es.ts` y se registra en `src/i18n/ind
   importarse. El registro de depuración se queda en `localStorage` (es grande). En el envío al
   portal hay que marcar «Yes, using the Data Module» o el SDK lo desactiva. No se usa el *Automatic
   Progress Save*: no está permitido en juegos con compras dentro del juego.
+- **Sin depuración**: el medidor de FPS solo existe en `npm run dev` (ningún build de producción lo
+  lleva). En CrazyGames tampoco hay registro de depuración (`registro.ts` no graba, sin pantalla
+  `RegistroScene` ni texto «Registro» en el menú) y el menú muestra solo la versión, sin build ni
+  commit.
 - **Subir al portal**: no acepta .zip; hay que descomprimirlo y arrastrar los archivos (index.html,
   favicon.svg y la carpeta assets).
 - **Release**: `.github/workflows/crazygames.yml` → en cada versión, Release

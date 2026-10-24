@@ -6,6 +6,7 @@ import { borrarProgreso, getGuardado } from '../sistemas/guardado';
 import { borrarNivelGuardado } from '../sistemas/nivelGuardado';
 import { borrarEstadisticas } from '../sistemas/estadisticas';
 import { cargaTerminada, enJuego } from '../sistemas/anuncios';
+import { EN_CRAZYGAMES } from '../plataforma';
 import { alCambiarActualizacion, getEstadoActualizacion, instalarActualizacion, URL_DESCARGA_APK, type EstadoActualizacion } from '../sistemas/actualizaciones';
 import { crearBoton } from '../ui/Boton';
 import { crearBotonAjustes } from '../ui/BotonAjustes';
@@ -76,23 +77,26 @@ export class MenuScene extends Phaser.Scene {
 
     // Versión y build abajo a la izquierda (el engranaje ocupa la esquina derecha)
     const build = this.add
-      .text(0, 0, [t('version', { v: VERSION, n: NUMERO_BUILD }), COMMIT_BUILD].filter(Boolean).join(' · '), {
+      // En CrazyGames solo la versión (build y commit son datos de depuración)
+      .text(0, 0, EN_CRAZYGAMES ? `v${VERSION}` : [t('version', { v: VERSION, n: NUMERO_BUILD }), COMMIT_BUILD].filter(Boolean).join(' · '), {
         fontFamily: 'sans-serif',
         fontSize: '24px',
         color: '#66667a',
       })
       .setOrigin(0, 1);
 
-    // Registro de depuración: texto discreto encima de la versión
-    const registro = this.add
-      .text(0, 0, t('registro'), { fontFamily: 'sans-serif', fontSize: '26px', color: '#8888a8' })
-      .setOrigin(0, 1)
-      .setPadding(10, 10)
-      .setInteractive({ useHandCursor: true })
-      .on('pointerup', () => {
-        this.scene.pause();
-        this.scene.launch('Registro', { origen: this.scene.key });
-      });
+    // Registro de depuración: texto discreto encima de la versión (no existe en CrazyGames)
+    const registro = EN_CRAZYGAMES
+      ? null
+      : this.add
+          .text(0, 0, t('registro'), { fontFamily: 'sans-serif', fontSize: '26px', color: '#8888a8' })
+          .setOrigin(0, 1)
+          .setPadding(10, 10)
+          .setInteractive({ useHandCursor: true })
+          .on('pointerup', () => {
+            this.scene.pause();
+            this.scene.launch('Registro', { origen: this.scene.key });
+          });
 
     // Aviso de actualización de la app (solo en Android; en el navegador no aparece nunca)
     const aviso = this.add
@@ -161,7 +165,7 @@ export class MenuScene extends Phaser.Scene {
       // Esquina inferior derecha, respetando notch y barra de gestos
       ajustes.setPosition(zona.x + zona.ancho - 90, zona.y + zona.alto - 90);
       build.setPosition(zona.x + 30, zona.y + zona.alto - 30);
-      registro.setPosition(zona.x + 20, zona.y + zona.alto - 62);
+      registro?.setPosition(zona.x + 20, zona.y + zona.alto - 62);
       borrar.colocar(zona.x + 46, zona.y + 60);
     });
   }

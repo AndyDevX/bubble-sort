@@ -197,6 +197,8 @@ juego (formato en `docs/tecnico.md`). Úsalo para reproducir fallos: busca `toqu
 - **Trampa**: `import.meta.glob` empaqueta los archivos de todas las carpetas que mencione el
   código, aunque la rama no se use. Por eso la música va por `virtual:musica` (vite.config.ts).
   Comprueba con `ls dist-crazygames/assets` que no se cuela ninguna canción de `src/assets/musica/`.
+- El build de CrazyGames no lleva herramientas de depuración (registro, medidor de FPS, build y
+  commit en el menú). Si añades alguna, déjala fuera con `EN_CRAZYGAMES` o `import.meta.env.DEV`.
 - En CrazyGames no puede haber enlaces externos ni anuncios propios, y el juego debe funcionar con
   bloqueador de anuncios. Las Releases `crazygames-v…` se crean con `--latest=false`.
 - Desde la sesión no se puede descargar el SDK real ni probar anuncios de verdad: las pruebas usan

@@ -1,5 +1,6 @@
 import { COMMIT_BUILD, NUMERO_BUILD, VERSION } from '../constantes';
 import { historialActualizaciones } from './actualizaciones';
+import { EN_CRAZYGAMES } from '../plataforma';
 import type { ColorId } from '../juego/colores';
 import type { Tubo } from '../juego/modelo';
 import type { ConfigNivel } from '../juego/niveles';
@@ -63,7 +64,10 @@ function cargar(): EntradaRegistro[] {
   }
 }
 
-let entradas = cargar();
+// El build de CrazyGames no lleva herramientas de depuración: no se graba nada (ni pantalla Registro)
+const ACTIVO = !EN_CRAZYGAMES;
+
+let entradas = ACTIVO ? cargar() : [];
 let actual: EntradaRegistro | null = null;
 let inicioReal = 0;
 let inicioJuego = 0;
@@ -100,6 +104,7 @@ export function iniciarRegistroNivel(datos: {
   tubos: Tubo[];
   reloj: () => number;
 }): void {
+  if (!ACTIVO) return; // sin nivel en curso, registrar y cerrar no hacen nada
   if (actual && !actual.resultado) cerrarRegistroNivel('salida', { motivo: 'nuevo nivel sin cerrar el anterior' });
   relojJuego = datos.reloj;
   inicioReal = performance.now();
@@ -164,7 +169,7 @@ export function borrarRegistro(): void {
 }
 
 // Errores de JavaScript: van al nivel en curso
-if (typeof window !== 'undefined') {
+if (ACTIVO && typeof window !== 'undefined') {
   window.addEventListener('error', (e) => registrar('error', { mensaje: e.message, origen: `${e.filename}:${e.lineno}:${e.colno}` }));
   window.addEventListener('unhandledrejection', (e) => registrar('error', { mensaje: String(e.reason) }));
   window.addEventListener('pagehide', () => pendiente && escribir());

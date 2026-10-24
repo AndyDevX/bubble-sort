@@ -11,6 +11,7 @@ import { RegistroScene } from './scenes/RegistroScene';
 import { setIdioma } from './i18n';
 import { getAjustes } from './sistemas/ajustes';
 import { registrarCacheOffline } from './sistemas/cacheOffline';
+import { EN_CRAZYGAMES } from './plataforma';
 import { iniciarActualizaciones } from './sistemas/actualizaciones';
 import { iniciarAnuncios } from './sistemas/anuncios';
 import './style.css';
@@ -41,7 +42,8 @@ const config: Phaser.Types.Core.GameConfig = {
     default: 'arcade',
     arcade: { gravity: { x: 0, y: 0 } },
   },
-  scene: [BootScene, MenuScene, GameScene, DialogoScene, TiendaScene, ColeccionScene, EstadisticasScene, RegistroScene, SettingsScene],
+  // El build de CrazyGames no lleva la pantalla de registro de depuración
+  scene: [BootScene, MenuScene, GameScene, DialogoScene, TiendaScene, ColeccionScene, EstadisticasScene, ...(EN_CRAZYGAMES ? [] : [RegistroScene]), SettingsScene],
 };
 
 // En CrazyGames el progreso se guarda con su SDK: hay que iniciarlo antes de leer los ajustes y la
