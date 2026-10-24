@@ -68,7 +68,8 @@ documentación de [`docs/`](docs/).
 - La capacidad de un tubo se lee con `capacidadDe(tubo)` (el de emergencia tiene 1).
 - Si cambias las reglas de movimiento, **actualiza también `src/juego/solucionador.ts`**: es el
   que garantiza que los niveles tienen solución.
-- Todo texto visible sale de `t('clave')` (`src/i18n/es.ts`).
+- Todo texto visible sale de `t('clave')` (`src/i18n/es.ts`). Hay 7 idiomas: una clave nueva va en
+  los 7 archivos (TypeScript avisa si falta) y hay que comprobar que cabe en alemán, ruso y chino.
 - Ayudas compradas (o futuras por anuncios): inventario en `src/sistemas/guardado.ts` y
   catálogo/compra/gasto en `src/sistemas/tienda.ts`.
 - Datos guardados (`localStorage`): valida al leer y ten valores por defecto (ver

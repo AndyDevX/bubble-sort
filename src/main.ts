@@ -14,8 +14,10 @@ import { registrarCacheOffline } from './sistemas/cacheOffline';
 import { EN_CRAZYGAMES } from './plataforma';
 import { iniciarActualizaciones } from './sistemas/actualizaciones';
 import { iniciarAnuncios } from './sistemas/anuncios';
+import { usarFuenteDeIdioma } from './ui/tema';
 import '@fontsource/fredoka/latin-500.css';
 import '@fontsource/fredoka/latin-700.css';
+import './fuentes.css';
 import './style.css';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -50,15 +52,20 @@ const config: Phaser.Types.Core.GameConfig = {
 
 // En CrazyGames el progreso se guarda con su SDK: hay que iniciarlo antes de leer los ajustes y la
 // partida (en la web `iniciarAnuncios` no hace nada y termina al momento)
-// La fuente Fredoka (incluida en el build) tiene que estar cargada antes de crear textos: Phaser
-// dibuja el texto en un canvas y no lo repinta cuando llega la fuente. Como mucho se esperan 3 s.
+// Las fuentes Fredoka y Nunito (cirílico, para el ruso; incluidas en el build) tienen que estar
+// cargadas antes de crear textos: Phaser dibuja el texto en un canvas y no lo repinta cuando llega
+// la fuente. Nunito se carga siempre (son 24 KB) por si se cambia a ruso en Ajustes. Como mucho
+// se esperan 3 s.
 const fuenteLista = Promise.race([
-  Promise.all([document.fonts.load('500 32px Fredoka'), document.fonts.load('700 32px Fredoka')]),
+  Promise.all(
+    ['500 32px Fredoka', '700 32px Fredoka', '500 32px Nunito', '700 32px Nunito'].map((fuente) => document.fonts.load(fuente, 'Aaя')),
+  ),
   new Promise((listo) => setTimeout(listo, 3000)),
 ]).catch(() => undefined);
 
 void Promise.all([iniciarAnuncios(), fuenteLista]).then(() => {
   setIdioma(getAjustes().idioma);
+  usarFuenteDeIdioma(getAjustes().idioma);
 
   const juego = new Phaser.Game(config);
   registrarCacheOffline();

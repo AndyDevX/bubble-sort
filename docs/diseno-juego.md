@@ -345,7 +345,9 @@ jugadas que no estropeen nada hasta que se derrite (`scripts/lib/juego.mjs`, `cr
 9. **Registro** (depuración; texto «Registro» discreto abajo a la izquierda del menú): lista de las
    últimas partidas y botones **Copiar resumen**, **Copiar todo**, **Descargar .txt** y **Borrar
    registro**. Sirve para pasar a quien desarrolla lo que pasó en cada nivel.
-10. **Ajustes**: volumen de música y de efectos (sliders) e idioma (de momento solo español).
+10. **Ajustes**: volumen de música y de efectos (sliders) e idioma con flechas: **español, inglés,
+    portugués (de Brasil), alemán, ruso, chino (simplificado) y japonés**. La primera vez se elige
+    solo el del dispositivo (si el juego no lo tiene, inglés); el que elijas se guarda.
 
 ## Aspecto y animaciones
 
@@ -366,7 +368,8 @@ Inspirado en vídeos de referencia del usuario: el primero para tubos y animacio
   relleno ámbar brillante.
 - **Ventanas** crema con borde y sombra, sobre un velo marrón translúcido.
 - **Texto** marrón con la fuente redondeada **Fredoka** (licencia OFL, incluida en el juego); el
-  título «Odi Sort» en azul con contorno blanco y sombra.
+  título «Odi Sort» en azul con contorno blanco y sombra. El ruso usa **Nunito** (también
+  redondeada, OFL, incluida) y el chino y el japonés, la fuente del sistema.
 
 - **Luz única**: todo (bolas, tubos, iconos) se ilumina desde arriba a la izquierda.
 - **Tubos de ensayo de vidrio realistas**: boca con aro de vidrio en perspectiva, paredes más
@@ -424,4 +427,3 @@ La web y la app no tienen anuncios. En la versión de CrazyGames:
 - **Vestidor / Tienda**: avatar por capas (cuerpo, ropa, ojos, cabeza) que se compra con monedas;
   arriba la vista previa y abajo una cuadrícula con pestañas y objetos bloqueados/desbloqueados.
 - **Anuncios**: conseguir usos de ayudas viendo un anuncio (la tienda de ayudas ya existe).
-- **Más idiomas** (el sistema de textos ya está preparado).

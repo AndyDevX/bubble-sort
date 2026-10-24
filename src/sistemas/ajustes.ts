@@ -1,4 +1,4 @@
-import { esIdiomaValido, type CodigoIdioma } from '../i18n';
+import { esIdiomaValido, idiomaDelDispositivo, type CodigoIdioma } from '../i18n';
 import { almacen } from './almacen';
 
 export interface Ajustes {
@@ -9,10 +9,9 @@ export interface Ajustes {
 
 const CLAVE_GUARDADO = 'odi-sort:ajustes';
 
-const POR_DEFECTO: Ajustes = {
+const POR_DEFECTO: Omit<Ajustes, 'idioma'> = {
   volumenMusica: 0.7,
   volumenEfectos: 0.8,
-  idioma: 'es',
 };
 
 function limitar(valor: unknown, porDefecto: number): number {
@@ -25,10 +24,10 @@ function cargar(): Ajustes {
     return {
       volumenMusica: limitar(datos.volumenMusica, POR_DEFECTO.volumenMusica),
       volumenEfectos: limitar(datos.volumenEfectos, POR_DEFECTO.volumenEfectos),
-      idioma: typeof datos.idioma === 'string' && esIdiomaValido(datos.idioma) ? datos.idioma : POR_DEFECTO.idioma,
+      idioma: typeof datos.idioma === 'string' && esIdiomaValido(datos.idioma) ? datos.idioma : idiomaDelDispositivo(),
     };
   } catch {
-    return { ...POR_DEFECTO };
+    return { ...POR_DEFECTO, idioma: idiomaDelDispositivo() };
   }
 }
 

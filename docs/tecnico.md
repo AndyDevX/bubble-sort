@@ -49,7 +49,7 @@ python3 scripts/generar-sonidos.py   # regenerar los efectos de sonido (Python +
    ├─ vite-env.d.ts           tipos de las variables inyectadas por Vite
    ├─ style.css               lienzo a pantalla completa, columna 3:4 en pantallas anchas
    ├─ assets/musica/          canciones (se detectan solas con import.meta.glob)
-   ├─ i18n/                   textos: es.ts + t('clave', { valores })
+   ├─ i18n/                   textos: es, en, pt, de, ru, zh, ja + t('clave', { valores })
    ├─ juego/                  lógica pura, sin Phaser (se puede probar con Node)
    ├─ scenes/                 Boot, Menu, Game, Dialogo, Tienda, Settings
    ├─ sistemas/               guardado (con inventario), tienda, audio, caché, FPS
@@ -79,8 +79,8 @@ BootScene ──► MenuScene ──► GameScene
 - **TiendaScene** (`init({ origen })`) se abre encima del menú, de la partida o de un diálogo y al
   cerrar reanuda la escena de origen. Menú y partida escuchan el evento `RESUME` para repintar
   monedas e inventario.
-- **SettingsScene** guarda al momento; si cambia el idioma, reinicia la escena de origen con sus
-  mismos datos.
+- **SettingsScene** guarda al momento; si cambia el idioma, se reinicia ella (conservando
+  `idiomaAlAbrir`) y al cerrar reinicia la escena de origen con sus mismos datos.
 
 ### Modelo y vista
 
@@ -202,8 +202,13 @@ nivel no llega al 100 %.
 - `crearBoton(..., colores)` y `crearBotonRedondo(..., colores)` aceptan el color (por defecto
   azul). Los iconos dibujados a mano (`iconoPausa`, `iconoEngranaje`) van en blanco.
 - Fuente: `@fontsource/fredoka` (pesos 500 y 700, subconjunto latino) importada en `main.ts`.
+  Para el ruso, Nunito cirílico (`src/fuentes.css`: los archivos 600 y 800 de `@fontsource/nunito`
+  declarados como 500 y 700, para que pese como Fredoka; 17 KB). Chino y japonés usan la fuente
+  del sistema (una CJK pesaría varios MB). `FUENTE` es `let`: `usarFuenteDeIdioma(codigo)` la
+  cambia al arrancar y al elegir idioma (Fredoka siempre va primero y el navegador busca letra a
+  letra en las siguientes). No guardes estilos de texto en constantes de módulo: usa funciones.
   Phaser pinta el texto en un canvas y no lo repinta cuando llega la fuente, así que `main.ts`
-  espera a `document.fonts.load` (máx. 3 s) antes de crear el juego.
+  espera a `document.fonts.load` de Fredoka y Nunito (máx. 3 s) antes de crear el juego.
 - Con fondo claro, las chispas usan mezcla normal (con ADD se volvían blancas e invisibles) y el
   interior de la boca de los tubos es azul grisáceo claro.
 - Color de fondo también en `style.css`, `index.html` (theme-color) y `manifest.webmanifest`. La
@@ -336,8 +341,21 @@ navegador no deja guardar, el nivel se mantiene en memoria.
 
 ### Textos
 
-Todo texto visible sale de `t('clave', { valores })` (`src/i18n/`). Para añadir un idioma se
-crea un archivo con las mismas claves que `es.ts` y se registra en `src/i18n/index.ts`.
+Todo texto visible sale de `t('clave', { valores })` (`src/i18n/`). Idiomas: `es` (base, define
+las claves), `en`, `pt` (Brasil), `de`, `ru`, `zh` (simplificado) y `ja`; cada archivo tiene el
+tipo `Textos`, así que TypeScript avisa si falta una clave.
+
+- **Idioma inicial**: `idiomaDelDispositivo()` (primer idioma de `navigator.languages` que exista;
+  si no, inglés) cuando `odi-sort:ajustes` no tiene uno guardado. `setIdioma` también pone
+  `<html lang>`.
+- **Añadir un idioma**: crea `xx.ts` con el tipo `Textos`, regístralo en `IDIOMAS`
+  (`src/i18n/index.ts`; el orden es el del selector) y, si usa otro alfabeto, añade su fuente en
+  `FUENTES_DE_IDIOMA` (`src/ui/tema.ts`) y su carga en `main.ts`.
+- **Longitud**: los botones crecen con el texto, pero los textos de tarjetas (tienda) y del HUD
+  tienen poco sitio; el título del nivel se encoge si no cabe entre la pausa y las monedas.
+  Prueba cada idioma a 360x640 (el alemán y el ruso son los más largos).
+- **Ajuste de línea**: usa siempre `wordWrap: ajusteDeLinea(ancho)` (`tema.ts`): por palabras, o
+  en chino y japonés letra a letra sin empezar línea con signos como 。、！ (reglas «kinsoku»).
 
 ### Rendimiento (60 fps)
 

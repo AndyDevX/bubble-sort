@@ -1,0 +1,18 @@
+/* Cirílico (ruso): Fredoka no lo tiene, así que esas letras salen con Nunito, también redondeada.
+   Nunito es más fina que Fredoka: se usa un peso más (600 para el normal y 800 para la negrita)
+   para que el ruso pese igual que el resto. Los textos de Phaser piden 500 y bold (700). */
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url('@fontsource/nunito/files/nunito-cyrillic-600-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url('@fontsource/nunito/files/nunito-cyrillic-800-normal.woff2') format('woff2');
+}

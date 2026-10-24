@@ -13,7 +13,7 @@ import { crearBotonAjustes } from '../ui/BotonAjustes';
 import { crearBotonBorrarProgreso } from '../ui/BorrarProgreso';
 import { alRedimensionar, zonaSegura } from '../ui/layout';
 import { crearIconoMoneda } from '../ui/Moneda';
-import { Botones, crearFondo, dibujarPastilla, estiloTexto, FUENTE, Tema } from '../ui/tema';
+import { ajusteDeLinea, Botones, crearFondo, dibujarPastilla, estiloTexto, FUENTE, Tema } from '../ui/tema';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -105,7 +105,7 @@ export class MenuScene extends Phaser.Scene {
 
     // Aviso de actualización de la app (solo en Android; en el navegador no aparece nunca)
     const aviso = this.add
-      .text(0, 0, '', { fontFamily: FUENTE, fontSize: '26px', color: Tema.positivo, align: 'center' })
+      .text(0, 0, '', { fontFamily: FUENTE, fontSize: '26px', color: Tema.positivo, align: 'center', wordWrap: ajusteDeLinea(640) })
       .setOrigin(0.5)
       .setPadding(10, 10);
     const mostrarActualizacion = (e: EstadoActualizacion) => {
@@ -164,7 +164,7 @@ export class MenuScene extends Phaser.Scene {
       colores.setPosition(ancho / 2, primero + 260);
       estadisticas.setPosition(ancho / 2, primero + 390);
       nivel.setPosition(ancho / 2, primero + 490);
-      aviso.setPosition(ancho / 2, primero + 550).setWordWrapWidth(ancho - 80);
+      aviso.setPosition(ancho / 2, primero + 550).setWordWrapWidth(ancho - 80, aviso.style.wordWrapUseAdvanced);
       monedas.setPosition(zona.x + zona.ancho - 40, zona.y + 60);
       colocarMonedas();
       // Esquina inferior derecha, respetando notch y barra de gestos

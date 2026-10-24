@@ -1,7 +1,7 @@
 import { anuncioEntreNiveles } from '../sistemas/anuncios';
 import Phaser from 'phaser';
 import { crearBoton } from '../ui/Boton';
-import { Botones, crearVelo, dibujarPanel, FUENTE, Tema, type ColoresBoton } from '../ui/tema';
+import { ajusteDeLinea, Botones, type ColoresBoton, crearVelo, dibujarPanel, FUENTE, Tema } from '../ui/tema';
 
 // Color de cada botón según lo que hace: seguir (verde), ayudas (azul), anuncios y tienda
 // (naranja), salir (crema)
@@ -53,7 +53,7 @@ export class DialogoScene extends Phaser.Scene {
     // El texto se parte en líneas para caber en el panel; su alto real coloca lo demás
     const objetoTexto = texto
       ? this.add
-          .text(width / 2, 0, texto, { fontFamily: FUENTE, fontSize: '32px', color: Tema.textoSuave, align: 'center', wordWrap: { width: anchoPanel - 70, useAdvancedWrap: true } })
+          .text(width / 2, 0, texto, { fontFamily: FUENTE, fontSize: '32px', color: Tema.textoSuave, align: 'center', wordWrap: ajusteDeLinea(anchoPanel - 70) })
           .setOrigin(0.5)
       : null;
     const altoTexto = objetoTexto?.height ?? 0;

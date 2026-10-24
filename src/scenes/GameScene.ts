@@ -353,6 +353,9 @@ export class GameScene extends Phaser.Scene {
     this.textoPuntos.setPosition(ancho / 2, yBarraSuperior + 26);
     this.textoMonedas.setPosition(zona.x + zona.ancho - 40, yBarraSuperior);
     this.colocarIconoMoneda();
+    // El título se encoge si no cabe entre la pausa y las monedas (p. ej. «Уровень 16 · Сложный»)
+    const libre = 2 * Math.min(ancho / 2 - (zona.x + 130), this.textoMonedas.x - this.textoMonedas.width - 90 - ancho / 2);
+    this.textoNivel.setScale(Math.min(1, libre / this.textoNivel.width));
     this.textoLluvia.setPosition(zona.x + zona.ancho - 40, yBarraSuperior + 50);
 
     // Fila inferior: [deshacer] [tubo de emergencia] [barra de Gravedad + botón], centrada

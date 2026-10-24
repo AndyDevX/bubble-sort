@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { t } from '../i18n';
 import { reproducirEfecto } from '../sistemas/audio';
 import { borrarRegistro, getRegistro, textoCompleto, textoResumen, type EntradaRegistro } from '../sistemas/registro';
-import { Botones, dibujarPanel, FUENTE, Tema } from '../ui/tema';
+import { ajusteDeLinea, Botones, dibujarPanel, FUENTE, Tema } from '../ui/tema';
 
 const ALTO_LINEA = 34;
 const ALTO_BOTON = 84;
@@ -50,7 +50,7 @@ export class RegistroScene extends Phaser.Scene {
         fontSize: '19px',
         color: Tema.texto,
         lineSpacing: ALTO_LINEA - 22,
-        wordWrap: { width: panelAncho - 52 },
+        wordWrap: ajusteDeLinea(panelAncho - 52),
       })
       .setCrop(0, 0, panelAncho - 52, altoLista);
 
@@ -90,7 +90,7 @@ export class RegistroScene extends Phaser.Scene {
     const pintar = (color: number) => fondo.clear().fillStyle(color).fillRoundedRect(-ancho / 2, -ALTO_BOTON / 2, ancho, ALTO_BOTON, 22);
     pintar(Botones.azul.cara);
     const etiqueta = this.add
-      .text(0, 0, texto, { fontFamily: FUENTE, fontSize: '28px', color: '#ffffff', fontStyle: 'bold', align: 'center', wordWrap: { width: ancho - 20 } })
+      .text(0, 0, texto, { fontFamily: FUENTE, fontSize: '28px', color: '#ffffff', fontStyle: 'bold', align: 'center', wordWrap: ajusteDeLinea(ancho - 20) })
       .setOrigin(0.5);
     const boton = this.add.container(x, y, [fondo, etiqueta]).setSize(ancho, ALTO_BOTON).setInteractive({ useHandCursor: true });
     boton.on('pointerover', () => pintar(Botones.azul.brillo));

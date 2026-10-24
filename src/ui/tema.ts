@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { getIdioma, type CodigoIdioma } from '../i18n';
 import { alRedimensionar } from './layout';
 
 // Tema visual (v1.0.12): estilo casual claro — fondo crema con manchas suaves, botones «caramelo»
@@ -6,7 +7,23 @@ import { alRedimensionar } from './layout';
 // insignias rojas y texto marrón con una fuente redondeada. Las canicas y los tubos no cambian.
 // Todo color o estilo de texto de la interfaz sale de aquí.
 
-export const FUENTE = '"Fredoka", "Trebuchet MS", sans-serif';
+// Fredoka solo tiene alfabeto latino: el ruso usa Nunito (redondeada, cirílico incluido en el
+// build) y el chino y el japonés, la fuente del sistema de cada idioma (una CJK pesaría varios MB).
+// El navegador elige letra a letra, así que números y latinos siguen saliendo con Fredoka.
+const FUENTES_DE_IDIOMA: Partial<Record<CodigoIdioma, string>> = {
+  ru: '"Fredoka", "Nunito", "Trebuchet MS", sans-serif',
+  zh: '"Fredoka", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC", "WenQuanYi Zen Hei", sans-serif',
+  ja: '"Fredoka", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", "Meiryo", "Noto Sans CJK JP", "Noto Sans JP", "IPAGothic", sans-serif',
+};
+const FUENTE_LATINA = '"Fredoka", "Trebuchet MS", sans-serif';
+
+/** Fuente de todos los textos; cambia con el idioma (`usarFuenteDeIdioma`). */
+export let FUENTE = FUENTE_LATINA;
+
+/** Ajusta `FUENTE` al idioma: llamar al cambiarlo, antes de crear los textos. */
+export function usarFuenteDeIdioma(codigo: CodigoIdioma): void {
+  FUENTE = FUENTES_DE_IDIOMA[codigo] ?? FUENTE_LATINA;
+}
 
 export const Tema = {
   fondo: 0xf7e9d4, // crema
@@ -47,6 +64,41 @@ export const Botones = {
 /** Estilo de texto del tema. `negrita` usa el peso 700 de Fredoka (el normal, 500). */
 export function estiloTexto(tamano: number, color: string = Tema.texto, negrita = true): Phaser.Types.GameObjects.Text.TextStyle {
   return { fontFamily: FUENTE, fontSize: `${tamano}px`, color, fontStyle: negrita ? 'bold' : 'normal' };
+}
+
+// ─────────── Ajuste de línea ───────────
+
+// Signos que no pueden empezar una línea en chino y japonés (reglas «kinsoku»): se quedan
+// colgando al final de la anterior aunque se pasen un poco del ancho.
+const NO_EMPIEZAN_LINEA = new Set('。、，．,.！？!?：；:;）」』】〉》”’ー…ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ々%');
+
+// Parte el texto letra a letra (el chino y el japonés no separan palabras con espacios)
+function partirCJK(texto: string, objeto: Phaser.GameObjects.Text): string[] {
+  const ancho = objeto.style.wordWrapWidth ?? Infinity;
+  const ctx = objeto.context;
+  const lineas: string[] = [];
+  for (const parrafo of texto.split('\n')) {
+    let linea = '';
+    for (const letra of parrafo) {
+      if (linea !== '' && !NO_EMPIEZAN_LINEA.has(letra) && ctx.measureText(linea + letra).width > ancho) {
+        lineas.push(linea.trimEnd());
+        linea = letra === ' ' ? '' : letra;
+      } else {
+        linea += letra;
+      }
+    }
+    lineas.push(linea);
+  }
+  return lineas;
+}
+
+/**
+ * Ajuste de línea para `wordWrap` de un texto: por palabras (el avanzado de Phaser, que también
+ * parte palabras más largas que la línea) o, en chino y japonés, letra a letra con sus reglas.
+ */
+export function ajusteDeLinea(ancho: number): Phaser.Types.GameObjects.Text.TextWordWrap {
+  const idioma = getIdioma();
+  return idioma === 'zh' || idioma === 'ja' ? { width: ancho, callback: partirCJK } : { width: ancho, useAdvancedWrap: true };
 }
 
 // ─────────── Fondo ───────────

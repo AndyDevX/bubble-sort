@@ -6,7 +6,7 @@ import { CATALOGO, cantidadDe, comprar, type Oferta } from '../sistemas/tienda';
 import { crearBoton } from '../ui/Boton';
 import { ICONO_DESHACER, ICONO_TUBO } from '../ui/iconosHabilidad';
 import { crearIconoMoneda } from '../ui/Moneda';
-import { Botones, crearVelo, dibujarCaramelo, dibujarPanel, FUENTE, Tema } from '../ui/tema';
+import { ajusteDeLinea, Botones, crearVelo, dibujarCaramelo, dibujarPanel, FUENTE, Tema } from '../ui/tema';
 
 const ICONOS: Record<Articulo, string> = { deshacer: ICONO_DESHACER, tuboExtra: ICONO_TUBO };
 const NOMBRES: Record<string, ClaveTexto> = { deshacer1: 'ofertaDeshacer1', deshacer5: 'ofertaDeshacer5', tubo1: 'ofertaTubo1' };
@@ -96,7 +96,7 @@ export class TiendaScene extends Phaser.Scene {
         fontFamily: FUENTE,
         fontSize: '24px',
         color: Tema.textoSuave,
-        wordWrap: { width: anchoTexto },
+        wordWrap: ajusteDeLinea(anchoTexto),
       })
       .setOrigin(0, 0.5);
     const tienes = this.add

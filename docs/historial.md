@@ -8,7 +8,8 @@ Al publicar, añade la nueva versión arriba del todo (lo indica la skill `publi
 
 | Versión | Build | Commit | Fecha | Cambios |
 | --- | --- | --- | --- | --- |
-| 1.0.12 | 41 | (este) | 2026-10-24 | **Nuevo diseño de interfaz** (vídeo de referencia del usuario): fondo crema con manchas, botones «caramelo» con brillo y relieve (colores por función), botones de icono a juego, insignias rojas, contadores en pastilla, ventanas crema y fuente redondeada Fredoka. Las canicas no cambian |
+| 1.0.13 | 42 | (este) | 2026-10-24 | **Siete idiomas**: español, inglés, portugués (Brasil), alemán, ruso, chino simplificado y japonés. La primera vez el juego elige el del dispositivo (si no lo tiene, inglés); se cambia en Ajustes. El ruso usa la fuente redondeada Nunito y el chino y el japonés, la del sistema, con salto de línea propio. Corrige que al cambiar el idioma desde la partida no se tradujera hasta reiniciarla |
+| 1.0.12 | 41 | adf142f | 2026-10-24 | **Nuevo diseño de interfaz** (vídeo de referencia del usuario): fondo crema con manchas, botones «caramelo» con brillo y relieve (colores por función), botones de icono a juego, insignias rojas, contadores en pastilla, ventanas crema y fuente redondeada Fredoka. Las canicas no cambian |
 | 1.0.11 | 40 | bd873b0 | 2026-10-24 | CrazyGames sin herramientas de depuración: ni registro (ni su pantalla ni el texto del menú) ni build/commit en el menú, solo la versión. El medidor de FPS ya solo existía en desarrollo |
 | 1.0.10 | 39 | 0f990e5 | 2026-10-24 | CrazyGames: el progreso (partida, nivel, ajustes y estadísticas) se guarda con el **Data Module** de su SDK, en la cuenta del jugador. La web y la app siguen con `localStorage` |
 | 1.0.9 | 38 | 2da8c8d | 2026-10-24 | **Música libre de derechos para CrazyGames**: 8 pistas CC0 (CoMiGo, Écrivain y hernandack) elegidas por su tono tranquilo o de hielo, alargadas a ~2,5 min y con el volumen igualado. La web y la app no cambian |

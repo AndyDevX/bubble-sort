@@ -23,7 +23,7 @@ Documentación: `README.md` (portada) · `docs/diseno-juego.md` (todo lo jugable
 - `src/ui/` — componentes (`Boton`, `BotonRedondo` + iconos, `Insignia`, `BarraHabilidad`, `Slider`), `tema.ts` (paleta, fuente Fredoka, fondo crema, botones caramelo, paneles y pastillas: todo color de la interfaz sale de aquí) y `layout.ts` (colocación adaptable)
 - `public/sw.js` — Service Worker: guarda audio y build en el caché del dispositivo (sube `VERSION` para invalidarlo)
 - `src/sistemas/` — ajustes y partida guardados, nivel guardado (reiniciar igual), tienda (catálogo, comprar/gastar del inventario), audio (volumen música/efectos), registro del Service Worker, actualizaciones en caliente de la app Android, medidor de FPS (solo dev)
-- `src/i18n/` — textos; todo texto visible sale de `t('clave')`
+- `src/i18n/` — textos en 7 idiomas (es, en, pt, de, ru, zh, ja; el inicial, el del dispositivo); todo texto visible sale de `t('clave')`. Clave nueva → añádela en los 7 archivos. Texto que se parte en líneas → `wordWrap: ajusteDeLinea(ancho)`
 - `public/assets/` — assets estáticos (se cargan como `assets/...`)
 - `public/assets/sfx/` — efectos de sonido de vidrio, generados con `python3 scripts/generar-sonidos.py` (Python + ffmpeg); para cambiar un sonido, edita su función en el script y vuelve a ejecutarlo
 - `src/assets/musica-crazygames/` — canciones del build de CrazyGames: **solo libres de derechos**, con licencia anotada en su `LEEME.md`

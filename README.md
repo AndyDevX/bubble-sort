@@ -15,6 +15,9 @@ Mecánicas: lluvia, alquimia (fusionar ingredientes), niebla (bolas ocultas), gi
 deshacer y tubo extra (se compran con monedas en la **tienda**). Todo el detalle en
 [docs/diseno-juego.md](docs/diseno-juego.md).
 
+Idiomas: español, inglés, portugués, alemán, ruso, chino y japonés (empieza en el del dispositivo;
+se cambia en Ajustes).
+
 ## Empezar a desarrollar
 
 Necesitas **Node.js 22.12+**.

@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { t } from '../i18n';
 import { reproducirEfecto } from '../sistemas/audio';
 import { crearBoton } from './Boton';
-import { Botones, dibujarPanel, FUENTE, Tema } from './tema';
+import { ajusteDeLinea, Botones, dibujarPanel, FUENTE, Tema } from './tema';
 
 const MANTENER_MS = 1500; // pulsación larga necesaria: evita borrar por un toque accidental
 const RADIO = 26;
@@ -95,7 +95,7 @@ function mostrarConfirmacion(escena: Phaser.Scene, alBorrar: () => void) {
       fontSize: '30px',
       color: Tema.texto,
       align: 'center',
-      wordWrap: { width: ancho - 80 },
+      wordWrap: ajusteDeLinea(ancho - 80),
     })
     .setOrigin(0.5)
     .setDepth(20);

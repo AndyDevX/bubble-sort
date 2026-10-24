@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
-import { CODIGOS_IDIOMA, getIdioma, nombreDeIdioma, setIdioma, t } from '../i18n';
+import { CODIGOS_IDIOMA, getIdioma, nombreDeIdioma, setIdioma, t, type CodigoIdioma } from '../i18n';
 import { actualizarAjustes, getAjustes } from '../sistemas/ajustes';
 import { aplicarVolumenMusica, reproducirEfecto } from '../sistemas/audio';
 import { crearBoton } from '../ui/Boton';
 import { crearSlider } from '../ui/Slider';
-import { Botones, crearVelo, dibujarPanel, FUENTE, Tema } from '../ui/tema';
+import { Botones, crearVelo, dibujarPanel, FUENTE, Tema, usarFuenteDeIdioma } from '../ui/tema';
 
 // Se abre encima de la escena que la lanza (que queda en pausa) y vuelve a ella al cerrar
 export class SettingsScene extends Phaser.Scene {
@@ -15,9 +15,11 @@ export class SettingsScene extends Phaser.Scene {
     super('Settings');
   }
 
-  init(data: { origen?: string }) {
+  // `idiomaAlAbrir` se conserva al reiniciar esta escena (cambio de idioma o de tamaño): al cerrar
+  // se compara con el actual para saber si hay que rehacer la escena de debajo
+  init(data: { origen?: string; idiomaAlAbrir?: CodigoIdioma }) {
     this.escenaOrigen = data.origen ?? 'Menu';
-    this.idiomaAlAbrir = getIdioma();
+    this.idiomaAlAbrir = data.idiomaAlAbrir ?? getIdioma();
   }
 
   create() {
@@ -66,7 +68,7 @@ export class SettingsScene extends Phaser.Scene {
     crearBoton(this, width / 2, arriba + panelAlto - 110, t('volver'), () => this.cerrar(), Botones.crema);
 
     // Si cambia el tamaño de la pantalla, se vuelve a construir (los valores ya están guardados)
-    const alCambiarTamano = () => this.scene.restart({ origen: this.escenaOrigen });
+    const alCambiarTamano = () => this.scene.restart({ origen: this.escenaOrigen, idiomaAlAbrir: this.idiomaAlAbrir });
     this.scale.once(Phaser.Scale.Events.RESIZE, alCambiarTamano);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, alCambiarTamano));
   }
@@ -83,8 +85,9 @@ export class SettingsScene extends Phaser.Scene {
       const indice = CODIGOS_IDIOMA.indexOf(getIdioma());
       const siguiente = CODIGOS_IDIOMA[(indice + paso + CODIGOS_IDIOMA.length) % CODIGOS_IDIOMA.length];
       setIdioma(siguiente);
+      usarFuenteDeIdioma(siguiente);
       actualizarAjustes({ idioma: siguiente });
-      this.scene.restart({ origen: this.escenaOrigen }); // repinta los textos en el nuevo idioma
+      this.scene.restart({ origen: this.escenaOrigen, idiomaAlAbrir: this.idiomaAlAbrir }); // repinta los textos en el nuevo idioma
     };
 
     const estiloFlecha = { fontFamily: FUENTE, fontSize: '56px', color: colorFlecha };
