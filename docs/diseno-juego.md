@@ -380,8 +380,10 @@ Inspirado en un vídeo de referencia del usuario (solo tubos y animaciones; boto
 - **Música**: solo durante la partida, canciones aleatorias y sin fin (nunca la misma dos veces
   seguidas). Se para en el menú. Sonido intencionadamente "degradado".
 - Volúmenes independientes en Ajustes; al soltar el slider de efectos suena una muestra.
-- **Versión de CrazyGames**: no lleva estas canciones (por si tienen derechos); solo música libre
-  de derechos de `src/assets/musica-crazygames/` (de momento vacía: sin música, con efectos).
+- **Versión de CrazyGames**: no lleva estas canciones (por si tienen derechos); lleva 8 pistas
+  **CC0** tranquilas o de temática de hielo y cristal (CoMiGo, Écrivain y hernandack, de itch.io y
+  OpenGameArt), cada bucle repetido hasta ~2,5 min. Lista, autores y licencias en
+  `src/assets/musica-crazygames/LEEME.md`.
 
 ## Anuncios (solo en CrazyGames)
 
