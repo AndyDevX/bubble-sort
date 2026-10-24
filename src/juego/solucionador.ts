@@ -58,12 +58,70 @@ const AGOTADO = -2;
  */
 export function nodosHastaSolucion(tubos: Tubo[], limiteNodos = 40000, coloresObjetivo?: ColorId[], limiteMs = Infinity): number {
   const inicio = performance.now();
-  const { estado: inicial, cod } = codificar(tubos);
+  const { estado: inicial, completo, sucesores } = preparar(tubos, coloresObjetivo);
+
+  // Capacidad de cada tubo (el de emergencia tiene 1); va en la clave porque los índices no cambian
+  const capacidades = tubos.map(capacidadDe);
+  const clave = (e: string[]) => e.map((t, i) => capacidades[i] + t).sort().join('|');
+  const visitados = new Set<string>([clave(inicial)]);
+  const pila: string[][] = [inicial];
+  let nodos = 0;
+
+  while (pila.length > 0) {
+    const e = pila.pop()!;
+    if (completo(e)) return nodos;
+    if (++nodos > limiteNodos) return -1;
+    // Con límite de tiempo (en partida, para no dar tirones) se mira el reloj cada 256 estados
+    if ((nodos & 255) === 0 && performance.now() - inicio > limiteMs) return -1;
+
+    const hijos = sucesores(e).filter((h) => {
+      const k = clave(h.e);
+      if (visitados.has(k)) return false;
+      visitados.add(k);
+      return true;
+    });
+    // Los de mayor prioridad se exploran primero (se meten al final de la pila)
+    hijos.sort((a, b) => a.prioridad - b.prioridad);
+    for (const h of hijos) pila.push(h.e);
+  }
+  return AGOTADO;
+}
+
+/**
+ * Parte de las partidas que gana un jugador que juega **al azar** (sin deshacer la jugada
+ * anterior). Mide si un tablero es una trampa: si casi cualquier jugada lleva a un callejón sin
+ * salida, el jugador al azar casi nunca gana (los tableros normales de los primeros niveles los
+ * gana más de la mitad de las veces).
+ */
+export function exitoAlAzar(tubos: Tubo[], partidas: number, rnd: () => number = Math.random, maxJugadas = 120): number {
+  const { estado: inicial, completo, sucesores } = preparar(tubos);
+  let ganadas = 0;
+  for (let p = 0; p < partidas; p++) {
+    let e = inicial;
+    let anterior = '';
+    for (let j = 0; j < maxJugadas; j++) {
+      if (completo(e)) {
+        ganadas++;
+        break;
+      }
+      const opciones = sucesores(e).filter((h) => h.e.join('|') !== anterior);
+      if (opciones.length === 0) break;
+      anterior = e.join('|');
+      e = opciones[Math.floor(rnd() * opciones.length)].e;
+    }
+  }
+  return ganadas / partidas;
+}
+
+// Codifica el tablero y prepara la condición de victoria y las jugadas posibles desde un estado
+// (las mismas reglas que `evaluarMovimiento` en el juego: si cambian, hay que cambiarlas aquí)
+function preparar(tubos: Tubo[], coloresObjetivo?: ColorId[]) {
+  const { estado, cod } = codificar(tubos);
 
   // Letras que deben acabar selladas (las de lluvia no). Los ingredientes (mayúsculas) siempre.
   const objetivo = coloresObjetivo ? new Set(coloresObjetivo.map((c) => cod.letraDe.get(c)).filter((l) => l !== undefined)) : null;
-  const completo = (estado: string[]) =>
-    estado.every((t) => t === '#' || t === '' || (objetivo !== null && [...t].every((l) => l === l.toLowerCase() && !objetivo.has(l))));
+  const completo = (e: string[]) =>
+    e.every((t) => t === '#' || t === '' || (objetivo !== null && [...t].every((l) => l === l.toLowerCase() && !objetivo.has(l))));
 
   const fusionar = (x: string, y: string): string | null => {
     const cx = cod.colorDe.get(x.toLowerCase());
@@ -80,20 +138,8 @@ export function nodosHastaSolucion(tubos: Tubo[], limiteNodos = 40000, coloresOb
     return l;
   };
 
-  // Capacidad de cada tubo (el de emergencia tiene 1); va en la clave porque los índices no cambian
   const capacidades = tubos.map(capacidadDe);
-  const clave = (e: string[]) => e.map((t, i) => capacidades[i] + t).sort().join('|');
-  const visitados = new Set<string>([clave(inicial)]);
-  const pila: string[][] = [inicial];
-  let nodos = 0;
-
-  while (pila.length > 0) {
-    const e = pila.pop()!;
-    if (completo(e)) return nodos;
-    if (++nodos > limiteNodos) return -1;
-    // Con límite de tiempo (en partida, para no dar tirones) se mira el reloj cada 256 estados
-    if ((nodos & 255) === 0 && performance.now() - inicio > limiteMs) return -1;
-
+  const sucesores = (e: string[]) => {
     const hijos: { e: string[]; prioridad: number }[] = [];
     for (let o = 0; o < e.length; o++) {
       const desde = e[o];
@@ -132,15 +178,10 @@ export function nodosHastaSolucion(tubos: Tubo[], limiteNodos = 40000, coloresOb
         const siguiente = [...e];
         siguiente[o] = desde.slice(0, -quitar);
         siguiente[d] = sellable(nuevoHacia) ? '#' : nuevoHacia;
-        const k = clave(siguiente);
-        if (visitados.has(k)) continue;
-        visitados.add(k);
         hijos.push({ e: siguiente, prioridad });
       }
     }
-    // Los de mayor prioridad se exploran primero (se meten al final de la pila)
-    hijos.sort((a, b) => a.prioridad - b.prioridad);
-    for (const h of hijos) pila.push(h.e);
-  }
-  return AGOTADO;
+    return hijos;
+  };
+  return { estado, completo, sucesores };
 }

@@ -133,6 +133,10 @@ Hasta v0.1.11 no coincidían y el 100 % era optimista.
 solucionador permite **menos** jugadas que `evaluarMovimiento`, el jugador pierde partidas que sí
 tenían solución. Cualquier cambio en las reglas de movimiento va en los dos sitios (y en
 `scripts/lib/juego.mjs`).
+**Trampa**: «tiene solución» no basta para que un nivel sea justo. Un tablero puede tener una sola
+salida y castigar casi cualquier jugada (nivel 8 de v1.0.5). Si tocas el generador, mira también
+`exitoAlAzar` en los primeros niveles. Si cambias cómo se reparten los tableros, sube
+`VERSION_GENERADOR` para que los niveles guardados se regeneren.
 
 ### Registro de partidas (depuración)
 

@@ -1,6 +1,6 @@
 import { COLORES, type ColorId } from '../juego/colores';
 import { clonarTubos, type Tubo } from '../juego/modelo';
-import type { Nivel } from '../juego/niveles';
+import { VERSION_GENERADOR, type Nivel } from '../juego/niveles';
 
 // Configuración inicial del nivel en curso, para poder reiniciarlo igual
 // (también tras cerrar el juego). Se guarda al generar un nivel nuevo.
@@ -52,7 +52,8 @@ export function cargarNivel(numero: number): Nivel | null {
     if (!Array.isArray(coloresBase) || !coloresBase.every(esColor)) return null;
     if (!Array.isArray(coloresLluvia) || !coloresLluvia.every(esColor)) return null;
     if (!config || typeof config.intervaloLluviaMs !== 'number') return null;
-    return { tubos: clonarTubos(tubos, true), coloresBase, coloresLluvia, config };
+    if (datos.nivel.generador !== VERSION_GENERADOR) return null; // generado con reglas anteriores: se rehace
+    return { tubos: clonarTubos(tubos, true), coloresBase, coloresLluvia, config, generador: VERSION_GENERADOR };
   } catch {
     return null;
   }

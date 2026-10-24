@@ -166,6 +166,14 @@ empezar (poner una bola sobre otra de su color o fusionar) y más le cuesta al s
 eligen entre 4 (bloque 0) y 12 (bloque 4 en adelante), y 6 más en el nivel difícil
 (`candidatosPorNivel`, `dificultadTablero`). Resultado: hacen falta ~10 % más movimientos y el
 jugador casual gana bastante menos (11–20: 36 % → 25 %).
+**Sin tableros trampa** (v1.0.6): un nivel 8 traía un ingrediente solo en un tubo (únicamente
+aceptaba su pareja de fusión, así que el nivel se quedaba con un tubo libre) y casi cualquier
+jugada llevaba a un callejón sin salida: el usuario perdió nueve veces seguidas y, como ya no hay
+«Nivel nuevo», no podía salir de ese tablero. Ahora se descartan siempre los tableros con un tubo a
+medias de solo ingredientes y, en los bloques 0–2 (hasta el nivel 16), los que un jugador que
+juega **al azar** gana menos del 35 % (bloques 0–1) o del 15 % (bloque 2) de 24 partidas
+(`exitoMinimo`, `exitoAlAzar`; la media de esos niveles es 40–80 %). Los niveles guardados con el
+generador anterior se vuelven a generar (`VERSION_GENERADOR`).
 La dificultad va por **bloques**: un bloque va de un desbloqueo de color al siguiente (y, cuando
 ya no quedan colores, cada 10 niveles). Al principio sube con el número de nivel y después con
 **cada bloque**, sin estancarse hasta los topes (`configNivel` en `src/juego/niveles.ts`):
@@ -238,16 +246,18 @@ niebla y ritmo de la lluvia) y su estadística. Resultado (130 niveles × 15 mue
 
 | Niveles | Índice | Éxito del jugador casual |
 | --- | --- | --- |
-| 1–10 | 11 | 85 % |
-| 11–20 | 46 | 31 % |
-| 21–30 | 65 | 8 % |
-| 31–40 | 73 | 2 % |
-| 51–60 | 81 | 1 % |
+| 1–10 | 11 | 89 % |
+| 11–20 | 45 | 37 % |
+| 21–30 | 67 | 7 % |
+| 31–40 | 74 | 4 % |
+| 51–60 | 83 | 1 % |
 | 71–130 | ≈ 87 | ≈ 0 % |
 
 Con la lluvia de hielo (v1.0.5) la curva queda casi igual que con la lluvia anterior (v1.0.4:
 11–20 → 25 %, 21–30 → 5 %): se eligió un deshielo de 4–8 jugadas para compensar el tubo que la
 lluvia ya no trae.
+En v1.0.6, quitar los tableros trampa de los niveles 4–16 los hace algo más amables (11–20:
+31 % → 37 %); desde el nivel 17 no cambia nada.
 
 - La dificultad **sube con cada desbloqueo**: correlación bloque ↔ índice ρ = 0,99 (nivel ↔ índice
   0,88). Se aplana a partir del nivel ~70, cuando los parámetros llegan a sus topes.

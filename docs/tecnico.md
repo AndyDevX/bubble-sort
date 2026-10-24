@@ -104,6 +104,13 @@ BootScene ──► MenuScene ──► GameScene
   tableros resolubles y se queda con el de mayor `dificultadTablero` = log2(1 + nodos del
   solucionador) − 1,5 · pares de iguales seguidos − 0,75 · jugadas «gratis» iniciales. Coste en PC:
   hasta ~100 ms en los niveles difíciles altos (8 colores), ~20–35 ms en los normales.
+- Descarta tableros con un tubo a medias de solo ingredientes y, si `exitoMinimo(config)` > 0
+  (bloques 0–2), los que `exitoAlAzar(tubos, 24)` (partidas de un jugador al azar, en
+  `solucionador.ts`) gana por debajo de ese mínimo; si ninguno lo cumple, usa el que más se acerca.
+  El nivel lleva `generador: VERSION_GENERADOR`; `cargarNivel` rechaza los guardados de otra
+  versión (se regeneran), porque sin «Nivel nuevo» un tablero defectuoso se quedaría fijo.
+  `nodosHastaSolucion`, `estadoSolucion` y `exitoAlAzar` comparten `preparar` (codificación y
+  jugadas posibles).
 - `nodosHastaSolucion(tubos, límite, objetivo?)`: lo mismo que `tieneSolucion` pero devuelve los
   estados explorados (-1 si no encuentra solución); `tieneSolucion` lo usa por dentro.
 - `src/juego/solucionador.ts`: búsqueda en profundidad con tubos codificados como texto y

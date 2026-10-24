@@ -1,6 +1,6 @@
 import { FAMILIA, RECETAS, type ColorId } from './colores';
 import { CAPACIDAD, evaluarMovimiento, nuevaBola, type Bola, type Tubo } from './modelo';
-import { nodosHastaSolucion } from './solucionador';
+import { exitoAlAzar, nodosHastaSolucion } from './solucionador';
 
 export interface ConfigNivel {
   colores: number;          // grupos de 4 a ordenar
@@ -137,6 +137,33 @@ export interface Nivel {
   coloresBase: ColorId[];
   coloresLluvia: ColorId[]; // un color nuevo por cada tanda de lluvia
   config: ConfigNivel;
+  generador?: number; // VERSION_GENERADOR con la que se creó (los guardados de otra se regeneran)
+}
+
+// Sube al cambiar cómo se reparten los tableros: el nivel guardado de una versión anterior se
+// vuelve a generar (como ya no hay «Nivel nuevo», un tablero defectuoso no debe quedarse fijo).
+// 2 (v1.0.6): sin tubos de solo ingredientes ni tableros trampa en los primeros bloques.
+export const VERSION_GENERADOR = 2;
+
+/**
+ * Éxito mínimo de un jugador al azar (`exitoAlAzar`) para aceptar un tablero: en los primeros
+ * bloques no se admiten tableros trampa, en los que casi cualquier jugada lleva a un callejón sin
+ * salida (un nivel 8 así, con un 17 %, hizo perder al jugador nueve veces seguidas; la media de
+ * ese nivel es ~80 %). Más adelante la dificultad la marca el bloque y no se filtra.
+ */
+export function exitoMinimo(config: ConfigNivel): number {
+  if (config.bloque <= 1) return 0.35;
+  if (config.bloque === 2) return 0.15;
+  return 0;
+}
+const PARTIDAS_AL_AZAR = 24;
+
+/**
+ * Un tubo a medias con solo ingredientes no admite más que su pareja de fusión: en la práctica
+ * deja el nivel con un tubo libre menos. Esos tableros se descartan.
+ */
+function tuboSoloIngredientes(tubos: Tubo[]): boolean {
+  return tubos.some((t) => t.bolas.length > 0 && t.bolas.length < CAPACIDAD && t.bolas.every((b) => b.ingrediente));
 }
 
 type Aleatorio = () => number;
@@ -184,7 +211,11 @@ export function dificultadTablero(tubos: Tubo[], nodos: number): number {
 export function generarNivel(nivel: number, rnd: Aleatorio = Math.random): Nivel {
   const config = configNivel(nivel);
   const buscados = candidatosPorNivel(config, nivel);
-  let mejor: { tubos: Tubo[]; coloresBase: ColorId[]; coloresLluvia: ColorId[]; dificultad: number } | null = null;
+  const minimo = exitoMinimo(config);
+  type Candidato = { tubos: Tubo[]; coloresBase: ColorId[]; coloresLluvia: ColorId[]; dificultad: number };
+  let mejor: Candidato | null = null;
+  let respaldo: Candidato | null = null; // el más fácil de los descartados por trampa, por si no hubiera otro
+  let exitoRespaldo = -1;
   let encontrados = 0;
 
   for (let intento = 0; intento < 200 + buscados * 20 && encontrados < buscados; intento++) {
@@ -238,14 +269,25 @@ export function generarNivel(nivel: number, rnd: Aleatorio = Math.random): Nivel
     const yaResuelto = tubos.some(
       (t) => t.bolas.length === CAPACIDAD && t.bolas.every((b) => b.color === t.bolas[0].color && !b.ingrediente),
     );
-    if (yaResuelto) continue;
+    if (yaResuelto || tuboSoloIngredientes(tubos)) continue;
     const nodos = nodosHastaSolucion(tubos);
     if (nodos < 0) continue;
 
-    encontrados++;
     const dificultad = dificultadTablero(tubos, nodos);
+    if (minimo > 0) {
+      const exito = exitoAlAzar(tubos, PARTIDAS_AL_AZAR, rnd);
+      if (exito < minimo) {
+        if (exito > exitoRespaldo) {
+          exitoRespaldo = exito;
+          respaldo = { tubos, coloresBase, coloresLluvia, dificultad };
+        }
+        continue;
+      }
+    }
+    encontrados++;
     if (!mejor || dificultad > mejor.dificultad) mejor = { tubos, coloresBase, coloresLluvia, dificultad };
   }
+  mejor ??= respaldo;
   if (!mejor) throw new Error(`No se pudo generar el nivel ${nivel}`);
 
   const { tubos, coloresBase, coloresLluvia } = mejor;
@@ -258,5 +300,5 @@ export function generarNivel(nivel: number, rnd: Aleatorio = Math.random): Nivel
     }
   }
 
-  return { tubos, coloresBase, coloresLluvia, config };
+  return { tubos, coloresBase, coloresLluvia, config, generador: VERSION_GENERADOR };
 }

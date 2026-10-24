@@ -8,7 +8,8 @@ Al publicar, añade la nueva versión arriba del todo (lo indica la skill `publi
 
 | Versión | Build | Commit | Fecha | Cambios |
 | --- | --- | --- | --- | --- |
-| 1.0.5 | 34 | (este) | 2026-10-23 | **Lluvia nueva, temporal**: gotas de **hielo** que bloquean un tubo y se derriten tras 4–8 jugadas (con contador) y, desde el bloque 5, de **niebla** que vuelven a tapar bolas. Ya no aparece un tubo nuevo ni hay «lluvia justa». Derrota **«Sin solución»** cuando es seguro que la partida ya no se puede ganar. El solucionador acepta poner un ingrediente sobre una bola normal de su color, como el juego |
+| 1.0.6 | 35 | (este) | 2026-10-24 | **Corrige el nivel 8 imposible de pasar**: el generador ya no deja un ingrediente solo en un tubo ni, hasta el nivel 16, tableros trampa (los que un jugador al azar casi nunca gana). Los niveles guardados de antes se regeneran |
+| 1.0.5 | 34 | b367b97 | 2026-10-23 | **Lluvia nueva, temporal**: gotas de **hielo** que bloquean un tubo y se derriten tras 4–8 jugadas (con contador) y, desde el bloque 5, de **niebla** que vuelven a tapar bolas. Ya no aparece un tubo nuevo ni hay «lluvia justa». Derrota **«Sin solución»** cuando es seguro que la partida ya no se puede ganar. El solucionador acepta poner un ingrediente sobre una bola normal de su color, como el juego |
 | 1.0.4 | 33 | 9e1ef3f | 2026-10-23 | **Tableros más revueltos**: cada nivel elige el más difícil entre varios tableros resolubles (menos bolas juntas, menos jugadas fáciles al empezar); ~10 % más movimientos para ganar. Se quita «Nivel nuevo» (todos los niveles tienen solución) |
 | 1.0.3 | 32 | d5f7562 | 2026-10-23 | Actualización de la app más clara: se instala en cuanto termina de descargarse si estás en el menú, el menú dice «Descargando…» / «Instalando…» o si falló, y cada intento queda en el registro de depuración |
 | 1.0.2 | 31 | 66ce5c3 | 2026-10-23 | Lista de pendientes (`docs/pendientes.md`): comprobaciones, seguridad, anuncios y Play Store |
