@@ -1,6 +1,7 @@
 import { COLORES, type ColorId } from '../juego/colores';
+import { almacen } from './almacen';
 
-// Estadísticas del jugador en localStorage (pantalla «Estadísticas» del menú).
+// Estadísticas del jugador (pantalla «Estadísticas» del menú), en el almacén de almacen.ts.
 // Se guardan con un pequeño retraso para no escribir en cada jugada.
 
 export type Habilidad = 'deshacer' | 'tuboExtra' | 'gravedad';
@@ -40,7 +41,7 @@ function porColor(v: unknown): Partial<Record<ColorId, number>> {
 
 function cargar(): Estadisticas {
   try {
-    const d = JSON.parse(localStorage.getItem(CLAVE) ?? '{}') as Record<string, unknown>;
+    const d = JSON.parse(almacen.getItem(CLAVE) ?? '{}') as Record<string, unknown>;
     const h = (d.habilidades ?? {}) as Record<string, unknown>;
     return {
       nivelesSuperados: entero(d.nivelesSuperados),
@@ -55,14 +56,16 @@ function cargar(): Estadisticas {
   }
 }
 
-let actual = cargar();
+// Se lee la primera vez que se pide (en CrazyGames, después de iniciar su SDK: ver almacen.ts)
+let actualCache: ReturnType<typeof cargar> | null = null;
+const actualDatos = () => (actualCache ??= cargar());
 let pendiente: ReturnType<typeof setTimeout> | null = null;
 
 function escribir() {
   if (pendiente) clearTimeout(pendiente);
   pendiente = null;
   try {
-    localStorage.setItem(CLAVE, JSON.stringify(actual));
+    almacen.setItem(CLAVE, JSON.stringify(actualDatos()));
   } catch {
     // Sin almacenamiento: las estadísticas duran solo esta sesión
   }
@@ -79,35 +82,35 @@ if (typeof window !== 'undefined') {
 }
 
 export function getEstadisticas(): Readonly<Estadisticas> {
-  return actual;
+  return actualDatos();
 }
 
 export function sumarNivel(tipo: 'nivelesSuperados' | 'nivelesGenerados' | 'nivelesFallidos'): void {
-  actual[tipo]++;
+  actualDatos()[tipo]++;
   guardar();
 }
 
 export function sumarHabilidad(habilidad: Habilidad): void {
-  actual.habilidades[habilidad]++;
+  actualDatos().habilidades[habilidad]++;
   guardar();
 }
 
 export function sumarColor(tipo: 'tubosLlenos' | 'canicasMovidas', color: ColorId, cantidad = 1): void {
-  actual[tipo][color] = (actual[tipo][color] ?? 0) + cantidad;
+  actualDatos()[tipo][color] = (actualDatos()[tipo][color] ?? 0) + cantidad;
   guardar();
 }
 
 // Total de todos los colores
 export function total(tipo: 'tubosLlenos' | 'canicasMovidas'): number {
-  return Object.values(actual[tipo]).reduce((a, b) => a + (b ?? 0), 0);
+  return Object.values(actualDatos()[tipo]).reduce((a, b) => a + (b ?? 0), 0);
 }
 
 export function borrarEstadisticas(): void {
-  actual = vacias();
+  actualCache = vacias();
   if (pendiente) clearTimeout(pendiente);
   pendiente = null;
   try {
-    localStorage.removeItem(CLAVE);
+    almacen.removeItem(CLAVE);
   } catch {
     // Sin almacenamiento: basta con la copia en memoria
   }

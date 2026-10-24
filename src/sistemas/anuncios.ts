@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { EN_CRAZYGAMES } from '../plataforma';
+import { usarDataModule } from './almacen';
 import { registrar } from './registro';
 
 // Anuncios (solo en el build de CrazyGames; en la web y en la app no hay ninguno y todo esto no
@@ -10,7 +11,8 @@ import { registrar } from './registro';
 //   ganar).
 // Durante el anuncio el sonido se silencia y la partida no avanza; si no hay anuncio (bloqueador,
 // sin conexión, sin inventario) el juego sigue igual, sin recompensa.
-// Además se avisa al SDK de cuándo se está cargando y cuándo se juega (lo pide CrazyGames).
+// Además se avisa al SDK de cuándo se está cargando y cuándo se juega (lo pide CrazyGames), y el
+// progreso pasa a guardarse en su Data Module (`almacen.ts`).
 
 interface SdkCrazyGames {
   init(): Promise<void>;
@@ -32,8 +34,10 @@ export async function iniciarAnuncios(): Promise<void> {
   const s = sdk();
   if (!s) return; // el script del SDK no cargó (sin conexión o bloqueado): el juego va sin anuncios
   try {
-    await s.init();
+    // Si el SDK no responde en 5 s, el juego arranca igual (sin anuncios, guardando en el navegador)
+    await Promise.race([s.init(), new Promise((_, fallo) => setTimeout(() => fallo(new Error('sin respuesta')), 5000))]);
     listo = true;
+    usarDataModule();
     s.game.loadingStart();
   } catch {
     listo = false;

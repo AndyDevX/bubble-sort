@@ -83,8 +83,11 @@ Menores, sin prisa:
   versión.
 - [x] **Tú** — Permitir `opengameart.org` e itch.io en la red del entorno.
 - [x] **Claude** — 8 pistas CC0 en `src/assets/musica-crazygames/` (licencias en su LEEME.md).
-- [ ] **Tú** — Subir el .zip de la última Release `crazygames-v…` en el portal de desarrolladores
-  de CrazyGames, con portada, descripción y categoría (Claude puede proponer los textos).
+- [ ] **Tú** — Subir a CrazyGames la última Release `crazygames-v…`: descomprimir el .zip y
+  arrastrar los archivos (el portal no acepta .zip); marcar «Data Module» en el progreso guardado,
+  orientación vertical, compatible con móvil. Después: portada, descripción y categoría.
+- [ ] **Claude** — (opcional) Silenciar el audio con el ajuste de CrazyGames («muting audio through
+  SDK»).
 - [ ] **Tú** — Decidir lo de la exclusividad antes de subirlo a GameDistribution.
 
 ## 6. Anuncios en la web propia (más adelante)

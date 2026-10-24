@@ -1,6 +1,7 @@
 import { COLORES, type ColorId } from '../juego/colores';
 import { clonarTubos, type Tubo } from '../juego/modelo';
 import { VERSION_GENERADOR, type Nivel } from '../juego/niveles';
+import { almacen } from './almacen';
 
 // Configuración inicial del nivel en curso, para poder reiniciarlo igual
 // (también tras cerrar el juego). Se guarda al generar un nivel nuevo.
@@ -30,7 +31,7 @@ function esTuboValido(t: unknown): t is Tubo {
 export function guardarNivel(numero: number, nivel: Nivel): void {
   enMemoria = JSON.stringify({ numero, nivel } satisfies NivelGuardado);
   try {
-    localStorage.setItem(CLAVE, enMemoria);
+    almacen.setItem(CLAVE, enMemoria);
   } catch {
     // Sin almacenamiento: reiniciar seguirá funcionando mientras no se cierre el juego
   }
@@ -41,7 +42,7 @@ export function cargarNivel(numero: number): Nivel | null {
   try {
     let texto: string | null = null;
     try {
-      texto = localStorage.getItem(CLAVE);
+      texto = almacen.getItem(CLAVE);
     } catch {
       // sin acceso al almacenamiento: se usa la copia en memoria
     }
@@ -62,7 +63,7 @@ export function cargarNivel(numero: number): Nivel | null {
 export function borrarNivelGuardado(): void {
   enMemoria = null;
   try {
-    localStorage.removeItem(CLAVE);
+    almacen.removeItem(CLAVE);
   } catch {
     // Sin almacenamiento: basta con la copia en memoria
   }

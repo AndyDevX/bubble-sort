@@ -360,6 +360,16 @@ crea un archivo con las mismas claves que `es.ts` y se registra en `src/i18n/ind
   - Durante el anuncio se silencia el sonido y la partida está en pausa; si no hay anuncio
     (bloqueador, sin conexión) no pasa nada y no hay recompensa. Cada anuncio queda en el registro
     (`anuncio`, `regalo`).
+- **Progreso guardado**: `src/sistemas/almacen.ts`. En CrazyGames, partida, nivel en curso,
+  ajustes y estadísticas van al **Data Module** del SDK (misma API que `localStorage`; guarda en la
+  cuenta del jugador y lo sincroniza entre dispositivos; para invitados usa `localStorage`). Hay
+  que iniciar el SDK **antes** de leer nada: `main.ts` espera a `iniciarAnuncios` (máx. 5 s) para
+  crear el juego, y `guardado`, `ajustes` y `estadisticas` leen la primera vez que se piden, no al
+  importarse. El registro de depuración se queda en `localStorage` (es grande). En el envío al
+  portal hay que marcar «Yes, using the Data Module» o el SDK lo desactiva. No se usa el *Automatic
+  Progress Save*: no está permitido en juegos con compras dentro del juego.
+- **Subir al portal**: no acepta .zip; hay que descomprimirlo y arrastrar los archivos (index.html,
+  favicon.svg y la carpeta assets).
 - **Release**: `.github/workflows/crazygames.yml` → en cada versión, Release
   `crazygames-vX.Y.Z` con `odi-sort-crazygames-vX.Y.Z.zip` (se sube tal cual al portal). Se crea con
   `--latest=false`: la última Release debe seguir siendo la del APK (el aviso de «app nueva» enlaza

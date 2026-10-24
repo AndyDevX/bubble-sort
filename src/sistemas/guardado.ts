@@ -1,4 +1,6 @@
-// Progreso de la partida en localStorage
+import { almacen } from './almacen';
+
+// Progreso de la partida (localStorage o, en CrazyGames, su Data Module: ver almacen.ts)
 
 // Habilidades compradas en la tienda (usos que quedan; no caducan al cambiar de nivel)
 export interface Inventario {
@@ -25,7 +27,7 @@ function entero(valor: unknown, porDefecto: number, minimo: number): number {
 
 function cargar(): Guardado {
   try {
-    const datos = JSON.parse(localStorage.getItem(CLAVE_GUARDADO) ?? '{}') as Partial<Record<keyof Guardado, unknown>>;
+    const datos = JSON.parse(almacen.getItem(CLAVE_GUARDADO) ?? '{}') as Partial<Record<keyof Guardado, unknown>>;
     // Los guardados anteriores a la tienda no tienen inventario: se empieza con 0
     const inventario = (datos.inventario ?? {}) as Partial<Record<Articulo, unknown>>;
     return {
@@ -42,16 +44,18 @@ function cargar(): Guardado {
   }
 }
 
-let actual = cargar();
+// Se lee la primera vez que se pide (en CrazyGames, después de iniciar su SDK: ver almacen.ts)
+let actualCache: ReturnType<typeof cargar> | null = null;
+const actualDatos = () => (actualCache ??= cargar());
 
 export function getGuardado(): Readonly<Guardado> {
-  return actual;
+  return actualDatos();
 }
 
 export function actualizarGuardado(cambios: Partial<Guardado>): void {
-  actual = { ...actual, ...cambios };
+  actualCache = { ...actualDatos(), ...cambios };
   try {
-    localStorage.setItem(CLAVE_GUARDADO, JSON.stringify(actual));
+    almacen.setItem(CLAVE_GUARDADO, JSON.stringify(actualDatos()));
   } catch {
     // Sin almacenamiento disponible: el progreso dura solo esta sesión
   }
@@ -59,9 +63,9 @@ export function actualizarGuardado(cambios: Partial<Guardado>): void {
 
 // Borra todo el progreso (nivel, récord, monedas e inventario). Los ajustes no se tocan.
 export function borrarProgreso(): void {
-  actual = { ...POR_DEFECTO, inventario: { ...POR_DEFECTO.inventario } };
+  actualCache = { ...POR_DEFECTO, inventario: { ...POR_DEFECTO.inventario } };
   try {
-    localStorage.removeItem(CLAVE_GUARDADO);
+    almacen.removeItem(CLAVE_GUARDADO);
   } catch {
     // Sin almacenamiento: basta con la copia en memoria
   }

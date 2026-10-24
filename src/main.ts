@@ -44,14 +44,17 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [BootScene, MenuScene, GameScene, DialogoScene, TiendaScene, ColeccionScene, EstadisticasScene, RegistroScene, SettingsScene],
 };
 
-setIdioma(getAjustes().idioma);
+// En CrazyGames el progreso se guarda con su SDK: hay que iniciarlo antes de leer los ajustes y la
+// partida (en la web `iniciarAnuncios` no hace nada y termina al momento)
+void iniciarAnuncios().then(() => {
+  setIdioma(getAjustes().idioma);
 
-const juego = new Phaser.Game(config);
-registrarCacheOffline();
-iniciarActualizaciones();
-void iniciarAnuncios();
+  const juego = new Phaser.Game(config);
+  registrarCacheOffline();
+  iniciarActualizaciones();
 
-if (import.meta.env.DEV) {
-  Object.assign(window, { juego }); // para depurar desde la consola del navegador
-  void import('./sistemas/medidorFps').then(({ mostrarMedidorFps }) => mostrarMedidorFps(juego));
-}
+  if (import.meta.env.DEV) {
+    Object.assign(window, { juego }); // para depurar desde la consola del navegador
+    void import('./sistemas/medidorFps').then(({ mostrarMedidorFps }) => mostrarMedidorFps(juego));
+  }
+});

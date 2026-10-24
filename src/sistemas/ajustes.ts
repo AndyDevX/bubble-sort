@@ -1,4 +1,5 @@
 import { esIdiomaValido, type CodigoIdioma } from '../i18n';
+import { almacen } from './almacen';
 
 export interface Ajustes {
   volumenMusica: number;  // 0..1
@@ -20,7 +21,7 @@ function limitar(valor: unknown, porDefecto: number): number {
 
 function cargar(): Ajustes {
   try {
-    const datos = JSON.parse(localStorage.getItem(CLAVE_GUARDADO) ?? '{}') as Partial<Record<keyof Ajustes, unknown>>;
+    const datos = JSON.parse(almacen.getItem(CLAVE_GUARDADO) ?? '{}') as Partial<Record<keyof Ajustes, unknown>>;
     return {
       volumenMusica: limitar(datos.volumenMusica, POR_DEFECTO.volumenMusica),
       volumenEfectos: limitar(datos.volumenEfectos, POR_DEFECTO.volumenEfectos),
@@ -31,16 +32,18 @@ function cargar(): Ajustes {
   }
 }
 
-let actuales = cargar();
+// Se lee la primera vez que se pide (en CrazyGames, después de iniciar su SDK: ver almacen.ts)
+let actualesCache: ReturnType<typeof cargar> | null = null;
+const actualesDatos = () => (actualesCache ??= cargar());
 
 export function getAjustes(): Readonly<Ajustes> {
-  return actuales;
+  return actualesDatos();
 }
 
 export function actualizarAjustes(cambios: Partial<Ajustes>): void {
-  actuales = { ...actuales, ...cambios };
+  actualesCache = { ...actualesDatos(), ...cambios };
   try {
-    localStorage.setItem(CLAVE_GUARDADO, JSON.stringify(actuales));
+    almacen.setItem(CLAVE_GUARDADO, JSON.stringify(actualesDatos()));
   } catch {
     // Sin almacenamiento disponible: los ajustes duran solo esta sesión
   }
