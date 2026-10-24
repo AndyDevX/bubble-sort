@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { Colores } from '../constantes';
 import { crearBoton } from '../ui/Boton';
 
-export type AccionDialogo = 'continuar' | 'deshacer' | 'reiniciar' | 'siguiente' | 'tienda' | 'ajustes' | 'menu';
+export type AccionDialogo = 'continuar' | 'deshacer' | 'seguir' | 'reiniciar' | 'siguiente' | 'tienda' | 'ajustes' | 'menu';
 
 export interface DatosDialogo {
   titulo: string;
@@ -29,19 +29,26 @@ export class DialogoScene extends Phaser.Scene {
     const { titulo, texto, bola, botones } = this.datos;
 
     // Fondo oscuro que además bloquea los toques a la partida
-    this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6).setInteractive();
+    this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6).setInteractive().setDepth(-2);
 
     const separacion = 140;
     const altoBola = bola ? 170 : 0; // hueco para la bola, entre el título y el texto
-    const lineasExtra = texto ? texto.split('\n').length - 1 : 0; // el texto puede tener varias líneas
-    const primerBoton = (texto ? 270 + lineasExtra * 40 : 200) + altoBola; // distancia del borde superior al primer botón
-    const altoPanel = primerBoton + (botones.length - 1) * separacion + 115;
     const anchoPanel = Math.min(620, width - 60);
+    // El texto se parte en líneas para caber en el panel; su alto real coloca lo demás
+    const objetoTexto = texto
+      ? this.add
+          .text(width / 2, 0, texto, { fontFamily: 'sans-serif', fontSize: '32px', color: '#aaaacc', align: 'center', wordWrap: { width: anchoPanel - 70, useAdvancedWrap: true } })
+          .setOrigin(0.5)
+      : null;
+    const altoTexto = objetoTexto?.height ?? 0;
+    const primerBoton = (texto ? 230 + altoTexto : 200) + altoBola; // distancia del borde superior al primer botón
+    const altoPanel = primerBoton + (botones.length - 1) * separacion + 115;
     const arriba = (height - altoPanel) / 2;
     this.add
       .graphics()
       .fillStyle(Colores.panel)
-      .fillRoundedRect((width - anchoPanel) / 2, arriba, anchoPanel, altoPanel, 32);
+      .fillRoundedRect((width - anchoPanel) / 2, arriba, anchoPanel, altoPanel, 32)
+      .setDepth(-1);
 
     this.add
       .text(width / 2, arriba + 90, titulo, { fontFamily: 'sans-serif', fontSize: '56px', color: '#ffffff', fontStyle: 'bold' })
@@ -61,11 +68,7 @@ export class DialogoScene extends Phaser.Scene {
       });
     }
 
-    if (texto) {
-      this.add
-        .text(width / 2, arriba + 165 + altoBola + lineasExtra * 20, texto, { fontFamily: 'sans-serif', fontSize: '32px', color: '#aaaacc', align: 'center' })
-        .setOrigin(0.5);
-    }
+    objetoTexto?.setY(arriba + 145 + altoBola + altoTexto / 2);
 
     let y = arriba + primerBoton;
 
@@ -92,11 +95,13 @@ export class DialogoScene extends Phaser.Scene {
         this.scene.stop();
         this.scene.resume('Game');
         break;
-      case 'deshacer': {
+      case 'deshacer':
+      case 'seguir': {
+        // Deshacer la última jugada o seguir jugando una partida que ya no tiene solución
         const juego = this.scene.get('Game');
         this.scene.stop();
         this.scene.resume('Game');
-        juego.events.emit('deshacer');
+        juego.events.emit(accion);
         break;
       }
       case 'reiniciar': // mismo nivel, misma configuración inicial

@@ -115,6 +115,7 @@ export class GameScene extends Phaser.Scene {
   private tuboUsado = false; // el tubo de emergencia se puede poner una vez por nivel
   // Estadísticas: cada derrota y cada color sellado cuentan una vez por partida (deshacer no duplica)
   private derrotaContada = false;
+  private sinSolucionAceptada = false; // «Seguir jugando» tras «Sin solución»: no se vuelve a avisar
   private sellosContados = new Set<ColorId>();
 
   private chispas!: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -162,6 +163,7 @@ export class GameScene extends Phaser.Scene {
     this.historial = [];
     this.tuboUsado = false;
     this.derrotaContada = false;
+    this.sinSolucionAceptada = false;
     this.sellosContados = new Set();
     this.sonidoAlarma = null;
   }
@@ -217,6 +219,8 @@ export class GameScene extends Phaser.Scene {
     // El diálogo de derrota puede pedir deshacer
     const alPedirDeshacer = () => this.deshacer();
     this.events.on('deshacer', alPedirDeshacer);
+    const alSeguir = () => this.seguirSinSolucion();
+    this.events.on('seguir', alSeguir);
     // Al volver de la tienda (directa o desde la pausa) puede haber cambiado el inventario
     const alReanudar = () => {
       registrar('reanudar');
@@ -229,6 +233,7 @@ export class GameScene extends Phaser.Scene {
       // Si se sale sin ganar ni perder (menú, reiniciar, nivel nuevo), el nivel queda como «salida»
       cerrarRegistroNivel('salida', { puntos: this.puntos }, this.tubos);
       this.events.off('deshacer', alPedirDeshacer);
+      this.events.off('seguir', alSeguir);
       this.events.off(Phaser.Scenes.Events.RESUME, alReanudar);
       this.events.off(Phaser.Scenes.Events.PAUSE, alPausar);
       this.pararLluvia(); // también corta la alarma si estaba sonando
@@ -1240,6 +1245,7 @@ export class GameScene extends Phaser.Scene {
   // ¿Sigue habiendo forma de ganar? El hielo no cuenta (se derrite). Si es seguro que no la hay,
   // ni siquiera con las ayudas que quedan (Gravedad cargada o tubo de emergencia), es derrota.
   private comprobarSolucion() {
+    if (this.sinSolucionAceptada) return;
     const objetivo = this.nivel.coloresBase;
     const inicio = performance.now();
     const tablero = sinHielo(this.tubos);
@@ -1253,8 +1259,32 @@ export class GameScene extends Phaser.Scene {
     const conTubo = () => estadoSolucion([...tablero, { bolas: [], sellado: false, capacidad: 1 }], NODOS_COMPROBACION, objetivo, MS_COMPROBACION) !== 'no';
     if (this.carga >= PUNTOS_CARGA && conGravedad()) return;
     if (this.tuboDisponible() && conTubo()) return;
-    registrar('sinSolucion', { calculoMs: Math.round(performance.now() - inicio), tubos: describirTubos(this.tubos).join(' ') });
-    this.derrota('sinSolucion');
+    const salvacion = this.jugadasParaSalvar();
+    registrar('sinSolucion', { calculoMs: Math.round(performance.now() - inicio), deshacerParaSalvar: salvacion, tubos: describirTubos(this.tubos).join(' ') });
+    this.derrota('sinSolucion', salvacion);
+  }
+
+  // Cuántas jugadas hay que deshacer para volver a tener solución (null si no se sabe en las 10
+  // últimas): se dice en la ventana de «Sin solución» para que se entienda qué falló
+  private jugadasParaSalvar(): number | null {
+    const objetivo = this.nivel.coloresBase;
+    for (let k = 1; k <= Math.min(10, this.historial.length); k++) {
+      const previo = this.historial[this.historial.length - k];
+      if (estadoSolucion(sinHielo(previo.tubos), NODOS_COMPROBACION, objetivo, MS_COMPROBACION) === 'si') return k;
+    }
+    return null;
+  }
+
+  // «Seguir jugando» tras «Sin solución»: la derrota ya contó, pero el jugador puede comprobar que no
+  // hay salida (o seguir hasta quedarse sin jugadas). Deshacer vuelve a activar el aviso.
+  private seguirSinSolucion() {
+    reabrirRegistroNivel();
+    registrar('seguirJugando');
+    this.sinSolucionAceptada = true;
+    this.terminado = false;
+    if (this.lluviaIniciada && this.lluviaPendiente.length > 0) this.arrancarLluvia();
+    this.actualizarDeshacer();
+    this.actualizarTuboEmergencia();
   }
 
   // ───────────────────────── Fin y pausa ─────────────────────────
@@ -1314,7 +1344,7 @@ export class GameScene extends Phaser.Scene {
     );
   }
 
-  private derrota(motivo: 'sinMovimientos' | 'sinSolucion') {
+  private derrota(motivo: 'sinMovimientos' | 'sinSolucion', salvacion: number | null = null) {
     this.terminado = true;
     cerrarRegistroNivel('derrota', { motivo, puntos: this.puntos, deshacerDisponible: this.puedeDeshacer() }, this.tubos);
     if (!this.derrotaContada) {
@@ -1329,10 +1359,15 @@ export class GameScene extends Phaser.Scene {
 
     const dialogo = (): DatosDialogo => ({
       titulo: motivo === 'sinSolucion' ? t('sinSolucion') : t('sinSalida'),
-      texto: motivo === 'sinSolucion' ? t('sinSolucionTexto') : t('sinMovimientos'),
+      texto:
+        motivo === 'sinSolucion'
+          ? t('sinSolucionTexto') + (salvacion !== null ? '\n' + t(salvacion === 1 ? 'sinSolucionPista1' : 'sinSolucionPista', { n: salvacion }) : '')
+          : t('sinMovimientos'),
       botones: [
         // Con deshacer comprados se puede volver atrás en vez de perder
         ...(this.puedeDeshacer() ? [{ texto: t('deshacer', { n: cantidadDe('deshacer') }), accion: 'deshacer' as const }] : []),
+        // Sin solución aún quedan jugadas: se puede seguir para comprobarlo (la derrota ya cuenta)
+        ...(motivo === 'sinSolucion' ? [{ texto: t('seguirJugando'), accion: 'seguir' as const }] : []),
         { texto: t('reiniciarNivel'), accion: 'reiniciar' },
         { texto: t('tienda'), accion: 'tienda' },
         { texto: t('menu'), accion: 'menu' },
@@ -1411,6 +1446,7 @@ export class GameScene extends Phaser.Scene {
     this.lluviaIniciada = previo.lluviaIniciada;
     this.seleccionado = null;
     this.terminado = false;
+    this.sinSolucionAceptada = false;
 
     // La lluvia vuelve a como estaba
     if (this.lluviaIniciada && this.lluviaPendiente.length > 0) this.arrancarLluvia();

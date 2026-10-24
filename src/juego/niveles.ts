@@ -88,7 +88,7 @@ export function configNivel(nivel: number): ConfigNivel {
   // Los colores se calculan dejando sitio a los 2 ingredientes (mínimo 3), así no bajan cuando
   // llega la primera fusión; la fusión se activa en cuanto cabe en la paleta.
   const colores = nivel < 3 ? 3 : Math.max(3, Math.min(coloresPorNivel(nivel, bloque), desbloqueados - 2));
-  let fusiones = nivel < 3 ? 0 : nivel < 9 ? 1 : bloque >= 10 ? 3 : 2;
+  let fusiones = nivel < 3 ? 0 : nivel < 9 ? 1 : bloque >= 8 ? 4 : bloque >= 4 ? 3 : 2;
   let lotesLluvia = nivel < 9 ? 1 : bloque >= 7 ? 3 : 2;
   // La niebla crece con el nivel hasta el 60 % y después con el bloque, hasta el 80 %
   let niebla = Math.min((nivel - 1) * 0.05, Math.min(0.8, 0.6 + 0.015 * bloque));
@@ -143,7 +143,8 @@ export interface Nivel {
 // Sube al cambiar cómo se reparten los tableros: el nivel guardado de una versión anterior se
 // vuelve a generar (como ya no hay «Nivel nuevo», un tablero defectuoso no debe quedarse fijo).
 // 2 (v1.0.6): sin tubos de solo ingredientes ni tableros trampa en los primeros bloques.
-export const VERSION_GENERADOR = 2;
+// 3 (v1.0.7): las bolas sobrantes de las fusiones van en su propio tubo (siempre 2 tubos libres).
+export const VERSION_GENERADOR = 3;
 
 /**
  * Éxito mínimo de un jugador al azar (`exitoAlAzar`) para aceptar un tablero: en los primeros
@@ -261,7 +262,11 @@ export function generarNivel(nivel: number, rnd: Aleatorio = Math.random): Nivel
     }
     barajar(bolas, rnd);
 
-    const totalTubos = config.colores + config.tubosVacios;
+    // Cada fusión parte un color en dos ingredientes y añade una bola: las que sobran van en su
+    // propio tubo, para que queden siempre `tubosVacios` tubos realmente vacíos. Antes ocupaban uno
+    // de los vacíos y con 3–4 fusiones el nivel se quedaba con ~1,25 tubos libres: casi cualquier
+    // jugada a un tubo vacío dejaba la partida sin solución (v1.0.6, 1000 niveles analizados).
+    const totalTubos = Math.ceil(bolas.length / CAPACIDAD) + config.tubosVacios;
     const tubos: Tubo[] = Array.from({ length: totalTubos }, () => ({ bolas: [], sellado: false }));
     bolas.forEach((b, i) => tubos[Math.floor(i / CAPACIDAD)].bolas.push(b));
 

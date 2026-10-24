@@ -104,6 +104,8 @@ BootScene ──► MenuScene ──► GameScene
   tableros resolubles y se queda con el de mayor `dificultadTablero` = log2(1 + nodos del
   solucionador) − 1,5 · pares de iguales seguidos − 0,75 · jugadas «gratis» iniciales. Coste en PC:
   hasta ~100 ms en los niveles difíciles altos (8 colores), ~20–35 ms en los normales.
+- Tubos = `ceil(bolas / 4)` + `tubosVacios` (2): las bolas que añaden las fusiones van en su
+  propio tubo y nunca ocupan los vacíos (v1.0.7, `VERSION_GENERADOR` 3).
 - Descarta tableros con un tubo a medias de solo ingredientes y, si `exitoMinimo(config)` > 0
   (bloques 0–2), los que `exitoAlAzar(tubos, 24)` (partidas de un jugador al azar, en
   `solucionador.ts`) gana por debajo de ese mínimo; si ninguno lo cumple, usa el que más se acerca.
@@ -160,6 +162,10 @@ bloque 5, `niebla` con `probNieblaDe`) y la espera antes de cada una (intervalo 
 **todos** los estados sin solución: es seguro) o `'desconocido'` (se acabó el límite de nodos o de tiempo). Solo con
 `'no'` se prueba además con la Gravedad (si está cargada) y con el tubo de emergencia (si queda
 uno disponible); si tampoco, derrota `sinSolucion`. Cada búsqueda para a los 12 ms (`MS_COMPROBACION`) para no dar tirones: en el PC la mayoría tarda 2–3 ms, pero los tableros más difíciles llegan a ~130 ms sin ese tope.
+La ventana dice cuántas jugadas deshacer para volver a tener solución (`jugadasParaSalvar`: prueba
+las 10 últimas instantáneas, sin hielo) y ofrece «Seguir jugando» (`accion: 'seguir'` →
+evento `seguir` → `seguirSinSolucion`: reabre el registro, `sinSolucionAceptada` evita volver a
+avisar hasta deshacer; la derrota ya contó en estadísticas).
 **El solucionador debe permitir exactamente las mismas jugadas que el juego** (si permite menos,
 daría «Sin solución» en partidas que sí la tienen). Por eso en v1.0.5 se corrigió: un ingrediente
 se puede poner sobre una bola normal de su color (y al revés), como en `evaluarMovimiento`.
@@ -232,9 +238,14 @@ nivel no llega al 100 %.
   se empieza con 4 básicos, luego el resto de básicos y al final los especiales, cada desbloqueo
   entre 5 y 12 niveles después del anterior, los desbloqueos siguen `ORDEN_COLORES`, el color nuevo sale en su nivel,
   la curva de colores no baja y los colores necesarios están desbloqueados.
-- `npm run analizar [niveles=60 muestras=20 obvia=0.6 ms=1500]` (`scripts/analizar-dificultad.mjs`):
+- `npm run analizar [niveles=60 muestras=20 intentos=8 obvia=0.6 ms=1500 tramo=10 salida=analisis-dificultad]` (`scripts/analizar-dificultad.mjs`):
   índice de dificultad por nivel y estadística (Spearman, pendientes, retrocesos, mesetas) →
-  `docs/analisis-dificultad.md` + `.svg`. El jugador casual juega con la lluvia de hielo y tiempo real (no modela la niebla).
+  `docs/analisis-dificultad.md` + `.svg`. El jugador casual juega con la lluvia de hielo y tiempo real (no modela la niebla) y
+  pierde como en el juego: «Sin solución» tras cada jugada (resolver sin hielo, 30000 nodos, solo
+  si la búsqueda se agota), «sin movimientos» o por tiempo. La tabla «Cómo pierde» da, por tramo,
+  cuántas derrotas son «Sin solución» con jugadas disponibles y en qué jugada (mediana): si esa
+  jugada es muy baja (2–3), hay tableros trampa. Para 1000 niveles:
+  `niveles=1000 muestras=5 intentos=4 tramo=50 salida=analisis-1000` (~5 min).
 - `scripts/lib/juego.mjs`: compilación de `src/juego` y motor de búsqueda compartidos por ambos
   scripts. `crearLluvia(plan, …)` reproduce la lluvia del juego (plan, alerta, hielo con `HIELO` = `~` en
   el estado, deshielo por jugadas con `trasJugada`, `derretirUno` sin jugadas): si cambia la

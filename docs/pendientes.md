@@ -12,8 +12,8 @@ que ya no aplique. Detalles de seguridad en [seguridad.md](./seguridad.md).
 - [x] **Tú** — Jugar con la lluvia nueva y pasar un registro.
 - [x] **Claude** — Ajustar la dificultad con ese registro: v1.0.4 elige tableros más revueltos y
   quita «Nivel nuevo».
-- [ ] **Tú** — Jugar la v1.0.5 (lluvia de hielo y niebla, derrota «Sin solución») y pasar otro
-  registro: ¿se entiende el hielo, la dificultad está bien?
+- [ ] **Tú** — Jugar la v1.0.7 y pasar otro registro: ¿«Sin solución» ya se siente justo? ¿Los
+  primeros 20 niveles son demasiado fáciles? (palancas: colores antes, más fusiones, más hielo)
   Siguientes palancas si hace falta: más candidatos por nivel, lluvia más rápida o algo menos de
   hueco libre al empezar.
 

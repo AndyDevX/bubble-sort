@@ -13,14 +13,17 @@
 // Escribe docs/analisis-dificultad.md y docs/analisis-dificultad.svg.
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { CAP, RAIZ, cargarJuego, codificarNivel, crearCodigo, crearLluvia, ganado, progreso, resolver, vecinos } from './lib/juego.mjs';
+import { CAP, RAIZ, cargarJuego, codificarNivel, crearCodigo, crearLluvia, ganado, progreso, quitarHielo, resolver, vecinos } from './lib/juego.mjs';
 
 const { generarNivel, configNivel, ORDEN_COLORES, colorNuevo, planificarLluvia } = await cargarJuego();
 
 const args = Object.fromEntries(process.argv.slice(2).map((a) => a.split('=')));
 const NIVELES = Number(args.niveles ?? 60);
 const MUESTRAS = Number(args.muestras ?? 20);
-const INTENTOS_CASUAL = 8;
+const INTENTOS_CASUAL = Number(args.intentos ?? 8);
+const TRAMO = Number(args.tramo ?? 10); // niveles por tramo en el informe
+const SALIDA = args.salida ?? 'analisis-dificultad'; // docs/<salida>.md y .svg
+const NODOS_SIN_SOLUCION = 30000; // como el juego (GameScene.comprobarSolucion)
 const PROB_OBVIA = Number(args.obvia ?? 0.6); // probabilidad de hacer la jugada «obvia»
 const MS_JUGADA = Number(args.ms ?? 1500); // tiempo por jugada del jugador casual
 const MAX_JUGADAS_CASUAL = Number(args.jugadas ?? 300);
@@ -39,8 +42,16 @@ const clave = (e) => [...e].sort().join('|');
 
 // Jugador casual con lluvia y tiempo real (como una persona): una jugada cada MS_JUGADA, suele
 // hacer la jugada «obvia» y a veces una cualquiera, sin memoria de posiciones (solo evita deshacer
-// su última jugada). La lluvia empieza al 35 % del nivel y es «justa», como en el juego. Pierde si
-// la lluvia no encuentra hueco, si se queda sin jugadas o tras MAX_JUGADAS_CASUAL jugadas.
+// su última jugada). La lluvia de hielo es como en el juego. Pierde como en el juego:
+//  - «sinSolucion»: tras su jugada, la partida ya no tiene solución (comprobado del todo, contando
+//    que el hielo se derrite) aunque le queden jugadas: es la derrota que más sorprende al jugador;
+//  - «sinMovimientos»: no le queda ninguna jugada (y no es por el hielo);
+//  - «tiempo»: tras MAX_JUGADAS_CASUAL jugadas sin ganar.
+function sinSolucion(e, cod, base) {
+  const info = {};
+  return !resolver(quitarHielo(e), cod, base, NODOS_SIN_SOLUCION, info) && info.nodos <= NODOS_SIN_SOLUCION;
+}
+
 function jugadorCasual(inicio, cod, base, nivel) {
   let e = inicio;
   let anterior = null;
@@ -50,7 +61,7 @@ function jugadorCasual(inicio, cod, base, nivel) {
   let t = 0;
   for (let j = 0; j < MAX_JUGADAS_CASUAL; j++) {
     e = lluvia.tick(e, t).e;
-    if (ganado(e, base)) return true;
+    if (ganado(e, base)) return { fin: 'gana', jugada: j };
     const claveAnterior = anterior && clave(anterior);
     const opciones = vecinos(e, cod).filter((v) => clave(v.e) !== claveAnterior);
     if (!opciones.length) {
@@ -59,7 +70,7 @@ function jugadorCasual(inicio, cod, base, nivel) {
         e = lluvia.derretirUno(e);
         continue;
       }
-      return false;
+      return { fin: 'sinMovimientos', jugada: j };
     }
     let elegida;
     if (azar() < PROB_OBVIA) {
@@ -72,9 +83,11 @@ function jugadorCasual(inicio, cod, base, nivel) {
     anterior = e;
     e = lluvia.trasJugada(elegida.e).e;
     t += MS_JUGADA;
+    if (ganado(e, base)) return { fin: 'gana', jugada: j + 1 };
+    if (sinSolucion(e, cod, base)) return { fin: 'sinSolucion', jugada: j + 1, conJugadas: vecinos(e, cod).length > 0 || lluvia.hayHielo() };
     if (!lluvia.iniciada() && lluvia.pendientes() && (progreso(e, base) - inicioBien) / porHacer >= lluvia.umbral) e = lluvia.iniciar(e, t);
   }
-  return ganado(e, base);
+  return { fin: 'tiempo', jugada: MAX_JUGADAS_CASUAL };
 }
 
 const media = (l) => l.reduce((a, b) => a + b, 0) / (l.length || 1);
@@ -117,6 +130,9 @@ for (let n = 1; n <= NIVELES; n++) {
   const ramas = [];
   const ocultas = [];
   let exitos = 0;
+  const fines = { gana: 0, sinSolucion: 0, sinMovimientos: 0, tiempo: 0 };
+  let conJugadas = 0;
+  const muertes = []; // jugada en la que la partida quedó sin solución
   for (let m = 0; m < MUESTRAS; m++) {
     const nivel = generarNivel(n, azar);
     const cod = crearCodigo();
@@ -133,7 +149,15 @@ for (let n = 1; n <= NIVELES; n++) {
     }
     const bolas = nivel.tubos.flatMap((t) => t.bolas);
     ocultas.push(bolas.filter((b) => b.oculta).length / bolas.length);
-    for (let k = 0; k < INTENTOS_CASUAL; k++) if (jugadorCasual(e0, cod, base, nivel)) exitos++;
+    for (let k = 0; k < INTENTOS_CASUAL; k++) {
+      const r = jugadorCasual(e0, cod, base, nivel);
+      fines[r.fin]++;
+      if (r.fin === 'gana') exitos++;
+      if (r.fin === 'sinSolucion') {
+        muertes.push(r.jugada);
+        if (r.conJugadas) conJugadas++;
+      }
+    }
   }
   filas.push({
     n,
@@ -151,6 +175,9 @@ for (let n = 1; n <= NIVELES; n++) {
     nodos: media(nodos),
     rama: media(ramas),
     casual: exitos / (MUESTRAS * INTENTOS_CASUAL),
+    fines,
+    conJugadas,
+    muertes,
     niebla: media(ocultas),
     ritmo: (c.lotesLluvia * 4) / (c.intervaloLluviaMs / 1000), // bolas de lluvia por segundo de intervalo
   });
@@ -180,11 +207,22 @@ const rhoCasual = spearman(ns, filas.map((f) => f.casual));
 // que es más difícil a propósito)
 const retrocesos = filas.filter((f, i) => i > 0 && !filas[i - 1].dificil && f.indice < filas[i - 1].indice - 5);
 const tramos = [];
-for (let a = 1; a <= NIVELES; a += 10) {
-  const t = filas.filter((f) => f.n >= a && f.n < a + 10);
+const sumaFines = (t, k) => t.reduce((a, f) => a + f.fines[k], 0);
+const mediana = (l) => {
+  const o = [...l].sort((a, b) => a - b);
+  return o.length ? o[Math.floor(o.length / 2)] : 0;
+};
+for (let a = 1; a <= NIVELES; a += TRAMO) {
+  const t = filas.filter((f) => f.n >= a && f.n < a + TRAMO);
   if (!t.length) continue;
+  const partidas = t.length * MUESTRAS * INTENTOS_CASUAL;
   tramos.push({
-    nombre: `${a}–${Math.min(a + 9, NIVELES)}`,
+    nombre: `${a}–${Math.min(a + TRAMO - 1, NIVELES)}`,
+    sinSolucion: sumaFines(t, 'sinSolucion') / partidas,
+    conJugadas: t.reduce((x, f) => x + f.conJugadas, 0) / Math.max(1, sumaFines(t, 'sinSolucion')),
+    sinMovimientos: sumaFines(t, 'sinMovimientos') / partidas,
+    tiempo: sumaFines(t, 'tiempo') / partidas,
+    muerte: mediana(t.flatMap((f) => f.muertes)),
     indice: media(t.map((f) => f.indice)),
     indiceDe: desviacion(t.map((f) => f.indice)),
     casual: media(t.map((f) => f.casual)),
@@ -239,7 +277,7 @@ de jugador casual por nivel; semilla fija). No editar a mano: vuelve a ejecutar 
 casual + 15 % niebla + 15 % ritmo de la lluvia (cada medida normalizada entre el mínimo y el máximo
 de los niveles analizados).
 
-![Índice de dificultad por nivel](analisis-dificultad.svg)
+![Índice de dificultad por nivel](${SALIDA}.svg)
 
 ## Por bloques
 
@@ -253,6 +291,17 @@ ${bloques.map((b) => `| ${b.bloque} | ${b.niveles} | ${fmt(b.normal)} | ${pct(b.
 | --- | --- | --- | --- | --- |
 ${tramos.map((t) => `| ${t.nombre} | ${fmt(t.indice)} ± ${fmt(t.indiceDe)} | ${fmt(t.pend, 2)} | ${pct(t.casual)} | ${fmt(t.movs)} |`).join('\n')}
 
+## Cómo pierde el jugador casual
+
+«Sin solución» = tras una jugada suya la partida ya no se puede ganar (el juego lo comprueba del
+todo y lo cuenta como derrota) aunque **le queden jugadas**; «sin movimientos» = no le queda
+ninguna; «tiempo» = ${MAX_JUGADAS_CASUAL} jugadas sin ganar. «Jugada» = mediana de la jugada en la
+que la partida quedó sin solución.
+
+| Niveles | Gana | Sin solución | … con jugadas | Jugada | Sin movimientos | Tiempo |
+| --- | --- | --- | --- | --- | --- | --- |
+${tramos.map((t) => `| ${t.nombre} | ${pct(t.casual)} | ${pct(t.sinSolucion)} | ${pct(t.conJugadas)} | ${t.muerte} | ${pct(t.sinMovimientos)} | ${pct(t.tiempo)} |`).join('\n')}
+
 ## Por nivel
 
 | Nivel | Bloque | Colores | Paleta | Tubos | Fusiones | Lluvia | Intervalo | Movimientos | log₁₀ nodos | Ramificación | Éxito casual | Niebla | Índice |
@@ -264,7 +313,7 @@ ${filas
   )
   .join('\n')}
 `;
-writeFileSync(join(RAIZ, 'docs', 'analisis-dificultad.md'), md);
+writeFileSync(join(RAIZ, 'docs', `${SALIDA}.md`), md);
 
 // Gráfica SVG: índice (línea) y éxito del jugador casual (barras)
 const W = 900;
@@ -284,7 +333,7 @@ const ejes = [0, 25, 50, 75, 100]
   .map((v) => `<line x1="${m.i}" x2="${W - m.d}" y1="${y(v)}" y2="${y(v)}" stroke="#44445e"/><text x="${m.i - 8}" y="${y(v) + 4}" text-anchor="end">${v}</text>`)
   .join('');
 const marcas = filas
-  .filter((f) => f.n === 1 || f.n % 10 === 0)
+  .filter((f) => f.n === 1 || f.n % (NIVELES > 200 ? 100 : 10) === 0)
   .map((f) => `<text x="${x(f.n)}" y="${H - m.b + 18}" text-anchor="middle">${f.n}</text>`)
   .join('');
 const desbloqueos = filas
@@ -298,7 +347,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" 
 <text x="${W / 2}" y="${H - 6}" text-anchor="middle">Nivel</text>
 </svg>
 `;
-writeFileSync(join(RAIZ, 'docs', 'analisis-dificultad.svg'), svg);
+writeFileSync(join(RAIZ, 'docs', `${SALIDA}.svg`), svg);
 
 console.log(`Analizados ${total} niveles en ${segundos} s`);
 console.log(`Resolubles sin habilidades: ${resolubles}/${total}`);
@@ -309,5 +358,7 @@ console.log('Tramo     índice          pendiente  éxito casual  movimientos');
 for (const t of tramos) {
   console.log(`${t.nombre.padEnd(9)} ${t.indice.toFixed(1).padStart(5)} ± ${t.indiceDe.toFixed(1).padEnd(5)}  ${t.pend.toFixed(2).padStart(6)}     ${pct(t.casual).padStart(5)}        ${t.movs.toFixed(1)}`);
 }
-console.log('Informe: docs/analisis-dificultad.md');
+console.log('Tramo     gana  sinSolución (con jugadas, jugada)  sinMovimientos  tiempo');
+for (const t of tramos) console.log(`${t.nombre.padEnd(9)} ${pct(t.casual).padStart(5)}  ${pct(t.sinSolucion).padStart(5)} (${pct(t.conJugadas)}, ${t.muerte})           ${pct(t.sinMovimientos).padStart(5)}  ${pct(t.tiempo).padStart(5)}`);
+console.log(`Informe: docs/${SALIDA}.md`);
 process.exit(resolubles === total ? 0 : 1);

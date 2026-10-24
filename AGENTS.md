@@ -137,6 +137,9 @@ tenían solución. Cualquier cambio en las reglas de movimiento va en los dos si
 salida y castigar casi cualquier jugada (nivel 8 de v1.0.5). Si tocas el generador, mira también
 `exitoAlAzar` en los primeros niveles. Si cambias cómo se reparten los tableros, sube
 `VERSION_GENERADOR` para que los niveles guardados se regeneren.
+Mira también la tabla «Cómo pierde» de `npm run analizar`: si el jugador casual muere por «Sin
+solución» en la jugada 2–3, hay tableros trampa (en v1.0.6 las bolas de las fusiones dejaban
+~1,25 tubos libres).
 
 ### Registro de partidas (depuración)
 
