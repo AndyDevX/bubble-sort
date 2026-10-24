@@ -412,8 +412,12 @@ La web y la app no tienen anuncios. En la versión de CrazyGames:
   minutos como máximo, lo limita CrazyGames). Nunca después de perder.
 - **Con recompensa** (los elige el jugador): «▶ +N monedas» al ganar (duplica las monedas del
   nivel, una vez) y «▶ Deshacer gratis» al perder si no te quedan deshacer comprados.
-- Mientras sale el anuncio, el juego está en pausa y en silencio. Con bloqueador de anuncios todo
-  funciona igual, solo que sin esos botones de recompensa.
+- Mientras sale el anuncio, el juego está en pausa y en silencio. Si no sale (bloqueador, sin
+  anuncios en ese momento), no hay recompensa y la ventana avisa «No hay ningún anuncio disponible
+  ahora mismo».
+- Mientras CrazyGames tenga el juego en **Basic Launch** (su fase de prueba, sin anuncios ni
+  ingresos), no aparece ningún botón de anuncio ni anuncios entre niveles. Vuelven solos al pasar a
+  **Full Launch**.
 
 ## Guardado (en el dispositivo)
 

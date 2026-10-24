@@ -393,8 +393,15 @@ tipo `Textos`, así que TypeScript avisa si falta una clave.
   - `anuncioRecompensa` («rewarded»): «▶ +N monedas» en la victoria (duplica las del nivel, una
     vez) y «▶ Deshacer gratis» en la derrota si no quedan deshacer comprados (`regalar` + deshacer).
   - Durante el anuncio se silencia el sonido y la partida está en pausa; si no hay anuncio
-    (bloqueador, sin conexión) no pasa nada y no hay recompensa. Cada anuncio queda en el registro
-    (`anuncio`, `regalo`).
+    (bloqueador, sin conexión, sin inventario) no hay recompensa y la ventana se reabre con el
+    aviso «No hay ningún anuncio disponible ahora mismo» (`anuncioNoDisponible`). Cada anuncio
+    queda en el registro (`anuncio`, `regalo`).
+  - **Basic Launch**: CrazyGames desactiva los anuncios y rechaza el juego si hay botones de
+    anuncio sin efecto. El SDK no lo expone de forma pública: `iniciarAnuncios` llama a
+    `ad.prefetchAd('rewarded')`, que en Basic Launch lanza el error `adsDisabledBasicLaunch` (y
+    en Full Launch precarga el anuncio). Entonces `hayAnuncios()` es `false`: ni botones «▶» ni
+    midgame. Si el error llega al pedir un anuncio, también se desactivan. Al pasar a Full Launch
+    vuelven sin cambiar nada.
 - **Progreso guardado**: `src/sistemas/almacen.ts`. En CrazyGames, partida, nivel en curso,
   ajustes y estadísticas van al **Data Module** del SDK (misma API que `localStorage`; guarda en la
   cuenta del jugador y lo sincroniza entre dispositivos; para invitados usa `localStorage`). Hay

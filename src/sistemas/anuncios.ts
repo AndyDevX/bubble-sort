@@ -11,12 +11,16 @@ import { registrar } from './registro';
 //   ganar).
 // Durante el anuncio el sonido se silencia y la partida no avanza; si no hay anuncio (bloqueador,
 // sin conexión, sin inventario) el juego sigue igual, sin recompensa.
+// En el «Basic Launch» de CrazyGames los anuncios están desactivados (el SDK responde con el error
+// `adsDisabledBasicLaunch`) y no puede haber botones de anuncio sin efecto (rechazan el juego): se
+// detecta al iniciar y entonces no se muestran ni se piden. Al pasar a «Full Launch» vuelven solos.
 // Además se avisa al SDK de cuándo se está cargando y cuándo se juega (lo pide CrazyGames), y el
 // progreso pasa a guardarse en su Data Module (`almacen.ts`).
 
 interface SdkCrazyGames {
   init(): Promise<void>;
   ad: {
+    prefetchAd?(tipo: 'midgame' | 'rewarded'): void;
     requestAd(tipo: 'midgame' | 'rewarded', callbacks: { adStarted?: () => void; adFinished?: () => void; adError?: (error: unknown) => void }): void;
   };
   game: { gameplayStart(): void; gameplayStop(): void; loadingStart(): void; loadingStop(): void };
@@ -24,7 +28,11 @@ interface SdkCrazyGames {
 
 const sdk = (): SdkCrazyGames | undefined => (window as unknown as { CrazyGames?: { SDK?: SdkCrazyGames } }).CrazyGames?.SDK;
 
+const ANUNCIOS_DESACTIVADOS = 'adsDisabledBasicLaunch';
+const esDesactivados = (error: unknown) => (error as { code?: unknown } | null)?.code === ANUNCIOS_DESACTIVADOS;
+
 let listo = false;
+let desactivados = false; // Basic Launch: el SDK funciona, pero sin anuncios
 let enPartida = false;
 let nivelesSinAnuncio = 0;
 let mostrando = false;
@@ -39,13 +47,20 @@ export async function iniciarAnuncios(): Promise<void> {
     listo = true;
     usarDataModule();
     s.game.loadingStart();
+    // Precargar el anuncio con recompensa sirve también para saber si hay anuncios: en Basic Launch
+    // el SDK lanza `adsDisabledBasicLaunch` (no tiene otra forma pública de consultarlo)
+    try {
+      s.ad.prefetchAd?.('rewarded');
+    } catch (error) {
+      desactivados = esDesactivados(error);
+    }
   } catch {
     listo = false;
   }
 }
 
-/** Hay SDK de anuncios (para mostrar o no los botones de «ver anuncio»). */
-export const hayAnuncios = (): boolean => listo;
+/** Hay anuncios (para mostrar o no los botones de «ver anuncio»). */
+export const hayAnuncios = (): boolean => listo && !desactivados;
 
 /** El juego terminó de cargar (menú visible). */
 export function cargaTerminada(): void {
@@ -62,7 +77,7 @@ export function enJuego(si: boolean): void {
 
 function pedir(tipo: 'midgame' | 'rewarded', escena: Phaser.Scene): Promise<boolean> {
   const s = sdk();
-  if (!listo || !s || mostrando) return Promise.resolve(false);
+  if (!hayAnuncios() || !s || mostrando) return Promise.resolve(false);
   return new Promise((resolver) => {
     const silenciado = escena.sound.mute;
     const jugaba = enPartida;
@@ -80,7 +95,10 @@ function pedir(tipo: 'midgame' | 'rewarded', escena: Phaser.Scene): Promise<bool
         escena.sound.mute = true;
       },
       adFinished: () => terminar(true),
-      adError: (error) => terminar(false, error),
+      adError: (error) => {
+        if (esDesactivados(error)) desactivados = true; // por si no se detectó al iniciar
+        terminar(false, error);
+      },
     });
   });
 }

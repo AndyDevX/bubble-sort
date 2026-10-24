@@ -30,6 +30,7 @@ export const ja: Textos = {
   seguirJugando: 'このまま続ける',
   deshacerAnuncio: '▶ 無料で戻す',
   duplicarAnuncio: '▶ +{n} コイン',
+  anuncioNoDisponible: '今は広告がありません。',
   sinSalida: '行き詰まり',
   sinMovimientos: 'もう動かせません',
   tienda: 'ショップ',

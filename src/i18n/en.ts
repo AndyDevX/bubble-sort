@@ -30,6 +30,7 @@ export const en: Textos = {
   seguirJugando: 'Keep playing',
   deshacerAnuncio: '▶ Free undo',
   duplicarAnuncio: '▶ +{n} coins',
+  anuncioNoDisponible: 'No ad is available right now.',
   sinSalida: 'Stuck',
   sinMovimientos: 'No moves left',
   tienda: 'Shop',

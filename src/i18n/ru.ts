@@ -30,6 +30,7 @@ export const ru: Textos = {
   seguirJugando: 'Играть дальше',
   deshacerAnuncio: '▶ Отменить бесплатно',
   duplicarAnuncio: '▶ +{n} монет',
+  anuncioNoDisponible: 'Сейчас нет доступной рекламы.',
   sinSalida: 'Тупик',
   sinMovimientos: 'Ходов больше нет',
   tienda: 'Магазин',

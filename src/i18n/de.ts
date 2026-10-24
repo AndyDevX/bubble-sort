@@ -30,6 +30,7 @@ export const de: Textos = {
   seguirJugando: 'Weiterspielen',
   deshacerAnuncio: '▶ Gratis zurück',
   duplicarAnuncio: '▶ +{n} Münzen',
+  anuncioNoDisponible: 'Gerade ist keine Werbung verfügbar.',
   sinSalida: 'Sackgasse',
   sinMovimientos: 'Keine Züge mehr',
   tienda: 'Shop',

@@ -31,6 +31,7 @@ export const pt: Textos = {
   seguirJugando: 'Continuar jogando',
   deshacerAnuncio: '▶ Desfazer grátis',
   duplicarAnuncio: '▶ +{n} moedas',
+  anuncioNoDisponible: 'Nenhum anúncio disponível agora.',
   sinSalida: 'Sem saída',
   sinMovimientos: 'Não há mais jogadas',
   tienda: 'Loja',

@@ -86,6 +86,9 @@ Menores, sin prisa:
 - [ ] **Tú** — Subir a CrazyGames la última Release `crazygames-v…`: descomprimir el .zip y
   arrastrar los archivos (el portal no acepta .zip); marcar «Data Module» en el progreso guardado,
   orientación vertical, compatible con móvil. Después: portada, descripción y categoría.
+- [x] **Claude** — En Basic Launch (anuncios desactivados) no salen botones de anuncio (v1.0.14).
+- [ ] **Tú** — Conseguir el paso a **Full Launch** (lo decide CrazyGames según cómo juega la gente):
+  entonces se activan los anuncios y los ingresos.
 - [ ] **Claude** — (opcional) Silenciar el audio con el ajuste de CrazyGames («muting audio through
   SDK»).
 - [ ] **Tú** — Decidir lo de la exclusividad antes de subirlo a GameDistribution.

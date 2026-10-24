@@ -28,6 +28,7 @@ export const es = {
   seguirJugando: 'Seguir jugando',
   deshacerAnuncio: '▶ Deshacer gratis',
   duplicarAnuncio: '▶ +{n} monedas',
+  anuncioNoDisponible: 'No hay ningún anuncio disponible ahora mismo.',
   sinSalida: 'Sin salida',
   sinMovimientos: 'No quedan movimientos',
   tienda: 'Tienda',

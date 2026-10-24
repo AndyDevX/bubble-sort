@@ -31,6 +31,7 @@ export const zh: Textos = {
   seguirJugando: '继续玩',
   deshacerAnuncio: '▶ 免费撤销',
   duplicarAnuncio: '▶ +{n} 金币',
+  anuncioNoDisponible: '现在没有可用的广告。',
   sinSalida: '无路可走',
   sinMovimientos: '没有可走的步了',
   tienda: '商店',

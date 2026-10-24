@@ -1362,11 +1362,13 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(950, () => this.abrirDialogo(this.dialogoVictoria()));
   }
 
-  private dialogoVictoria(): DatosDialogo {
+  // `sinAnuncio`: el anuncio con recompensa no salió; se dice en la ventana para que el botón no
+  // parezca roto (si los anuncios están desactivados, además el botón ya no vuelve a salir)
+  private dialogoVictoria(sinAnuncio = false): DatosDialogo {
     const monedas = this.monedasGanadas * (this.monedasDuplicadas ? 2 : 1);
     return {
       titulo: t('nivelCompletado'),
-      texto: t(this.esDificil() ? 'recompensaDoble' : 'recompensa', { puntos: this.puntos, monedas }),
+      texto: t(this.esDificil() ? 'recompensaDoble' : 'recompensa', { puntos: this.puntos, monedas }) + (sinAnuncio ? '\n' + t('anuncioNoDisponible') : ''),
       botones: [
         { texto: t('siguiente'), accion: 'siguiente' },
         // CrazyGames: ver un anuncio duplica las monedas del nivel (una vez)
@@ -1387,7 +1389,7 @@ export class GameScene extends Phaser.Scene {
       this.colocarIconoMoneda();
       reproducirEfecto(this, 'victoria');
     }
-    this.abrirDialogo(this.dialogoVictoria());
+    this.abrirDialogo(this.dialogoVictoria(!visto));
   }
 
   // Al perder sin deshacer comprados: ver un anuncio da uno gratis y se usa en el momento
@@ -1399,7 +1401,8 @@ export class GameScene extends Phaser.Scene {
       regalar('deshacer', 1);
       this.deshacer();
     } else if (this.terminado) {
-      this.abrirDialogo(this.dialogoDerrota!());
+      const dialogo = this.dialogoDerrota!();
+      this.abrirDialogo({ ...dialogo, texto: (dialogo.texto ? dialogo.texto + '\n' : '') + t('anuncioNoDisponible') });
     }
   }
 
