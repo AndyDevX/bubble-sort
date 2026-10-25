@@ -12,13 +12,16 @@ import { setIdioma } from './i18n';
 import { getAjustes } from './sistemas/ajustes';
 import { registrarCacheOffline } from './sistemas/cacheOffline';
 import { EN_CRAZYGAMES } from './plataforma';
-import { iniciarActualizaciones } from './sistemas/actualizaciones';
+import { confirmarArranque, iniciarActualizaciones } from './sistemas/actualizaciones';
 import { iniciarAnuncios } from './sistemas/anuncios';
 import { usarFuenteDeIdioma } from './ui/tema';
 import '@fontsource/fredoka/latin-500.css';
 import '@fontsource/fredoka/latin-700.css';
 import './fuentes.css';
 import './style.css';
+
+// App Android: confirmar el arranque antes de cualquier espera (ver confirmarArranque)
+confirmarArranque();
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,

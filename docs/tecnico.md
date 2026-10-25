@@ -470,7 +470,11 @@ Para no reinstalar el APK en cada versión, la app descarga el juego nuevo desde
    - **MAJOR nuevo** → no descarga (puede traer cambios nativos); el menú avisa de que hay app nueva
      y al tocarlo abre las Releases en el navegador;
    - si un build nuevo no llega a `notifyAppReady` en 15 s (`appReadyTimeout`), Capgo vuelve al
-     anterior y esa versión no se reintenta.
+     anterior y esa versión no se reintenta. **Por eso `confirmarArranque()` va lo primero en
+     `main.ts`, antes de cualquier `await`**: Capgo instala con la app en segundo plano, donde
+     Android congela los temporizadores. De v1.0.12 a v1.0.15 la confirmación esperaba a las
+     fuentes (con un `setTimeout` de 3 s), nunca llegaba y la app se quedaba en la v1.0.0 del APK
+     (lo vio el usuario el 25/10; corregido en v1.0.16).
 3. Cada paso (arranque, al día, descargando, lista, error y su motivo) se apunta en
    `odi-sort:actualizaciones` (últimas 30 líneas) y sale en la cabecera del **registro de
    depuración**: si una actualización no llega, el registro dice por qué.

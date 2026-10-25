@@ -81,10 +81,21 @@ export function compararVersiones(a: string, b: string): number {
   return 0;
 }
 
+/**
+ * Confirma a Capgo que este build arranca. Se llama **lo primero** en main.ts, antes de esperar a
+ * nada: Capgo instala la versión nueva recargando el juego con la app en segundo plano y, si en
+ * 15 s no llega esta confirmación, la da por rota, vuelve al APK y no la reintenta. En segundo
+ * plano Android congela los temporizadores, y desde v1.0.12 la confirmación esperaba a las fuentes
+ * (con un temporizador de 3 s): nunca llegaba a tiempo y la app se quedaba en la versión del APK.
+ */
+export function confirmarArranque(): void {
+  if (!Capacitor.isNativePlatform()) return;
+  void CapacitorUpdater.notifyAppReady();
+}
+
 export function iniciarActualizaciones(): void {
   if (!Capacitor.isNativePlatform()) return;
-  // Lo primero: confirmar que este build arranca (si no, Capgo vuelve al anterior)
-  void CapacitorUpdater.notifyAppReady();
+  confirmarArranque(); // ya se hizo al empezar main.ts; repetirlo no hace daño
   apuntar('arranque');
   void buscarActualizacion();
   document.addEventListener('visibilitychange', () => {

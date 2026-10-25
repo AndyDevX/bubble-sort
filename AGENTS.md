@@ -123,6 +123,10 @@ npx tsc -p . --noEmit false --outDir /tmp/salida --module esnext \
 
 Genera cientos de niveles y comprueba `tieneSolucion`, tiempos y casos límite.
 
+**Actualizaciones de la app**: `confirmarArranque()` (Capgo `notifyAppReady`) debe seguir siendo lo
+primero que hace `main.ts`, antes de cualquier `await` o temporizador. Si se retrasa, la app Android
+descarta cada versión nueva y se queda en la del APK (pasó de v1.0.12 a v1.0.15).
+
 **Lluvia desactivada** (v1.0.15): `LLUVIA_ACTIVA = false` en `src/juego/lluvia.ts`. No borres su
 código (se va a refactorizar); si la reactivas, vuelve a medir y ajustar la dificultad.
 
