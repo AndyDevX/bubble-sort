@@ -1,5 +1,6 @@
 import { FAMILIA, RECETAS, type ColorId } from './colores';
 import { CAPACIDAD, evaluarMovimiento, nuevaBola, type Bola, type Tubo } from './modelo';
+import { LLUVIA_ACTIVA } from './lluvia';
 import { exitoAlAzar, nodosHastaSolucion } from './solucionador';
 
 export interface ConfigNivel {
@@ -89,7 +90,9 @@ export function configNivel(nivel: number): ConfigNivel {
   // llega la primera fusión; la fusión se activa en cuanto cabe en la paleta.
   const colores = nivel < 3 ? 3 : Math.max(3, Math.min(coloresPorNivel(nivel, bloque), desbloqueados - 2));
   let fusiones = nivel < 3 ? 0 : nivel < 9 ? 1 : bloque >= 8 ? 4 : bloque >= 4 ? 3 : 2;
-  let lotesLluvia = nivel < 9 ? 1 : bloque >= 7 ? 3 : 2;
+  // Lluvia desactivada (ver lluvia.ts): sin tandas. Fórmula de cuando estaba activa:
+  // nivel < 9 ? 1 : bloque >= 7 ? 3 : 2
+  let lotesLluvia = LLUVIA_ACTIVA ? (nivel < 9 ? 1 : bloque >= 7 ? 3 : 2) : 0;
   // La niebla crece con el nivel hasta el 60 % y después con el bloque, hasta el 80 %
   let niebla = Math.min((nivel - 1) * 0.05, Math.min(0.8, 0.6 + 0.015 * bloque));
   // La lluvia acelera con el nivel hasta 2,5 s y después con el bloque, hasta 1,6 s
@@ -98,7 +101,7 @@ export function configNivel(nivel: number): ConfigNivel {
   if (dificil) {
     niebla = Math.min(0.85, niebla + 0.15);
     intervaloLluviaMs = Math.max(1300, Math.round(intervaloLluviaMs * 0.8));
-    lotesLluvia += 1;
+    if (LLUVIA_ACTIVA) lotesLluvia += 1;
     fusiones = Math.min(4, fusiones + 1);
   }
   if (colores + 2 > desbloqueados) fusiones = 0; // aún no caben los ingredientes
@@ -144,7 +147,8 @@ export interface Nivel {
 // vuelve a generar (como ya no hay «Nivel nuevo», un tablero defectuoso no debe quedarse fijo).
 // 2 (v1.0.6): sin tubos de solo ingredientes ni tableros trampa en los primeros bloques.
 // 3 (v1.0.7): las bolas sobrantes de las fusiones van en su propio tubo (siempre 2 tubos libres).
-export const VERSION_GENERADOR = 3;
+// 4 (v1.0.15): sin lluvia; más candidatos por nivel y el difícil elige el que peor juega el azar.
+export const VERSION_GENERADOR = 4;
 
 /**
  * Éxito mínimo de un jugador al azar (`exitoAlAzar`) para aceptar un tablero: en los primeros
@@ -158,6 +162,7 @@ export function exitoMinimo(config: ConfigNivel): number {
   return 0;
 }
 const PARTIDAS_AL_AZAR = 24;
+const PESO_AZAR_DIFICIL = 5; // puntos de `dificultadTablero` por cada 100 % de éxito al azar
 
 /**
  * Un tubo a medias con solo ingredientes no admite más que su pareja de fusión: en la práctica
@@ -184,6 +189,8 @@ function barajar<T>(lista: T[], rnd: Aleatorio): T[] {
  */
 export function candidatosPorNivel(config: ConfigNivel, nivel: number): number {
   if (nivel <= 3) return 1;
+  // Sin lluvia se elige entre más tableros (era min(12, 4 + 2·bloque) + 6 en el difícil)
+  if (!LLUVIA_ACTIVA) return Math.min(14, 6 + 2 * config.bloque) + (config.dificil ? 8 : 0);
   return Math.min(12, 4 + 2 * config.bloque) + (config.dificil ? 6 : 0);
 }
 
@@ -278,9 +285,13 @@ export function generarNivel(nivel: number, rnd: Aleatorio = Math.random): Nivel
     const nodos = nodosHastaSolucion(tubos);
     if (nodos < 0) continue;
 
-    const dificultad = dificultadTablero(tubos, nodos);
+    let dificultad = dificultadTablero(tubos, nodos);
+    // Sin lluvia, el nivel difícil prefiere además el tablero que menos gana un jugador al azar
+    // (la lluvia era lo que más lo diferenciaba del resto del bloque)
+    if (config.dificil && !LLUVIA_ACTIVA && minimo === 0) dificultad -= PESO_AZAR_DIFICIL * exitoAlAzar(tubos, PARTIDAS_AL_AZAR, rnd);
     if (minimo > 0) {
       const exito = exitoAlAzar(tubos, PARTIDAS_AL_AZAR, rnd);
+      if (config.dificil && !LLUVIA_ACTIVA) dificultad -= PESO_AZAR_DIFICIL * exito;
       if (exito < minimo) {
         if (exito > exitoRespaldo) {
           exitoRespaldo = exito;

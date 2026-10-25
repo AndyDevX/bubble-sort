@@ -127,12 +127,20 @@ BootScene ──► MenuScene ──► GameScene
   por nivel = desbloqueados − 2 (mín. 3; máx. 7, u 8 desde el bloque 8; nunca bajan) y la fusión
   cuando cabe; `bloqueDe(n)` (bloque = desbloqueos alcanzados, y uno cada 10 niveles al final)
   hace crecer niebla, lluvia y fusiones; `esNivelDificil(n)` = último nivel del bloque
-  (`config.dificil`: más niebla, lluvia más rápida, +1 tanda, +1 fusión). `GameScene` lo avisa
+  (`config.dificil`: más niebla, +1 fusión, +8 candidatos y, sin lluvia, el tablero que peor juega
+  un jugador al azar: `PESO_AZAR_DIFICIL`; con lluvia, además lluvia más rápida y +1 tanda). `GameScene` lo avisa
   con `DialogoScene` (icono `icono-peligro`), pone el título en naranja y paga monedas ×2; `tubosVacios` = 2. La lluvia puede usar un color
   aún no desbloqueado (cae congelada). `colorNuevo(n)` dice qué color se desbloquea en el nivel n (siempre sale en él);
   `GameScene.avisarColorNuevo` lo anuncia con `DialogoScene` (campo `bola`: textura de la bola).
 
-### Lluvia (hielo y niebla)
+### Lluvia (hielo y niebla) — desactivada
+
+**Desactivada desde v1.0.15** con `LLUVIA_ACTIVA = false` (`src/juego/lluvia.ts`): `planificarLluvia`
+devuelve un plan sin gotas, `configNivel` pone `lotesLluvia = 0` y `candidatosPorNivel` usa la
+tabla sin lluvia. Como `GameScene` solo arranca la lluvia si quedan gotas, no hay alerta, contador
+ni hielo, y los simuladores (`crearLluvia`) juegan sin lluvia. El resto del código (GameScene,
+texturas de hielo, `crearLluvia`, textos `empiezaLluvia`/`lluviaRestante`) se deja tal cual para
+la refactorización. Al reactivarla, revisa la dificultad (`npm run simular` y `npm run analizar`).
 
 `src/juego/lluvia.ts` → `planificarLluvia(config, colores)`: sortea en cada partida el umbral de
 inicio (25–45 %), el orden de las gotas (todas las tandas mezcladas), su tipo (`hielo` o, desde el

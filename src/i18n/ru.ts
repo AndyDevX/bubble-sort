@@ -65,7 +65,7 @@ export const ru: Textos = {
   colorOculto: '???',
   nuevoColor: 'Новый цвет!',
   nivelDificil: 'Сложный уровень!',
-  nivelDificilTexto: 'Больше тумана и дождя, и он быстрее.\nПройдёшь — получишь двойные монеты.',
+  nivelDificilTexto: 'Больше тумана, больше алхимии и поле посложнее.\nПройдёшь — получишь двойные монеты.',
   aceptarReto: 'Вперёд!',
   nivelTituloDificil: 'Уровень {n} · Сложный',
   recompensaDoble: '{puntos} очк. · +{monedas} монет (×2)',

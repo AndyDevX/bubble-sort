@@ -9,9 +9,9 @@ Juego de ordenar bolas de colores en tubos, para móvil y siempre en vertical, h
 
 Toca un tubo para levantar sus bolas de arriba y toca otro para soltarlas: solo pueden caer en un
 tubo vacío o sobre su mismo color. Junta 4 iguales para **sellar** el tubo. Ganas al sellar todos
-los colores del nivel… mientras la **lluvia** intenta llenarte los huecos.
+los colores del nivel… con la **niebla** tapando bolas y las **fusiones** creando colores nuevos.
 
-Mecánicas: lluvia, alquimia (fusionar ingredientes), niebla (bolas ocultas), giro de gravedad,
+Mecánicas: alquimia (fusionar ingredientes), niebla (bolas ocultas), giro de gravedad,
 deshacer y tubo extra (se compran con monedas en la **tienda**). Todo el detalle en
 [docs/diseno-juego.md](docs/diseno-juego.md).
 
@@ -34,7 +34,7 @@ npm run dev        # http://localhost:5173 (también desde el móvil con la IP d
 | `npm run dev` | Servidor de desarrollo con recarga al guardar |
 | `npm run build` | Comprueba tipos y genera `dist/` |
 | `npm run preview` | Sirve `dist/` en local |
-| `npm run simular` | Mide que todos los niveles se pueden resolver sin habilidades (con lluvia) |
+| `npm run simular` | Mide que todos los niveles se pueden resolver sin habilidades |
 | `npm run analizar` | Análisis estadístico de la curva de dificultad (`docs/analisis-dificultad.md`) |
 | `npm run compartir` | Con `npm run dev` abierto, crea un enlace público temporal |
 | `npm run cap:android` | Compila, sincroniza y abre el proyecto en Android Studio |

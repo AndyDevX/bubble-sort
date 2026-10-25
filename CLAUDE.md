@@ -8,7 +8,7 @@ Documentación: `README.md` (portada) · `docs/diseno-juego.md` (todo lo jugable
 - `npm run dev` — servidor local (http://localhost:5173)
 - `npm run build` — tsc + build a `dist/`
 - `npm run build:crazygames` — build para CrazyGames a `dist-crazygames/` (SDK de anuncios, solo música de `src/assets/musica-crazygames/`, sin Service Worker); cada versión publica una Release `crazygames-vX.Y.Z` con el .zip (`.github/workflows/crazygames.yml`)
-- `npm run simular` — mide la solubilidad sin habilidades de 50 niveles con lluvia (debe dar 100 %)
+- `npm run simular` — mide la solubilidad sin habilidades de 50 niveles (debe dar 100 %). La **lluvia está desactivada** (`LLUVIA_ACTIVA = false` en `src/juego/lluvia.ts`; código conservado para rehacerla)
 - `npm run analizar` — análisis estadístico de la curva de dificultad → `docs/analisis-dificultad.md` (1000 niveles: `-- niveles=1000 muestras=5 intentos=4 tramo=50 salida=analisis-1000`)
 - `npm run compartir` — (con `npm run dev` abierto en otra terminal) túnel público temporal `https://….trycloudflare.com`
 - `npm run cap:sync` / `npm run cap:android` — build y sincronizar con nativo

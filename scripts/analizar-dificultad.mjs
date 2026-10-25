@@ -194,8 +194,13 @@ const nMovs = norm('movs');
 const nNodos = norm('nodos');
 const nNiebla = norm('niebla');
 const nRitmo = norm('ritmo');
+// Sin lluvia (desactivada, ver src/juego/lluvia.ts) su 15 % se reparte entre las demás medidas
+const hayLluvia = filas.some((f) => f.ritmo > 0);
+const PESOS = hayLluvia
+  ? { movs: 0.25, nodos: 0.15, casual: 0.3, niebla: 0.15, ritmo: 0.15 }
+  : { movs: 0.3, nodos: 0.2, casual: 0.35, niebla: 0.15, ritmo: 0 };
 for (const f of filas) {
-  f.indice = 100 * (0.25 * nMovs(f.movs) + 0.15 * nNodos(f.nodos) + 0.3 * (1 - f.casual) + 0.15 * nNiebla(f.niebla) + 0.15 * nRitmo(f.ritmo));
+  f.indice = 100 * (PESOS.movs * nMovs(f.movs) + PESOS.nodos * nNodos(f.nodos) + PESOS.casual * (1 - f.casual) + PESOS.niebla * nNiebla(f.niebla) + PESOS.ritmo * nRitmo(f.ritmo));
 }
 
 // ───────────── Estadística ─────────────
@@ -264,7 +269,7 @@ de jugador casual por nivel; semilla fija). No editar a mano: vuelve a ejecutar 
 
 ## Resumen
 
-- **Resolubles sin habilidades**: ${resolubles}/${total} (${pct(resolubles / total)}). Con lluvia, \`npm run simular\`.
+- **Resolubles sin habilidades**: ${resolubles}/${total} (${pct(resolubles / total)}). Con un jugador perfecto, \`npm run simular\`.
 - **Tendencia**: correlación de Spearman nivel ↔ índice **ρ = ${fmt(rho, 2)}** (1 = sube siempre);
   nivel ↔ éxito del jugador casual ρ = ${fmt(rhoCasual, 2)} (negativa = cada vez gana menos).
 - **Retrocesos** (el índice baja más de 5 puntos respecto al nivel anterior): ${retrocesos.length ? retrocesos.map((f) => f.n).join(', ') : 'ninguno'}.
@@ -273,9 +278,9 @@ de jugador casual por nivel; semilla fija). No editar a mano: vuelve a ejecutar 
   ρ = ${fmt(rhoBloques, 2)}. El **nivel difícil** supera a la media de su bloque en
   ${dificilesMayores}/${completos.length} bloques, de media por **${fmt(ventajaDificil)} puntos**.
 
-Índice = 25 % movimientos de la solución + 15 % esfuerzo de búsqueda + 30 % fracaso del jugador
-casual + 15 % niebla + 15 % ritmo de la lluvia (cada medida normalizada entre el mínimo y el máximo
-de los niveles analizados).
+Índice = ${Math.round(PESOS.movs * 100)} % movimientos de la solución + ${Math.round(PESOS.nodos * 100)} % esfuerzo de búsqueda + ${Math.round(PESOS.casual * 100)} % fracaso del jugador
+casual + ${Math.round(PESOS.niebla * 100)} % niebla${hayLluvia ? ' + 15 % ritmo de la lluvia' : ' (la lluvia está desactivada)'} (cada medida normalizada entre el
+mínimo y el máximo de los niveles analizados).
 
 ![Índice de dificultad por nivel](${SALIDA}.svg)
 

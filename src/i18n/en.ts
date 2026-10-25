@@ -65,7 +65,7 @@ export const en: Textos = {
   colorOculto: '???',
   nuevoColor: 'New color!',
   nivelDificil: 'Hard level!',
-  nivelDificilTexto: 'More fog and more rain, falling faster.\nBeat it for double coins.',
+  nivelDificilTexto: 'More fog, more alchemy and a trickier board.\nBeat it for double coins.',
   aceptarReto: 'Let’s go!',
   nivelTituloDificil: 'Level {n} · Hard',
   recompensaDoble: '{puntos} pts · +{monedas} coins (×2)',

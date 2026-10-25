@@ -17,6 +17,12 @@ que ya no aplique. Detalles de seguridad en [seguridad.md](./seguridad.md).
   Siguientes palancas si hace falta: más candidatos por nivel, lluvia más rápida o algo menos de
   hueco libre al empezar.
 
+## 1b. Lluvia (desactivada en v1.0.15)
+
+- [ ] **Claude** — Rehacer la mecánica de la lluvia (refactorización pendiente; ahora está apagada
+  con `LLUVIA_ACTIVA = false` y su código se conserva). Al reactivarla, volver a medir la
+  dificultad: hoy la compensan más candidatos por nivel y el nivel difícil elegido contra el azar.
+
 ## 2. Seguridad de la publicación (antes de repartir el APK o meter anuncios)
 
 Hacerlo **cuanto antes**: cambiar la clave obliga a desinstalar el APK una vez (se pierde el progreso

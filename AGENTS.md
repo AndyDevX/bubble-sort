@@ -123,6 +123,9 @@ npx tsc -p . --noEmit false --outDir /tmp/salida --module esnext \
 
 Genera cientos de niveles y comprueba `tieneSolucion`, tiempos y casos límite.
 
+**Lluvia desactivada** (v1.0.15): `LLUVIA_ACTIVA = false` en `src/juego/lluvia.ts`. No borres su
+código (se va a refactorizar); si la reactivas, vuelve a medir y ajustar la dificultad.
+
 **Solubilidad**: si cambias la dificultad (`configNivel`), las reglas o la lluvia, ejecuta
 `npm run simular` (50 niveles × 3 velocidades de jugador con lluvia). Debe salir 100 % en todo:
 el usuario exige que **todos los niveles se puedan resolver sin habilidades**. Para ver cómo sube

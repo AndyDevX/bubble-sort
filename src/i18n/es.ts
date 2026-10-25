@@ -63,7 +63,7 @@ export const es = {
   colorOculto: '???',
   nuevoColor: '¡Nuevo color!',
   nivelDificil: '¡Nivel difícil!',
-  nivelDificilTexto: 'Más niebla y más lluvia, y más rápida.\nSi lo superas, monedas dobles.',
+  nivelDificilTexto: 'Más niebla, más alquimia y un tablero más enrevesado.\nSi lo superas, monedas dobles.',
   aceptarReto: '¡Vamos!',
   nivelTituloDificil: 'Nivel {n} · Difícil',
   recompensaDoble: '{puntos} pts · +{monedas} monedas (×2)',

@@ -66,7 +66,7 @@ export const zh: Textos = {
   colorOculto: '???',
   nuevoColor: '新颜色！',
   nivelDificil: '困难关卡！',
-  nivelDificilTexto: '雾更多，雨更多，下得更快。\n通过可获得双倍金币。',
+  nivelDificilTexto: '雾更多，炼金更多，局面更复杂。\n通过可获得双倍金币。',
   aceptarReto: '冲！',
   nivelTituloDificil: '第 {n} 关 · 困难',
   recompensaDoble: '{puntos} 分 · +{monedas} 金币（×2）',

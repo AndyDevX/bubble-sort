@@ -65,7 +65,7 @@ export const de: Textos = {
   colorOculto: '???',
   nuevoColor: 'Neue Farbe!',
   nivelDificil: 'Schweres Level!',
-  nivelDificilTexto: 'Mehr Nebel und mehr Regen, und schneller.\nSchaffst du es, gibt es doppelte Münzen.',
+  nivelDificilTexto: 'Mehr Nebel, mehr Alchemie und ein kniffligeres Brett.\nSchaffst du es, gibt es doppelte Münzen.',
   aceptarReto: 'Los geht’s!',
   nivelTituloDificil: 'Level {n} · Schwer',
   recompensaDoble: '{puntos} Pkt. · +{monedas} Münzen (×2)',

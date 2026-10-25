@@ -66,7 +66,7 @@ export const pt: Textos = {
   colorOculto: '???',
   nuevoColor: 'Nova cor!',
   nivelDificil: 'Nível difícil!',
-  nivelDificilTexto: 'Mais neblina e mais chuva, e mais rápida.\nSe vencer, ganha moedas em dobro.',
+  nivelDificilTexto: 'Mais neblina, mais alquimia e um tabuleiro mais complicado.\nSe vencer, ganha moedas em dobro.',
   aceptarReto: 'Vamos lá!',
   nivelTituloDificil: 'Nível {n} · Difícil',
   recompensaDoble: '{puntos} pts · +{monedas} moedas (×2)',

@@ -65,7 +65,7 @@ export const ja: Textos = {
   colorOculto: '???',
   nuevoColor: '新しい色！',
   nivelDificil: '難しいレベル！',
-  nivelDificilTexto: '霧も雨も多く、雨は速くなります。\nクリアするとコイン 2 倍。',
+  nivelDificilTexto: '霧も錬金術も増えて、盤面も難しくなります。\nクリアするとコイン 2 倍。',
   aceptarReto: 'いくぞ！',
   nivelTituloDificil: 'レベル {n} · ハード',
   recompensaDoble: '{puntos} pt · +{monedas} コイン（×2）',

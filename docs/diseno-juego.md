@@ -11,8 +11,9 @@ técnica está en [tecnico.md](./tecnico.md).
 
 ## Resumen en una frase
 
-Ordena cada color en su tubo mientras la lluvia congela tubos y vuelve a tapar bolas, ayudándote de fusiones,
-del giro de gravedad y de las ayudas que compras en la tienda (deshacer y tubo extra).
+Ordena cada color en su tubo entre bolas ocultas por la niebla, ayudándote de fusiones, del giro de
+gravedad y de las ayudas que compras en la tienda (deshacer y tubo extra). (La lluvia está
+desactivada desde v1.0.15; se rehará más adelante.)
 
 ## Decisiones de diseño
 
@@ -20,10 +21,10 @@ del giro de gravedad y de las ayudas que compras en la tienda (deshacer y tubo e
 | --- | --- |
 | Modos | **Un único modo** con todas las mecánicas activas (no hay selector de modos) |
 | Flujo | Menú → **Jugar** → partida directamente |
-| Niveles | **Aleatorios**, generados por procedimiento y comprobados con un solucionador: **todos tienen solución sin habilidades**, también con la lluvia (ver «Solubilidad») |
+| Niveles | **Aleatorios**, generados por procedimiento y comprobados con un solucionador: **todos tienen solución sin habilidades** (ver «Solubilidad») |
 | Colores | Pocos al principio (3) y se van **desbloqueando** con los niveles; ventana «¡Nuevo color!» |
 | Ganar | Al **sellar todos los colores iniciales** del nivel |
-| Lluvia | Obstáculo **temporal** (v1.0.5): empieza entre el **25 % y el 45 %** del nivel (al azar). Las gotas de **hielo** bloquean un tubo hasta derretirse tras unas jugadas; en los bloques altos, las de **niebla** vuelven a tapar bolas. No añade tubos ni cambia el tablero |
+| Lluvia | **Desactivada desde v1.0.15** (lo pidió el usuario; se refactorizará más adelante). El código sigue en el proyecto detrás de `LLUVIA_ACTIVA` (`src/juego/lluvia.ts`). Cuando estaba activa: obstáculo **temporal** (v1.0.5): empieza entre el **25 % y el 45 %** del nivel (al azar). Las gotas de **hielo** bloquean un tubo hasta derretirse tras unas jugadas; en los bloques altos, las de **niebla** vuelven a tapar bolas. No añade tubos ni cambia el tablero |
 | Giro de gravedad | **Habilidad** con barra de carga (150 pts), una sola carga por nivel |
 | Deshacer | Se **compra** en la tienda; sin límite por nivel |
 | Tubo de emergencia (tubo extra) | Un tubo de **1 hueco**; se **compra** en la tienda; **máximo uno por nivel** |
@@ -33,7 +34,7 @@ del giro de gravedad y de las ayudas que compras en la tienda (deshacer y tubo e
 ## Controles
 
 - Los tubos responden **al tocar** (no al levantar el dedo) y se puede encadenar jugadas sin
-  esperar a que terminen las animaciones: ni la fusión ni las gotas de lluvia bloquean los toques
+  esperar a que terminen las animaciones: la fusión no bloquea los toques
   (solo el giro de gravedad, deshacer y la entrada de los tubos). Se aceptan varios dedos.
 - **Tocar un tubo** levanta su grupo de bolas de arriba (la de arriba se eleva).
 - **Tocar otro tubo** las suelta allí si la jugada es válida.
@@ -83,7 +84,12 @@ del giro de gravedad y de las ayudas que compras en la tienda (deshacer y tubo e
 
 ## Mecánicas (todas activas a la vez)
 
-### Lluvia
+### Lluvia (desactivada)
+
+> **Desactivada desde v1.0.15** (lo pidió el usuario: se rehará más adelante). `LLUVIA_ACTIVA =
+> false` en `src/juego/lluvia.ts`: el plan de lluvia sale vacío, así que no hay alerta, ni gotas,
+> ni contador, y el nivel difícil ya no la usa. Todo el código se conserva para la
+> refactorización. Lo que sigue describe cómo funcionaba.
 
 - Empieza cuando llevas resuelto **entre el 25 % y el 45 % del nivel** (se sortea en cada
   partida), medido en **bolas bien colocadas**: las
@@ -168,8 +174,8 @@ Cada nivel se genera al azar y un solucionador comprueba que tiene solución (en
 **Tableros revueltos** (v1.0.4): desde el nivel 4 se generan varios tableros resolubles y se queda
 el más difícil: el que menos bolas iguales trae ya juntas, menos jugadas «gratis» ofrece al
 empezar (poner una bola sobre otra de su color o fusionar) y más le cuesta al solucionador. Se
-eligen entre 4 (bloque 0) y 12 (bloque 4 en adelante), y 6 más en el nivel difícil
-(`candidatosPorNivel`, `dificultadTablero`). Resultado: hacen falta ~10 % más movimientos y el
+eligen entre 6 (bloque 0) y 14 (bloque 4 en adelante), y 8 más en el nivel difícil
+(`candidatosPorNivel`, `dificultadTablero`; hasta v1.0.14, con lluvia, eran 4–12 y 6 más). Resultado: hacen falta ~10 % más movimientos y el
 jugador casual gana bastante menos (11–20: 36 % → 25 %).
 **Sin tableros trampa** (v1.0.6): un nivel 8 traía un ingrediente solo en un tubo (únicamente
 aceptaba su pareja de fusión, así que el nivel se quedaba con un tubo libre) y casi cualquier
@@ -208,11 +214,14 @@ ya no quedan colores, cada 10 niveles). Al principio sube con el número de nive
 - **Colores a ordenar**: los marca la paleta (desbloqueados − 2, para dejar sitio a los
   ingredientes; mínimo 3): 3 hasta el nivel 11, 4 desde el 12, 5 desde el 17, 6 desde el 24, 7
   desde el 29 y **8 desde el bloque 8** (nivel 48). Nunca bajan. La primera fusión, en el nivel 6.
-- **Con cada bloque**: la niebla sube del 60 % al 80 %, la lluvia acelera de 2,5 s a 1,6 s, llega
-  una **tercera tanda** de lluvia (bloque 7), una **tercera fusión** (bloque 4) y una **cuarta** (bloque 8).
+- **Con cada bloque**: la niebla sube del 60 % al 80 %, llega una **tercera fusión** (bloque 4) y
+  una **cuarta** (bloque 8), y se elige entre más tableros. (Las columnas de lluvia de la tabla son
+  de cuando estaba activa: ahora no cae ninguna.)
 - **Nivel difícil**: el **último nivel de cada bloque** (justo antes del color nuevo) es más
-  difícil que el resto del bloque: +15 % de niebla (máx. 85 %), lluvia un 20 % más rápida, una
-  tanda de lluvia más y una fusión más. Al empezarlo sale una ventana de **advertencia** («¡Nivel
+  difícil que el resto del bloque: +15 % de niebla (máx. 85 %), una fusión más y se elige entre 8
+  tableros más, prefiriendo el que **peor juega un jugador al azar** (`exitoAlAzar`, peso
+  `PESO_AZAR_DIFICIL`). Hasta v1.0.14 lo diferenciaba sobre todo la lluvia (un 20 % más rápida y
+  una tanda más); sin ella, esta selección lo deja con la misma dificultad medida (ver «Curva»). Al empezarlo sale una ventana de **advertencia** («¡Nivel
   difícil!», triángulo de peligro, botón «¡Vamos!»; no al reiniciarlo),
   el título de la partida se ve en naranja («Nivel N · Difícil») y al superarlo da **monedas
   dobles**. Niveles difíciles: 5, 11, 16, 23, 28, 34, 39, 47, 57, 63, 75, 82, 91, 102, 112, 122…
@@ -249,7 +258,7 @@ ya no quedan colores, cada 10 niveles). Al principio sube con el número de nive
 - **Aviso**: el color nuevo aparece seguro en el nivel que lo desbloquea y se anuncia en una **ventana** «¡Nuevo color!» (bola grande y su nombre, botón Continuar) cuando
   los tubos terminan de entrar; la partida queda en pausa. Solo la primera vez que se llega al
   nivel (no al reiniciarlo).
-- **Lluvia**: usa colores desbloqueados que no estén en el nivel; si no queda ninguno (primeros
+- **Lluvia** (desactivada): usaba colores desbloqueados que no estuvieran en el nivel; si no queda ninguno (primeros
   niveles), uno aún por descubrir, que cae **congelado** (no se ve como bola normal).
 - **Tubos** = colores + 1 si hay fusiones (las bolas sobrantes de los ingredientes) + 2 vacíos (la
   lluvia ya no añade ninguno).
@@ -257,17 +266,31 @@ ya no quedan colores, cada 10 niveles). Al principio sube con el número de nive
 ### Curva de dificultad (medida)
 
 `npm run analizar` genera [analisis-dificultad.md](./analisis-dificultad.md) con un índice 0–100 por
-nivel (movimientos, esfuerzo de búsqueda, éxito de un jugador casual **con lluvia y tiempo real**,
-niebla y ritmo de la lluvia) y su estadística. Resultado (130 niveles × 15 muestras):
+nivel (movimientos, esfuerzo de búsqueda, éxito de un jugador casual y niebla; con la lluvia
+activa, también su ritmo) y su estadística.
 
-| Niveles | Índice | Éxito del jugador casual |
-| --- | --- | --- |
-| 1–10 | 8 | 100 % |
-| 11–20 | 28 | 99 % |
-| 21–30 | 47 | 78 % |
-| 31–40 | 58 | 61 % |
-| 41–50 | 65 | 53 % |
-| 51–130 | ≈ 77 | ≈ 36 % |
+**v1.0.15, sin lluvia** (60 niveles × 20 muestras; entre paréntesis, v1.0.14 con lluvia):
+
+| Niveles | Éxito del jugador casual |
+| --- | --- |
+| 1–10 | 100 % (100 %) |
+| 11–20 | 97 % (99 %) |
+| 21–30 | 80 % (78 %) |
+| 31–40 | 59 % (61 %) |
+| 41–50 | 56 % (53 %) |
+| 51–60 | 36 % (≈ 36 %) |
+
+Al quitar la lluvia, el jugador casual del análisis apenas notó la diferencia (pierde hacia la
+jugada 9–10 y la lluvia empezaba más tarde, entre el 25 y el 45 % del nivel). Lo que sí se perdió
+fue el **nivel difícil**: sin lluvia, a veces salía más fácil que su bloque. Se compensó con más
+tableros candidatos por nivel (6–14 en vez de 4–12) y con un nivel difícil que elige, entre 8
+candidatos más, el que peor juega un jugador al azar. Con 1000 niveles: los normales 32–38 % de
+victorias por tramo (con lluvia, 34–39 %) y los difíciles ≈ 30 % (con lluvia, ≈ 30–33 %); el difícil
+supera a la media de su bloque en 83 de 103 bloques. Generar un nivel difícil tarda ~150 ms en el
+PC (los normales, <10 ms).
+
+Antes, con lluvia (v1.0.7, 130 niveles × 15 muestras), el jugador casual ganaba 100 / 99 / 78 /
+61 / 53 % y ≈ 36 % desde el nivel 51.
 
 v1.0.7 (dos tubos libres de verdad y más fusiones). Antes (v1.0.6) el jugador casual ganaba
 89 / 37 / 7 / 4 % y ≈ 1 % desde el nivel 50, pero casi siempre perdía por una jugada mortal en la
@@ -276,23 +299,25 @@ Los primeros 20 niveles quedan fáciles (de aprendizaje); para endurecerlos sin 
 palancas son colores antes, más fusiones o más hielo.
 
 **1000 niveles** (`npm run analizar -- niveles=1000 muestras=5 intentos=4 tramo=50
-salida=analisis-1000`, informe en [analisis-1000.md](./analisis-1000.md)): 5000/5000 tableros
-resolubles; desde el nivel ~55 la dificultad se queda plana (todos los parámetros en su tope):
-índice ≈ 74 y el jugador casual gana ≈ 36 % en todos los tramos hasta el 1000, sin picos ni
-huecos; el nivel difícil supera a su bloque en 100 de 103 bloques. Cuando pierde, el 80 % de las
+salida=analisis-1000`, informe en [analisis-1000.md](./analisis-1000.md); v1.0.15, sin lluvia):
+5000/5000 tableros resolubles; desde el nivel ~55 la dificultad se queda plana (todos los
+parámetros en su tope): índice ≈ 75 y el jugador casual gana ≈ 35 % en todos los tramos hasta el
+1000, sin picos ni huecos; el nivel difícil supera a su bloque en 83 de 103 bloques (con lluvia,
+v1.0.7: 100 de 103, pero con ventajas parecidas en éxito casual). Cuando pierde, el 80 % de las
 veces aún tenía jugadas («Sin solución»), de mediana en la jugada 9–10.
 
-- La dificultad **sube con cada desbloqueo**: correlación bloque ↔ índice ρ = 0,97 (nivel ↔ índice
-  0,83). Se aplana a partir del nivel ~55, cuando los parámetros llegan a sus topes.
-- El **nivel difícil** supera a la media de su bloque en **16 de 16** bloques, por 10,1 puntos de
-  media (picos naranjas de la gráfica).
+- La dificultad **sube con cada desbloqueo**: correlación bloque ↔ índice ρ = 0,95 en los 60
+  primeros niveles (nivel ↔ índice 0,95). Se aplana a partir del nivel ~55, cuando los parámetros
+  llegan a sus topes.
+- El **nivel difícil** supera a la media de su bloque en **9 de 9** bloques de los 60 primeros
+  niveles, por 11,3 puntos de media (picos naranjas de la gráfica).
 - El «jugador casual» del análisis no planifica (juega la jugada obvia o una al azar), así que su
   éxito es una cota baja: una persona que piensa un par de jugadas gana bastante más. Aun así, la
   idea es que a partir del nivel ~15 haga falta pensar o usar habilidades: con el diseño anterior
   (hasta 5 tubos vacíos) se llegaba muy lejos sin usar ninguna.
-- Sin lluvia los niveles son fáciles: la dificultad real la ponen la **lluvia** (tubos bloqueados a
-  destiempo) y la **niebla**. El análisis no modela las gotas de niebla (su jugador casual no mira
-  las bolas ocultas), así que en los bloques altos el juego real es algo más difícil.
+- El análisis no modela la **niebla** (su jugador casual ve las bolas ocultas), así que en los
+  bloques altos el juego real es algo más difícil de lo medido. Tampoco modelaba la presión de
+  tiempo de la lluvia: para una persona, quitarla sí hace el juego algo más tranquilo.
 
 ### Solubilidad (medida)
 
@@ -305,6 +330,7 @@ veces aún tenía jugadas («Sin solución»), de mediana en la jugada 9–10.
 | v0.1.12: 2 vacíos + 1 al llover, lluvia justa que espera | **100 %** | **100 %** | **100 %** | **100 %** |
 | v1.0.5: lluvia de hielo y niebla (temporal) | **100 %** | **100 %** | **100 %** | **100 %** |
 | v1.0.7: 1000 niveles × 2 partidas (6000) | **100 %** | **100 %** | **100 %** | **100 %** |
+| v1.0.15: sin lluvia, 50 niveles × 10 partidas (las 3 velocidades ya no cambian nada) | **100 %** | **100 %** | **100 %** | **100 %** |
 
 (130 niveles × 2 partidas × 3 velocidades = 780/780.) Con la lluvia temporal es de esperar: el
 hielo siempre se acaba derritiendo y la niebla solo tapa, así que la lluvia no puede dejar un nivel

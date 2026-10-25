@@ -11,6 +11,13 @@ import type { ConfigNivel } from './niveles';
 //   derrite al cabo de `deshielo` jugadas.
 // - Gota de niebla (bloques altos): vuelve a tapar con «?» bolas ya descubiertas de un tubo.
 
+// ─── DESACTIVADA (v1.0.15) ───
+// La lluvia está apagada hasta que se rehaga: el plan sale siempre vacío, así que en la partida no
+// hay alerta, ni gotas, ni contador, y los simuladores juegan sin lluvia. El código (aquí, en
+// GameScene y en scripts/lib/juego.mjs) se conserva tal cual para la refactorización: para
+// volver a activarla basta con poner `LLUVIA_ACTIVA = true` (y revisar la dificultad).
+export const LLUVIA_ACTIVA = false;
+
 export type TipoGota = 'hielo' | 'niebla';
 
 export interface Gota {
@@ -41,6 +48,7 @@ export function probNieblaDe(config: ConfigNivel): number {
 }
 
 export function planificarLluvia(config: ConfigNivel, colores: ColorId[], rnd: () => number = Math.random): PlanLluvia {
+  if (!LLUVIA_ACTIVA) return { umbral: 1, gotas: [], deshielo: deshieloDe(config) };
   // Todas las gotas mezcladas: los colores de las distintas tandas se intercalan
   const orden: ColorId[] = colores.flatMap((c) => Array<ColorId>(CAPACIDAD).fill(c));
   for (let i = orden.length - 1; i > 0; i--) {
